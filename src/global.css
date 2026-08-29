@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@import "uniwind";
+@import "heroui-native/styles";
+
+@theme {
+  --spacing-screen: 1.25rem;
+}
+
+@layer theme {
+  @variant light {
+    --background: #ffffff;
+    --foreground: #101828;
+    --surface: #ffffff;
+    --surface-secondary: #f9fafb;
+    --surface-tertiary: #f2f4f7;
+    --muted: #667085;
+    --accent: #ff4405;
+    --accent-foreground: #ffffff;
+    --danger: #f04438;
+    --danger-foreground: #ffffff;
+    --warning: #f79009;
+    --warning-foreground: #101828;
+    --success: #17b26a;
+    --success-foreground: #101828;
+    --border: #eaecf0;
+    --separator: #eaecf0;
+    --focus: #ff4405;
+    --link: #1570ef;
+  }
+
+  @variant dark {
+    --background: #000000;
+    --foreground: #ffffff;
+    --surface: #101828;
+    --surface-secondary: #1d2939;
+    --surface-tertiary: #344054;
+    --muted: #98a2b3;
+    --accent: #ff4405;
+    --accent-foreground: #ffffff;
+    --danger: #f97066;
+    --danger-foreground: #ffffff;
+    --warning: #fdb022;
+    --warning-foreground: #0c111d;
+    --success: #47cd89;
+    --success-foreground: #0c111d;
+    --border: #344054;
+    --separator: #344054;
+    --focus: #ff4405;
+    --link: #84caff;
+  }
+}
