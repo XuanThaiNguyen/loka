@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { HomeSectionHeader } from "@/features/home/components/home-section-header";
+import { RecentTripCard } from "@/features/travel-plan/components/recent-trip-card";
+import { useUserTravelPlans } from "@/features/travel-plan/travel-plan.store";
 import { travelCities } from "@/features/travel/city.data";
 import { DestinationCard } from "@/features/travel/components/destination-card";
 import {
@@ -20,6 +22,7 @@ type HomeSheetContentProps = {
 
 export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
   const { t } = useTranslation();
+  const [recentTrip] = useUserTravelPlans();
 
   return (
     <BottomSheetScrollView
@@ -27,6 +30,17 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
       bounces={false}
       contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
     >
+      {recentTrip ? (
+        <View style={styles.section}>
+          <HomeSectionHeader
+            title={t("home.recentTrip")}
+            actionLabel={t("common.seeAll")}
+            onActionPress={() => router.push("/trips")}
+          />
+          <RecentTripCard trip={recentTrip} onPress={() => router.push("/trips")} />
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <HomeSectionHeader
           title={t("home.exploreCity")}

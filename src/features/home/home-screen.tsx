@@ -19,10 +19,12 @@ import {
   SCREEN_FADE_THRESHOLD,
   TOP_OVERLAY_FALLBACK_HEIGHT,
 } from "@/features/home/home.constants";
+import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { theme } from "@/theme/theme";
 
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const bottomPadding = useTabBottomPadding();
   const { height } = useWindowDimensions();
   const [sceneHeight, setSceneHeight] = useState(
     Math.max(height - TAB_BAR_HEIGHT - insets.bottom, 0),
@@ -97,7 +99,7 @@ export function HomeScreen() {
           handleStyle={styles.sheetHandleArea}
           handleIndicatorStyle={styles.sheetHandle}
         >
-          <HomeSheetContent bottomPadding={insets.bottom || 24} />
+          <HomeSheetContent bottomPadding={bottomPadding} />
         </BottomSheet>
       </View>
     </View>

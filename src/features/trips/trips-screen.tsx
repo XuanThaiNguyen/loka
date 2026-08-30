@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
+import { RecentTripCard } from "@/features/travel-plan/components/recent-trip-card";
+import { useUserTravelPlans } from "@/features/travel-plan/travel-plan.store";
 import { getDestination } from "@/features/travel/travel.data";
 import { TripCard } from "@/features/trips/components/trip-card";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
@@ -11,19 +13,16 @@ import { theme } from "@/theme/theme";
 const bookings = [
   {
     id: "haLongBay",
-    date: "December 20, 2026",
-    countdown: "In 4 days",
   },
   {
     id: "parisEscape",
-    date: "December 24, 2026",
-    countdown: "In 8 days",
   },
 ] as const;
 
 export function TripsScreen() {
   const { t } = useTranslation();
   const bottomPadding = useTabBottomPadding();
+  const userPlans = useUserTravelPlans();
   const [activeTab, setActiveTab] = useState<"booking" | "planning">("booking");
 
   return (
@@ -58,7 +57,7 @@ export function TripsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: bottomPadding + theme.spacing[4] },
+          { paddingBottom: bottomPadding },
         ]}
       >
         {activeTab === "booking" ? (
@@ -68,11 +67,18 @@ export function TripsScreen() {
               <TripCard
                 key={booking.id}
                 destination={destination}
-                date={booking.date}
-                countdown={booking.countdown}
+                date={t(`trips.bookings.${booking.id}.date`)}
+                countdown={t(`trips.bookings.${booking.id}.countdown`)}
               />
             ) : null;
           })
+        ) : userPlans.length > 0 ? (
+          <View style={styles.userPlanList}>
+            <Text style={styles.userPlanTitle}>{t("trips.userPlans")}</Text>
+            {userPlans.map((plan) => (
+              <RecentTripCard key={plan.id} trip={plan} />
+            ))}
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>{t("trips.planningTitle")}</Text>
@@ -121,6 +127,15 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: theme.spacing[5],
     gap: theme.spacing[4],
+  },
+  userPlanList: {
+    gap: theme.spacing[3],
+  },
+  userPlanTitle: {
+    color: theme.colors.light.gray[900],
+    fontSize: theme.typography.fontSize.lg,
+    lineHeight: theme.typography.lineHeight.lg,
+    fontWeight: "900",
   },
   emptyState: {
     minHeight: 260,

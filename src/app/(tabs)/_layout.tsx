@@ -1,12 +1,13 @@
 import { Stack, Tabs } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TabBarButton } from "@/components/core/tab-bar-button";
 import { TAB_BAR_HEIGHT } from "@/constants/layout";
-import { i18n } from "@/i18n";
 import { theme } from "@/theme/theme";
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -36,7 +37,7 @@ export default function TabsLayout() {
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
-                label={i18n.t("tabs.home")}
+                label={t("tabs.home")}
                 iconName="home-outline"
                 activeIconName="home"
                 routePath="/"
@@ -50,7 +51,7 @@ export default function TabsLayout() {
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
-                label={i18n.t("tabs.trips")}
+                label={t("tabs.trips")}
                 iconName="compass-outline"
                 activeIconName="compass"
                 routePath="/trips"
@@ -64,7 +65,7 @@ export default function TabsLayout() {
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
-                label={i18n.t("tabs.explore")}
+                label={t("tabs.explore")}
                 iconName="paper-plane"
                 activeIconName="paper-plane"
                 routePath="/explore"
@@ -79,7 +80,7 @@ export default function TabsLayout() {
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
-                label={i18n.t("tabs.favorites")}
+                label={t("tabs.favorites")}
                 iconName="heart-outline"
                 activeIconName="heart"
                 routePath="/favorites"
@@ -93,7 +94,7 @@ export default function TabsLayout() {
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
-                label={i18n.t("tabs.profile")}
+                label={t("tabs.profile")}
                 iconName="person-outline"
                 activeIconName="person"
                 routePath="/profile"

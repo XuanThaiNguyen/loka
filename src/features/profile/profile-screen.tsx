@@ -44,7 +44,7 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: bottomPadding + theme.spacing[4] },
+          { paddingBottom: bottomPadding },
         ]}
       >
         <View style={styles.identity}>

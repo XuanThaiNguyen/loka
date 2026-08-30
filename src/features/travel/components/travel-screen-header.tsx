@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -14,6 +15,7 @@ export function TravelScreenHeader({
   title,
   showBack = false,
 }: TravelScreenHeaderProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -21,7 +23,7 @@ export function TravelScreenHeader({
       <View style={styles.actionSlot}>
         {showBack ? (
           <Pressable
-            accessibilityLabel="Back"
+            accessibilityLabel={t("common.back")}
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => router.back()}
@@ -42,7 +44,7 @@ export function TravelScreenHeader({
 
       <View style={styles.actionSlot}>
         <Pressable
-          accessibilityLabel="More options"
+          accessibilityLabel={t("common.moreOptions")}
           accessibilityRole="button"
           hitSlop={8}
           style={styles.moreButton}
