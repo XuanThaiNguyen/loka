@@ -1,3 +1,3 @@
-import { TripsScreen } from "@/features/trips/trips-screen";
+import { TripsScreen } from "@/features/trips/screens/trips-screen";
 
 export default TripsScreen;

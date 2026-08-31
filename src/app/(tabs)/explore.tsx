@@ -1,3 +1,3 @@
-import { TravelPlanScreen } from "@/features/travel-plan/travel-plan-screen";
+import { TravelPlanScreen } from "@/features/travel-plan/screens/travel-plan-screen";
 
 export default TravelPlanScreen;

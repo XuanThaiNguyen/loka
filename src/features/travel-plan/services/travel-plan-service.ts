@@ -6,7 +6,7 @@ import {
   getDestinationImage,
   getTravellerOption,
   interestOptions,
-} from "./travel-plan.data";
+} from "@/features/travel-plan/travel-plan.data";
 import type {
   PlannerAnswers,
   PlannerTurn,
@@ -15,7 +15,8 @@ import type {
   TravelPlanDay,
   TravelPlanHotel,
   UserTravelPlan,
-} from "./travel-plan.types";
+} from "@/features/travel-plan/travel-plan.types";
+import { requestOpenRouterCompletion } from "@/lib/openrouter/openrouter-client";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -30,11 +31,6 @@ type GenerateTravelPlanInput = {
   answers: Required<PlannerAnswers>;
   language: string;
   t: Translate;
-};
-
-type OpenRouterMessage = {
-  role: "system" | "user";
-  content: string;
 };
 
 type RawCoordinates = {
@@ -82,9 +78,6 @@ type RawGeneratedPlan = {
   };
 };
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const REQUEST_TIMEOUT_MS = 180000;
-
 export const TRIP_PLANNER_PROMPT = `You are an AI Trip Planner Agent. Help the user plan a trip by asking exactly one relevant question at a time. Ask only for these details, in this order: 1) starting location, 2) destination city and country, 3) group size (solo, couple, family, friends), 4) budget (low, medium, high), 5) trip duration in days, 6) travel interests, 7) special requirements. Never ask multiple questions or unrelated questions. If an answer is missing or unclear, politely request clarification. Keep the tone conversational. Return strict JSON only with this schema: {"resp":"question text","ui":"origin|destination|groupSize|budget|tripDuration|interests|requirements|final"}. The ui value must identify the single generative UI control that should be displayed next. Use final only when all details are collected.`;
 
 export const LAST_TRIP_PROMPT = `Generate a realistic travel plan from the supplied details. Include hotel options and a day-by-day itinerary. Every hotel must include hotel_name, hotel_address, price_per_night, hotel_image_url, geo_coordinates with numeric latitude and longitude, rating, and description. Every activity must include place_name, place_details, place_image_url, geo_coordinates with numeric latitude and longitude, place_address, ticket_pricing, time_travel_each_location, and best_time_to_visit. Return strict minified JSON only, without markdown or commentary, using this schema: {"trip_plan":{"destination":"string","duration":"string","origin":"string","budget":"string","group_size":"string","hotels":[{"hotel_name":"string","hotel_address":"string","price_per_night":"string","hotel_image_url":"string","geo_coordinates":{"latitude":0,"longitude":0},"rating":0,"description":"string"}],"itinerary":[{"day":1,"day_plan":"string","best_time_to_visit_day":"string","activities":[{"place_name":"string","place_details":"string","place_image_url":"string","geo_coordinates":{"latitude":0,"longitude":0},"place_address":"string","ticket_pricing":"string","time_travel_each_location":"string","best_time_to_visit":"string"}]}]}}`;
@@ -100,17 +93,17 @@ export async function requestPlannerTurn({
   if (!env.openRouterApiKey) return fallback;
 
   try {
-    const raw = await callOpenRouter(
-      false,
-      JSON.stringify({
+    const raw = await requestOpenRouterCompletion({
+      systemPrompt: TRIP_PLANNER_PROMPT,
+      userContent: JSON.stringify({
         language,
         collectedDetails: answers,
         nextRequiredUi: expectedUi,
         instruction:
           "Ask only the question for nextRequiredUi. Keep the response short and return strict JSON.",
       }),
-      420,
-    );
+      maxCompletionTokens: 420,
+    });
     const parsed = parseJson(raw) as Partial<PlannerTurn>;
 
     return {
@@ -132,11 +125,11 @@ export async function generateTravelPlan({
   if (!env.openRouterApiKey) return buildFallbackPlan(basePlan, answers, t);
 
   try {
-    const raw = await callOpenRouter(
-      true,
-      JSON.stringify({ language, tripDetails: answers }),
-      5200,
-    );
+    const raw = await requestOpenRouterCompletion({
+      systemPrompt: LAST_TRIP_PROMPT,
+      userContent: JSON.stringify({ language, tripDetails: answers }),
+      maxCompletionTokens: 5200,
+    });
     const generated = (parseJson(raw) as RawGeneratedPlan).trip_plan;
 
     if (!generated) throw new Error("OpenRouter returned no trip_plan object");
@@ -160,46 +153,6 @@ export async function generateTravelPlan({
   } catch {
     return buildFallbackPlan(basePlan, answers, t);
   }
-}
-
-async function callOpenRouter(
-  isLast: boolean,
-  userContent: string,
-  maxCompletionTokens: number,
-) {
-  const messages: OpenRouterMessage[] = [
-    {
-      role: "system",
-      content: isLast ? LAST_TRIP_PROMPT : TRIP_PLANNER_PROMPT,
-    },
-    { role: "user", content: userContent },
-  ];
-  const response = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    headers: {
-      Authorization: `Bearer ${env.openRouterApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: env.openRouterModel,
-      messages,
-      temperature: 0.55,
-      max_completion_tokens: maxCompletionTokens,
-    }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data?.error?.message || `OpenRouter HTTP ${response.status}`);
-  }
-
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw new Error("OpenRouter returned an empty response");
-  }
-
-  return content.trim();
 }
 
 function parseJson(raw: string): unknown {

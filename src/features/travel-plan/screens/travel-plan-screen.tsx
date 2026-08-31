@@ -17,7 +17,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { theme } from "@/theme/theme";
 
-import { generateTravelPlan, requestPlannerTurn } from "./openrouter";
+import {
+  generateTravelPlan,
+  requestPlannerTurn,
+} from "@/features/travel-plan/services/travel-plan-service";
 import {
   budgetOptions,
   destinationSuggestionKeys,
@@ -29,15 +32,15 @@ import {
   plannerStepOrder,
   requirementSuggestionKeys,
   travellerOptions,
-} from "./travel-plan.data";
-import { addUserTravelPlan } from "./travel-plan.store";
+} from "@/features/travel-plan/travel-plan.data";
+import { addUserTravelPlan } from "@/features/travel-plan/travel-plan.store";
 import type {
   PlannerAnswers,
   PlannerChatMessage,
   PlannerUi,
   TravelPlanOption,
   UserTravelPlan,
-} from "./travel-plan.types";
+} from "@/features/travel-plan/travel-plan.types";
 
 const REQUIRED_DETAIL_COUNT = 7;
 

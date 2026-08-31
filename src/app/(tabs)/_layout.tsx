@@ -2,7 +2,7 @@ import { Stack, Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { TabBarButton } from "@/components/core/tab-bar-button";
+import { TabBarButton } from "@/components/navigation/tab-bar-button";
 import { TAB_BAR_HEIGHT } from "@/constants/layout";
 import { theme } from "@/theme/theme";
 
