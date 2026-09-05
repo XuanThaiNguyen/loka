@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Button } from "heroui-native/button";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,11 +8,11 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
+import { galleryImages } from "@/features/travel/travel.data";
 import {
-  destinations,
-  galleryImages,
-  getDestination,
-} from "@/features/travel/travel.data";
+  useDestination,
+  useFavoriteMutation,
+} from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
 
 const visitorColors = [
@@ -27,9 +27,29 @@ export function DestinationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const destination = getDestination(id) ?? destinations[0];
-  const title = t(`travel.destinations.${destination.id}.title`);
+  const { destination } = useDestination(id);
+  const favoriteMutation = useFavoriteMutation();
+  const [favoriteOverride, setFavoriteOverride] = useState<{
+    id: string;
+    value: boolean;
+  } | null>(null);
+  const isFavorite = favoriteOverride?.id === destination.id
+    ? favoriteOverride.value
+    : (destination.isFavorite ?? false);
+  const title = destination.title ?? t(`travel.destinations.${destination.id}.title`);
+  const destinationGallery = destination.gallery?.length
+    ? destination.gallery
+    : galleryImages;
+
+  const toggleFavorite = () => {
+    const previous = isFavorite;
+    const favorite = !previous;
+    setFavoriteOverride({ id: destination.id, value: favorite });
+    favoriteMutation.mutate(
+      { destinationId: destination.id, favorite },
+      { onError: () => setFavoriteOverride({ id: destination.id, value: previous }) },
+    );
+  };
 
   return (
     <View style={styles.screen}>
@@ -64,7 +84,7 @@ export function DestinationDetailScreen() {
                 color={theme.colors.light.accent}
               />
               <Text numberOfLines={1} style={styles.metadataText}>
-                {t(`travel.destinations.${destination.id}.location`)}
+                {destination.location ?? t(`travel.destinations.${destination.id}.location`)}
               </Text>
               <Ionicons
                 name="star"
@@ -79,7 +99,7 @@ export function DestinationDetailScreen() {
             isIconOnly
             variant="secondary"
             accessibilityLabel={t("travel.toggleFavorite", { title })}
-            onPress={() => setIsFavorite((current) => !current)}
+            onPress={toggleFavorite}
           >
             <Ionicons
               name={isFavorite ? "heart" : "heart-outline"}
@@ -121,7 +141,7 @@ export function DestinationDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("travel.detail.details")}</Text>
           <Text style={styles.description}>
-            {t(`travel.destinations.${destination.id}.description`)}
+            {destination.description ?? t(`travel.destinations.${destination.id}.description`)}
           </Text>
         </View>
 
@@ -135,14 +155,14 @@ export function DestinationDetailScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.gallery}
           >
-            {galleryImages.map((image, index) => (
+            {destinationGallery.map((image, index) => (
               <View key={image}>
                 <Image
                   source={{ uri: image }}
                   style={styles.galleryImage}
                   contentFit="cover"
                 />
-                {index === galleryImages.length - 1 ? (
+                {index === destinationGallery.length - 1 ? (
                   <View style={styles.galleryCount}>
                     <Text style={styles.galleryCountText}>12+</Text>
                   </View>
@@ -162,11 +182,18 @@ export function DestinationDetailScreen() {
         <View>
           <Text style={styles.priceEyebrow}>{t("travel.detail.startFrom")}</Text>
           <Text style={styles.checkoutPrice}>
-            ${destination.price.toFixed(2)}
+            {new Intl.NumberFormat(undefined, {
+              style: "currency",
+              currency: destination.currency ?? "USD",
+            }).format(destination.price)}
             <Text style={styles.perPerson}>/{t("travel.detail.person")}</Text>
           </Text>
         </View>
-        <Button variant="primary" style={styles.checkoutButton}>
+        <Button
+          variant="primary"
+          style={styles.checkoutButton}
+          onPress={() => router.push({ pathname: "/booking/new", params: { destinationId: destination.id } })}
+        >
           <Button.Label>{t("travel.detail.checkout")}</Button.Label>
         </Button>
       </View>

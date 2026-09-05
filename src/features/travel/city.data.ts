@@ -1,15 +1,22 @@
 import type { DestinationId } from "@/features/travel/travel.data";
 
-export type CityId = "tokyo" | "kyoto" | "paris" | "singapore" | "seoul";
+export type CityId = string;
 
 export type TravelCity = {
   id: CityId;
+  name?: string;
+  country?: string;
   image: string;
   featuredImage: string;
+  featuredTitle?: string;
   featuredRating: string;
   featuredPrice: number;
+  featuredCurrency?: string;
   gallery: readonly string[];
   relatedDestinationIds: readonly DestinationId[];
+  relatedDestinations?: readonly import("@/features/travel/travel.data").Destination[];
+  featuredDestination?: import("@/features/travel/travel.data").Destination;
+  apiBacked?: boolean;
 };
 
 export const travelCities: readonly TravelCity[] = [

@@ -6,17 +6,43 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import type { Destination } from "@/features/travel/travel.data";
+import type { BookingStatus } from "@/features/trips/services/trips-api-service";
 import { theme } from "@/theme/theme";
 
 type TripCardProps = {
   destination: Destination;
   date: string;
   countdown: string;
+  totalPrice?: number;
+  currency?: string;
+  travellerCount?: number;
+  reminderEnabled?: boolean;
+  status?: BookingStatus;
+  onReminderChange?: (enabled: boolean) => Promise<unknown>;
 };
 
-export function TripCard({ destination, date, countdown }: TripCardProps) {
+export function TripCard({
+  destination,
+  date,
+  countdown,
+  totalPrice,
+  currency = "USD",
+  travellerCount = 4,
+  reminderEnabled: initialReminderEnabled = true,
+  status = "upcoming",
+  onReminderChange,
+}: TripCardProps) {
   const { t } = useTranslation();
-  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderEnabled, setReminderEnabled] = useState(initialReminderEnabled);
+  const title = destination.title ?? t(`travel.destinations.${destination.id}.title`);
+  const location = destination.location ?? t(`travel.destinations.${destination.id}.location`);
+  const amount = totalPrice ?? destination.price * travellerCount;
+
+  const handleReminderChange = (enabled: boolean) => {
+    const previous = reminderEnabled;
+    setReminderEnabled(enabled);
+    onReminderChange?.(enabled).catch(() => setReminderEnabled(previous));
+  };
 
   return (
     <View style={styles.card}>
@@ -26,7 +52,7 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
           <Text style={styles.reminderLabel}>{t("trips.remindMe")}</Text>
           <Switch
             value={reminderEnabled}
-            onValueChange={setReminderEnabled}
+            onValueChange={handleReminderChange}
             trackColor={{
               false: theme.colors.light.gray[300],
               true: theme.colors.light.accent,
@@ -44,10 +70,10 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
         />
         <View style={styles.destinationInfo}>
           <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{t("trips.onGoing")}</Text>
+            <Text style={styles.statusText}>{t(`trips.bookingStatuses.${status}`)}</Text>
           </View>
           <Text numberOfLines={1} style={styles.title}>
-            {t(`travel.destinations.${destination.id}.title`)}
+            {title}
           </Text>
           <View style={styles.inlineMetadata}>
             <Ionicons
@@ -56,7 +82,7 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
               color={theme.colors.light.gray[700]}
             />
             <Text numberOfLines={1} style={styles.metadataText}>
-              {t(`travel.destinations.${destination.id}.location`)}
+              {location}
             </Text>
             <Ionicons
               name="star"
@@ -76,7 +102,7 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
             color={theme.colors.light.accent}
           />
           <Text numberOfLines={1} style={styles.scheduleText}>
-            {t(`travel.destinations.${destination.id}.location`)}
+            {location}
           </Text>
         </View>
         <View style={styles.scheduleRow}>
@@ -86,7 +112,7 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
             color={theme.colors.light.accent}
           />
           <Text numberOfLines={1} style={styles.scheduleText}>
-            {t("trips.schedule")}
+            {date}
           </Text>
           <View style={styles.countdownBadge}>
             <Text style={styles.countdownText}>{countdown}</Text>
@@ -96,8 +122,11 @@ export function TripCard({ destination, date, countdown }: TripCardProps) {
 
       <View style={styles.footer}>
         <Text style={styles.totalPrice}>
-          ${(destination.price * 4).toFixed(2)}
-          <Text style={styles.peopleText}> {t("trips.forPeople")}</Text>
+          {new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency,
+          }).format(amount)}
+          <Text style={styles.peopleText}> {t("trips.forPeople", { count: travellerCount })}</Text>
         </Text>
         <Pressable
           onPress={() =>

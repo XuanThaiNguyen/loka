@@ -87,10 +87,14 @@ export type UserTravelPlan = {
   specialRequirements?: string;
   startDate: string;
   endDate: string;
+  rawStartDate?: string | null;
+  rawEndDate?: string | null;
   totalPeople: number;
   estimatedCost: number;
   rating: string;
   status: "planned" | "completed";
+  apiStatus?: "planning" | "archived";
+  currency?: string;
   image: string;
   summary: string;
   hotels: TravelPlanHotel[];

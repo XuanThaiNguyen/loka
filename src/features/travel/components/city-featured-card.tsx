@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { TravelCity } from "@/features/travel/city.data";
+import { useFavoriteMutation } from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
 
 type CityFeaturedCardProps = {
@@ -13,7 +14,22 @@ type CityFeaturedCardProps = {
 
 export function CityFeaturedCard({ city }: CityFeaturedCardProps) {
   const { t } = useTranslation();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const favoriteMutation = useFavoriteMutation();
+  const [isFavorite, setIsFavorite] = useState(
+    city.featuredDestination?.isFavorite ?? false,
+  );
+
+  const toggleFavorite = () => {
+    const previous = isFavorite;
+    const favorite = !previous;
+    setIsFavorite(favorite);
+    if (city.featuredDestination) {
+      favoriteMutation.mutate(
+        { destinationId: city.featuredDestination.id, favorite },
+        { onError: () => setIsFavorite(previous) },
+      );
+    }
+  };
 
   return (
     <View style={styles.card}>
@@ -30,7 +46,7 @@ export function CityFeaturedCard({ city }: CityFeaturedCardProps) {
           accessibilityLabel={t("travel.cityScreen.toggleFeaturedFavorite")}
           accessibilityRole="button"
           hitSlop={8}
-          onPress={() => setIsFavorite((current) => !current)}
+          onPress={toggleFavorite}
           style={styles.favoriteButton}
         >
           <Ionicons
@@ -43,11 +59,15 @@ export function CityFeaturedCard({ city }: CityFeaturedCardProps) {
 
       <View style={styles.content}>
         <Text numberOfLines={1} style={styles.title}>
-          {t(`travel.cities.${city.id}.featuredTitle`)}
+          {city.featuredTitle ?? t(`travel.cities.${city.id}.featuredTitle`)}
         </Text>
         <View style={styles.details}>
           <Text style={styles.price}>
-            ${city.featuredPrice}
+            {new Intl.NumberFormat(undefined, {
+              style: "currency",
+              currency: city.featuredCurrency ?? "USD",
+              maximumFractionDigits: 0,
+            }).format(city.featuredPrice)}
             <Text style={styles.perPerson}>
               /{t("travel.cityScreen.person")}
             </Text>
@@ -59,7 +79,7 @@ export function CityFeaturedCard({ city }: CityFeaturedCardProps) {
               color={theme.colors.light.accent}
             />
             <Text numberOfLines={1} style={styles.locationText}>
-              {t(`travel.cities.${city.id}.country`)}
+              {city.country ?? t(`travel.cities.${city.id}.country`)}
             </Text>
           </View>
           <View style={styles.rating}>

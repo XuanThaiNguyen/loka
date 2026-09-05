@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import type { Destination } from "@/features/travel/travel.data";
+import { useFavoriteMutation } from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
 
 type DestinationCardProps = {
@@ -25,12 +26,26 @@ export function DestinationCard({
   initiallyFavorite = false,
 }: DestinationCardProps) {
   const { t } = useTranslation();
-  const [isFavorite, setIsFavorite] = useState(initiallyFavorite);
-  const title = t(`travel.destinations.${destination.id}.title`);
+  const favoriteMutation = useFavoriteMutation();
+  const sourceFavorite = destination.isFavorite ?? initiallyFavorite;
+  const [favoriteOverride, setFavoriteOverride] = useState<{
+    id: string;
+    value: boolean;
+  } | null>(null);
+  const isFavorite = favoriteOverride?.id === destination.id
+    ? favoriteOverride.value
+    : sourceFavorite;
+  const title = destination.title ?? t(`travel.destinations.${destination.id}.title`);
 
   const handleFavoritePress = (event: GestureResponderEvent) => {
     event.stopPropagation();
-    setIsFavorite((current) => !current);
+    const previous = isFavorite;
+    const favorite = !previous;
+    setFavoriteOverride({ id: destination.id, value: favorite });
+    favoriteMutation.mutate(
+      { destinationId: destination.id, favorite },
+      { onError: () => setFavoriteOverride({ id: destination.id, value: previous }) },
+    );
   };
 
   return (
@@ -77,7 +92,7 @@ export function DestinationCard({
             color={theme.colors.light.accent}
           />
           <Text numberOfLines={1} style={styles.locationText}>
-            {t(`travel.destinations.${destination.id}.location`)}
+            {destination.location ?? t(`travel.destinations.${destination.id}.location`)}
           </Text>
         </View>
       </View>

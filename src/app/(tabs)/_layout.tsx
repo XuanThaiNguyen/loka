@@ -34,6 +34,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
+            title: t("tabs.home"),
+            tabBarAccessibilityLabel: t("tabs.home"),
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
@@ -48,6 +50,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="trips"
           options={{
+            title: t("tabs.trips"),
+            tabBarAccessibilityLabel: t("tabs.trips"),
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
@@ -62,6 +66,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="explore"
           options={{
+            title: t("tabs.explore"),
+            tabBarAccessibilityLabel: t("tabs.explore"),
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
@@ -77,6 +83,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="favorites"
           options={{
+            title: t("tabs.favorites"),
+            tabBarAccessibilityLabel: t("tabs.favorites"),
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}
@@ -91,6 +99,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
+            title: t("tabs.profile"),
+            tabBarAccessibilityLabel: t("tabs.profile"),
             tabBarButton: (props) => (
               <TabBarButton
                 {...props}

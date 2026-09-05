@@ -33,6 +33,10 @@ function RootNavigator() {
           <Stack.Screen name="city/[id]" />
           <Stack.Screen name="collection/[slug]" />
           <Stack.Screen name="destination/[id]" />
+          <Stack.Screen name="trip/new" options={{ animation: "slide_from_right", gestureEnabled: true }} />
+          <Stack.Screen name="trip/[id]" />
+          <Stack.Screen name="plan/[id]" />
+          <Stack.Screen name="booking/new" />
         </Stack.Protected>
 
         <Stack.Protected guard={!session}>

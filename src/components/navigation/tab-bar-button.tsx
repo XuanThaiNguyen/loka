@@ -7,6 +7,7 @@ import {
   PressableProps,
   StyleProp,
   Text,
+  TextStyle,
   View,
   ViewStyle,
 } from "react-native";
@@ -61,6 +62,7 @@ export function TabBarButton({
             color={theme.colors.light.accentForeground}
           />
         </View>
+        <Text numberOfLines={1} style={[styles.prominentLabel, { color }]}>{label}</Text>
       </Pressable>
     );
   }
@@ -127,4 +129,10 @@ const styles = {
     shadowRadius: 8,
     elevation: 6,
   } satisfies ViewStyle,
+  prominentLabel: {
+    marginTop: 1,
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "700",
+  } satisfies TextStyle,
 };

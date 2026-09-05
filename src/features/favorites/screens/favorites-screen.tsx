@@ -15,11 +15,9 @@ import { DestinationCard } from "@/features/travel/components/destination-card";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import {
-  destinations,
-  getCollection,
-  getCollectionDestinations,
   type Destination,
 } from "@/features/travel/travel.data";
+import { useFavorites } from "@/features/travel/services/travel-api-service";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { theme } from "@/theme/theme";
 
@@ -35,42 +33,28 @@ const categories: readonly {
   { key: "culture", icon: "business-outline" },
 ] as const;
 
-const favoriteIds = [
-  "haLongBay",
-  "santorini",
-  "swissAlps",
-  "kyoto",
-  "amalfiCoast",
-] as const;
-
 export function FavoritesScreen() {
   const { t } = useTranslation();
   const bottomPadding = useTabBottomPadding();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
-  const newCollection = getCollection("new");
-  const recentItems = newCollection
-    ? getCollectionDestinations(newCollection)
-    : [];
+  const { favorites } = useFavorites();
+  const recentItems = favorites.slice(0, 3);
 
   const favoriteItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
-    return destinations.filter((destination) => {
-      if (!favoriteIds.includes(destination.id as (typeof favoriteIds)[number])) {
-        return false;
-      }
-
+    return favorites.filter((destination) => {
       if (category !== "all" && destination.category !== category) {
         return false;
       }
 
-      const title = t(
-        `travel.destinations.${destination.id}.title`,
+      const title = (
+        destination.title ?? t(`travel.destinations.${destination.id}.title`)
       ).toLocaleLowerCase();
       return !normalizedQuery || title.includes(normalizedQuery);
     });
-  }, [category, query, t]);
+  }, [category, favorites, query, t]);
 
   const openDestination = (destination: Destination) => {
     router.push({
@@ -168,7 +152,7 @@ export function FavoritesScreen() {
               <DestinationCard
                 key={destination.id}
                 destination={destination}
-                initiallyFavorite
+                initiallyFavorite={destination.isFavorite ?? true}
                 onPress={() => openDestination(destination)}
               />
             ))}

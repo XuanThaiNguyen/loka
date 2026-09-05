@@ -4,8 +4,10 @@ This document describes the UI and user flows currently implemented in the Loka
 mobile app. It also proposes backend domains, API contracts, and an implementation
 order so the frontend can replace local mock data feature by feature.
 
-The inventory reflects the current source as of August 31, 2026. Proposed APIs are
-not implemented yet and can be adjusted by the backend team before integration.
+The original inventory reflects the source as of August 31, 2026. The proposed API
+surface has since been implemented and connected to mobile; see
+[`api-integration.md`](./api-integration.md) for the live route-to-screen mapping and
+fallback policy.
 
 ## 1. Current application overview
 

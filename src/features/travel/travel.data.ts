@@ -1,4 +1,4 @@
-export type DestinationId =
+export type KnownDestinationId =
   | "haLongBay"
   | "santorini"
   | "bali"
@@ -12,25 +12,40 @@ export type DestinationId =
   | "singapore"
   | "amalfiCoast";
 
-export type CollectionSlug =
+export type DestinationId = string;
+
+export type KnownCollectionSlug =
   | "recommended"
   | "trending"
   | "seasonal"
   | "new";
 
+export type CollectionSlug = string;
+
 export type Destination = {
   id: DestinationId;
+  title?: string;
+  location?: string;
+  description?: string;
   image: string;
+  gallery?: readonly string[];
   rating: string;
   price: number;
+  currency?: string;
   visitors: string;
-  category: "adventure" | "beach" | "culture" | "city";
+  category: "adventure" | "beach" | "culture" | "city" | "food";
+  isFavorite?: boolean;
+  isFeatured?: boolean;
+  apiBacked?: boolean;
 };
 
 export type TravelCollection = {
   slug: CollectionSlug;
-  rankingBasis: "personalized" | "recentGrowth" | "seasonal" | "addedAt";
+  title?: string;
+  rankingBasis: "personalized" | "recentGrowth" | "seasonal" | "addedAt" | "recommended" | "trending" | "new";
   destinationIds: readonly DestinationId[];
+  items?: readonly Destination[];
+  apiBacked?: boolean;
 };
 
 export const destinations: readonly Destination[] = [
@@ -183,6 +198,8 @@ export function getCollection(slug: string | undefined) {
 }
 
 export function getCollectionDestinations(collection: TravelCollection) {
+  if (collection.items) return collection.items;
+
   return collection.destinationIds
     .map((id) => getDestination(id))
     .filter((destination): destination is Destination => Boolean(destination));

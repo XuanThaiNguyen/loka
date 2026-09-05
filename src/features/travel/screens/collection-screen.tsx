@@ -6,23 +6,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import {
-  getCollection,
-  getCollectionDestinations,
-  travelCollections,
-} from "@/features/travel/travel.data";
+  useCollection,
+} from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
 
 export function CollectionScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const collection = getCollection(slug) ?? travelCollections[0];
-  const items = getCollectionDestinations(collection);
+  const { collection, items } = useCollection(slug);
 
   return (
     <View style={styles.screen}>
       <TravelScreenHeader
-        title={t(`travel.collections.${collection.slug}`)}
+        title={collection.title ?? t(`travel.collections.${collection.slug}`)}
         showBack
       />
 

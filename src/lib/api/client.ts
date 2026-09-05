@@ -12,6 +12,34 @@ export type ApiErrorPayload = {
   };
 };
 
+export type DataEnvelope<T> = { data: T };
+
+export type PageEnvelope<T, TMeta extends object = object> = DataEnvelope<T[]> & {
+  meta: TMeta & {
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+};
+
+type QueryValue = string | number | boolean | null | undefined;
+
+export function apiPath(
+  path: `/${string}`,
+  query?: Readonly<Record<string, QueryValue>>,
+): `/${string}` {
+  if (!query) return path;
+
+  const search = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, String(value));
+    }
+  });
+
+  const queryString = search.toString();
+  return queryString ? `${path}?${queryString}` : path;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -54,9 +82,9 @@ export async function apiRequest<T>(
     );
   }
 
-  const payload = (await response
-    .json()
-    .catch(() => null)) as ApiErrorPayload | T | null;
+  const payload = response.status === 204
+    ? null
+    : ((await response.json().catch(() => null)) as ApiErrorPayload | T | null);
 
   if (!response.ok) {
     const apiError = payload as ApiErrorPayload | null;

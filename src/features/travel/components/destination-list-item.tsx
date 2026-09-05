@@ -27,7 +27,7 @@ export function DestinationListItem({
 
       <View style={styles.content}>
         <Text numberOfLines={1} style={styles.title}>
-          {t(`travel.destinations.${destination.id}.title`)}
+          {destination.title ?? t(`travel.destinations.${destination.id}.title`)}
         </Text>
         <View style={styles.metadata}>
           <Ionicons
@@ -36,7 +36,7 @@ export function DestinationListItem({
             color={theme.colors.light.gray[500]}
           />
           <Text numberOfLines={1} style={styles.metadataText}>
-            {t(`travel.destinations.${destination.id}.location`)}
+            {destination.location ?? t(`travel.destinations.${destination.id}.location`)}
           </Text>
           <Ionicons
             name="star-outline"
@@ -48,7 +48,13 @@ export function DestinationListItem({
           </Text>
         </View>
         <Text style={styles.price}>
-          {t("travel.priceFrom", { price: destination.price.toFixed(0) })}
+          {t("travel.priceFrom", {
+            price: new Intl.NumberFormat(undefined, {
+              style: "currency",
+              currency: destination.currency ?? "USD",
+              maximumFractionDigits: 0,
+            }).format(destination.price),
+          })}
         </Text>
       </View>
 

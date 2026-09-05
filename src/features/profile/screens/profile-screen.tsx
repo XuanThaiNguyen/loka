@@ -9,11 +9,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { useAuth } from "@/features/auth/auth-provider";
 import { ProfileMenuItem } from "@/features/profile/components/profile-menu-item";
+import {
+  useCurrentAccount,
+  useUpdateCurrentAccount,
+} from "@/features/profile/services/profile-api-service";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { i18n, type SupportedLanguage } from "@/i18n";
@@ -44,10 +49,12 @@ const deferredWebItems = [
 export function ProfileScreen() {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const accountQuery = useCurrentAccount();
   const bottomPadding = useTabBottomPadding();
   const [languageExpanded, setLanguageExpanded] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const user = session?.user;
+  const user = accountQuery.data ?? session?.user;
   const displayName = user?.name?.trim() || t("profile.fallbackName");
 
   const handleSignOut = async () => {
@@ -117,6 +124,7 @@ export function ProfileScreen() {
             accessibilityLabel={t("profile.editProfile")}
             accessibilityRole="button"
             hitSlop={8}
+            onPress={() => setProfileExpanded((current) => !current)}
             style={styles.editButton}
           >
             <Ionicons
@@ -126,6 +134,15 @@ export function ProfileScreen() {
             />
           </Pressable>
         </View>
+
+        {profileExpanded && user ? (
+          <ProfileEditForm
+            key={`${user.id}-${user.name}-${user.image}`}
+            initialName={user.name ?? ""}
+            initialImage={user.image ?? ""}
+            onDone={() => setProfileExpanded(false)}
+          />
+        ) : null}
 
         <View style={styles.menu}>
           <ProfileMenuItem
@@ -218,6 +235,32 @@ export function ProfileScreen() {
   );
 }
 
+function ProfileEditForm({ initialName, initialImage, onDone }: { initialName: string; initialImage: string; onDone: () => void }) {
+  const { t } = useTranslation();
+  const mutation = useUpdateCurrentAccount();
+  const [name, setName] = useState(initialName);
+  const [image, setImage] = useState(initialImage);
+  const valid = Boolean(name.trim()) && (!image.trim() || /^https?:\/\//i.test(image.trim()));
+  const save = () => mutation.mutate(
+    { name: name.trim(), image: image.trim() || null },
+    {
+      onSuccess: onDone,
+      onError: (error) => Alert.alert(t("profile.edit.errorTitle"), error.message),
+    },
+  );
+  return (
+    <View style={styles.editForm}>
+      <Text style={styles.editFormTitle}>{t("profile.edit.title")}</Text>
+      <TextInput value={name} onChangeText={setName} maxLength={255} placeholder={t("profile.edit.name")} placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+      <TextInput value={image} onChangeText={setImage} autoCapitalize="none" autoCorrect={false} placeholder={t("profile.edit.image")} placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+      <View style={styles.editActions}>
+        <Pressable onPress={onDone} style={styles.secondaryAction}><Text style={styles.secondaryActionText}>{t("common.cancel")}</Text></Pressable>
+        <Pressable disabled={!valid || mutation.isPending} onPress={save} style={[styles.primaryAction, (!valid || mutation.isPending) && styles.disabled]}><Text style={styles.primaryActionText}>{mutation.isPending ? t("profile.edit.saving") : t("common.save")}</Text></Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -282,6 +325,60 @@ const styles = StyleSheet.create({
     gap: theme.spacing[3],
     backgroundColor: theme.colors.light.surface,
   },
+  editForm: {
+    padding: theme.spacing[4],
+    borderWidth: 1,
+    borderColor: theme.colors.light.orange[200],
+    borderRadius: theme.radius.md,
+    gap: theme.spacing[3],
+    backgroundColor: theme.colors.light.orange[50],
+  },
+  editFormTitle: {
+    color: theme.colors.light.gray[900],
+    fontSize: theme.typography.fontSize.md,
+    lineHeight: theme.typography.lineHeight.md,
+    fontWeight: "900",
+  },
+  input: {
+    minHeight: 48,
+    paddingHorizontal: theme.spacing[3],
+    borderWidth: 1,
+    borderColor: theme.colors.light.gray[300],
+    borderRadius: theme.radius.md,
+    color: theme.colors.light.gray[900],
+    backgroundColor: theme.colors.light.surface,
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: theme.spacing[2],
+  },
+  secondaryAction: {
+    flex: 1,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: theme.colors.light.gray[300],
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.light.surface,
+  },
+  secondaryActionText: {
+    color: theme.colors.light.gray[700],
+    fontWeight: "800",
+  },
+  primaryAction: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.light.accent,
+  },
+  primaryActionText: {
+    color: theme.colors.light.base.white,
+    fontWeight: "900",
+  },
+  disabled: { opacity: 0.45 },
   contactIcon: {
     width: 46,
     height: 46,

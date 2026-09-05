@@ -1,998 +1,1110 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { DateTimePicker } from "@expo/ui/community/datetime-picker";
 import { Image } from "expo-image";
-import { useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  type StyleProp,
   View,
+  type ViewStyle,
 } from "react-native";
+import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
-import { theme } from "@/theme/theme";
-
 import {
-  generateTravelPlan,
-  requestPlannerTurn,
-} from "@/features/travel-plan/services/travel-plan-service";
+  plannerApi,
+  type PlannerSessionDTO,
+  type PlannerSessionInput,
+  useCreatePlannerSession,
+  useDeletePlannerSession,
+  usePlannerSession,
+  useUpdatePlannerSession,
+} from "@/features/travel-plan/services/planner-api-service";
 import {
-  budgetOptions,
-  destinationSuggestionKeys,
-  durationDayOptions,
-  getBudgetOption,
-  getTravellerOption,
   interestOptions,
   originSuggestionKeys,
-  plannerStepOrder,
   requirementSuggestionKeys,
-  travellerOptions,
 } from "@/features/travel-plan/travel-plan.data";
-import { addUserTravelPlan } from "@/features/travel-plan/travel-plan.store";
-import type {
-  PlannerAnswers,
-  PlannerChatMessage,
-  PlannerUi,
-  TravelPlanOption,
-  UserTravelPlan,
-} from "@/features/travel-plan/travel-plan.types";
+import {
+  type TripDetailDTO,
+  type TripDTO,
+  useCreateTrip,
+  useTrip,
+  useTrips,
+} from "@/features/trips/services/trips-api-service";
+import { useDestinationSuggestions } from "@/features/travel/services/travel-api-service";
+import type { Destination } from "@/features/travel/travel.data";
+import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
+import { ApiError } from "@/lib/api/client";
+import { theme } from "@/theme/theme";
 
-const REQUIRED_DETAIL_COUNT = 7;
+type WizardForm = {
+  origin: string;
+  budgetAmount: string;
+  currency: string;
+  budgetScope: "person" | "group";
+  transportPreference: string;
+  accommodationPreference: string;
+  pace: "relaxed" | "balanced" | "packed";
+  interestIds: string[];
+  mustDoActivities: string;
+  dietaryAccessibility: string;
+  avoidances: string;
+  notes: string;
+};
+
+const initialWizardForm: WizardForm = {
+  origin: "",
+  budgetAmount: "",
+  currency: "USD",
+  budgetScope: "group",
+  transportPreference: "",
+  accommodationPreference: "",
+  pace: "balanced",
+  interestIds: [],
+  mustDoActivities: "",
+  dietaryAccessibility: "",
+  avoidances: "",
+  notes: "",
+};
+
+const paceOptions = ["relaxed", "balanced", "packed"] as const;
+const transportSuggestionIds = ["train", "rentalCar", "flights"] as const;
+const accommodationSuggestionIds = ["hotel", "homestay", "apartment"] as const;
+const mustDoSuggestionIds = ["localFood", "sunsetViewpoint", "historicLandmarks"] as const;
 
 export function TravelPlanScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { tripId: requestedTripId } = useLocalSearchParams<{ tripId?: string }>();
   const insets = useSafeAreaInsets();
   const bottomPadding = useTabBottomPadding();
-  const scrollRef = useRef<ScrollView>(null);
-  const messageSequence = useRef(0);
-  const [messages, setMessages] = useState<PlannerChatMessage[]>([]);
-  const [answers, setAnswers] = useState<PlannerAnswers>({});
-  const [activeUi, setActiveUi] = useState<PlannerUi | null>(null);
-  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const [durationDays, setDurationDays] = useState(3);
-  const [selectedInterestIds, setSelectedInterestIds] = useState<string[]>([]);
-  const [isThinking, setIsThinking] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedTrip, setGeneratedTrip] = useState<UserTravelPlan | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
+  const tripsQuery = useTrips();
+  const requestedId = Number(requestedTripId);
+  const requestedSelection = Number.isInteger(requestedId) && requestedId > 0 ? requestedId : null;
+  const [manualTripId, setManualTripId] = useState<number | null>(null);
+  const selectedTripId = requestedSelection ?? manualTripId;
+  const [savedSession, setSavedSession] = useState<PlannerSessionDTO | null>(null);
+  const tripQuery = useTrip(selectedTripId);
+  const existingSessionId = tripQuery.data?.plannerSessionId ?? null;
+  const existingSessionQuery = usePlannerSession(existingSessionId);
+  const ownerTrips = (tripsQuery.data ?? []).filter((trip) => trip.accessRole === "owner");
 
-  function makeMessage(
-    role: PlannerChatMessage["role"],
-    text: string,
-    ui?: PlannerUi,
-  ): PlannerChatMessage {
-    messageSequence.current += 1;
-    return { id: `planner-message-${messageSequence.current}`, role, text, ui };
-  }
+  const resetSelection = () => {
+    router.setParams({ tripId: undefined });
+    setManualTripId(null);
+    setSavedSession(null);
+  };
 
-  async function appendAssistantTurn(nextAnswers: PlannerAnswers, expectedUi: PlannerUi) {
-    setIsThinking(true);
-    setActiveUi(null);
-    setActiveMessageId(null);
-
-    const turn = await requestPlannerTurn({
-      answers: nextAnswers,
-      expectedUi,
-      language: i18n.language,
-      t,
-    });
-    const assistantMessage = makeMessage("assistant", turn.resp, turn.ui);
-    setMessages((current) => [...current, assistantMessage]);
-    setActiveUi(turn.ui);
-    setActiveMessageId(assistantMessage.id);
-    setIsThinking(false);
-  }
-
-  async function startPlanner() {
-    setMessages([]);
-    setAnswers({});
-    setDraft("");
-    setDurationDays(3);
-    setSelectedInterestIds([]);
-    setGeneratedTrip(null);
-    setShowDetail(false);
-    await appendAssistantTurn({}, "origin");
-  }
-
-  async function submitAnswer(
-    partial: Partial<PlannerAnswers>,
-    displayText: string,
-  ) {
-    if (!activeUi || isThinking) return;
-
-    const nextAnswers = { ...answers, ...partial };
-    const currentIndex = plannerStepOrder.indexOf(activeUi);
-    const expectedUi = plannerStepOrder[currentIndex + 1];
-
-    setMessages((current) => [...current, makeMessage("user", displayText)]);
-    setAnswers(nextAnswers);
-    setDraft("");
-
-    if (expectedUi) await appendAssistantTurn(nextAnswers, expectedUi);
-  }
-
-  async function submitTextAnswer(value = draft) {
-    const text = value.trim();
-    if (!text || !activeUi) return;
-
-    if (activeUi === "origin") {
-      await submitAnswer({ origin: text }, text);
-    } else if (activeUi === "destination") {
-      await submitAnswer({ destination: text }, text);
-    } else if (activeUi === "requirements") {
-      await submitAnswer({ specialRequirements: text }, text);
-    }
-  }
-
-  async function handleGenerate() {
-    if (!hasCompleteAnswers(answers)) return;
-
-    setIsGenerating(true);
-    const trip = await generateTravelPlan({
-      answers,
-      language: i18n.language,
-      t,
-    });
-    addUserTravelPlan(trip);
-    setGeneratedTrip(trip);
-    setIsGenerating(false);
-  }
-
-  function resetPlanner() {
-    setMessages([]);
-    setAnswers({});
-    setActiveUi(null);
-    setActiveMessageId(null);
-    setGeneratedTrip(null);
-    setShowDetail(false);
-    setDraft("");
-    setDurationDays(3);
-    setSelectedInterestIds([]);
-    setIsThinking(false);
-    setIsGenerating(false);
-  }
-
-  if (generatedTrip && showDetail) {
+  if (savedSession || existingSessionQuery.data) {
     return (
-      <GeneratedTripDetail
-        trip={generatedTrip}
+      <WorkspaceSummary
+        session={savedSession ?? (existingSessionQuery.data as PlannerSessionDTO)}
         topInset={insets.top}
         bottomPadding={bottomPadding}
-        onBack={() => setShowDetail(false)}
-        onPlanAnother={resetPlanner}
+        onChooseAnother={resetSelection}
+        onSessionChange={setSavedSession}
       />
     );
   }
 
-  const progressIndex = activeUi ? plannerStepOrder.indexOf(activeUi) : 0;
-  const showComposer =
-    activeUi === "origin" || activeUi === "destination" || activeUi === "requirements";
+  if (selectedTripId !== null) {
+    if (tripQuery.isPending || (existingSessionId !== null && existingSessionQuery.isPending)) {
+      return <LoadingScreen topInset={insets.top} label={t("travelPlan.workspace.loadingTrip")} />;
+    }
+    if (tripQuery.isError || !tripQuery.data) {
+      return <ErrorScreen topInset={insets.top} message={getErrorMessage(tripQuery.error, t("travelPlan.workspace.tripLoadError"))} onBack={resetSelection} />;
+    }
+    if (existingSessionId !== null && existingSessionQuery.isError) {
+      return <ErrorScreen topInset={insets.top} message={getErrorMessage(existingSessionQuery.error, t("travelPlan.workspace.sessionLoadError"))} onBack={resetSelection} />;
+    }
+    return (
+      <PlannerWizard
+        key={tripQuery.data.id}
+        trip={tripQuery.data}
+        topInset={insets.top}
+        bottomPadding={bottomPadding}
+        onBack={resetSelection}
+        onSaved={setSavedSession}
+      />
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined}
-      style={styles.screen}
-    >
-      <View style={[styles.chatHeader, { paddingTop: insets.top + theme.spacing[2] }]}> 
-        <View style={styles.brandMark}>
-          <Ionicons name="sparkles" size={20} color={theme.colors.light.base.white} />
-        </View>
-        <View style={styles.headerTextGroup}>
-          <Text style={styles.headerTitle}>{t("travelPlan.chat.title")}</Text>
-          <View style={styles.statusRow}>
-            <View style={styles.onlineDot} />
-            <Text style={styles.headerStatus}>{t("travelPlan.chat.online")}</Text>
-          </View>
-        </View>
-        {messages.length > 0 ? (
-          <Pressable
-            accessibilityLabel={t("travelPlan.chat.restart")}
-            onPress={resetPlanner}
-            style={styles.headerIconButton}
-          >
-            <Ionicons name="refresh-outline" size={22} color={theme.colors.light.gray[700]} />
-          </Pressable>
-        ) : (
-          <View style={styles.headerIconButton} />
-        )}
-      </View>
-
-      {messages.length > 0 || isThinking ? (
-        <View style={styles.progressArea}>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${(Math.min(progressIndex, REQUIRED_DETAIL_COUNT) / REQUIRED_DETAIL_COUNT) * 100}%` },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {t("travelPlan.chat.progress", {
-              current: Math.min(progressIndex, REQUIRED_DETAIL_COUNT),
-              total: REQUIRED_DETAIL_COUNT,
-            })}
-          </Text>
-        </View>
-      ) : null}
-
+    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <PlannerHeader topInset={insets.top} />
       <ScrollView
-        ref={scrollRef}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-        contentContainerStyle={[
-          styles.chatContent,
-          {
-            paddingBottom:
-              bottomPadding + (showComposer ? theme.spacing[3] : theme.spacing[6]),
-          },
-        ]}
+        contentContainerStyle={[styles.pageContent, { paddingBottom: bottomPadding }]}
       >
-        {messages.length === 0 && !isThinking ? (
-          <PlannerStarter onStart={startPlanner} />
-        ) : null}
-
-        {messages.map((message) => {
-          const isActive = message.id === activeMessageId && !isThinking;
-
-          if (message.role === "user") {
-            return (
-              <View key={message.id} style={styles.userMessageRow}>
-                <View style={styles.userBubble}>
-                  <Text selectable style={styles.userMessageText}>
-                    {message.text}
-                  </Text>
-                </View>
-              </View>
-            );
-          }
-
-          return (
-            <View key={message.id} style={styles.assistantMessageGroup}>
-              <View style={styles.assistantRow}>
-                <View style={styles.assistantAvatar}>
-                  <Ionicons name="sparkles" size={16} color={theme.colors.light.accent} />
-                </View>
-                <View style={styles.assistantBubble}>
-                  <Text selectable style={styles.assistantMessageText}>
-                    {message.text}
-                  </Text>
-                </View>
-              </View>
-
-              {message.ui ? (
-                <PlannerControl
-                  ui={message.ui}
-                  active={isActive}
-                  answers={answers}
-                  durationDays={durationDays}
-                  selectedInterestIds={selectedInterestIds}
-                  generatedTrip={generatedTrip}
-                  isGenerating={isGenerating}
-                  onQuickText={submitTextAnswer}
-                  onTraveller={(id, label) => submitAnswer({ travellerId: id }, label)}
-                  onBudget={(id, label) => submitAnswer({ budgetId: id }, label)}
-                  onDurationChange={setDurationDays}
-                  onDurationConfirm={() =>
-                    submitAnswer(
-                      { durationDays },
-                      t("travelPlan.chat.answer.days", { count: durationDays }),
-                    )
-                  }
-                  onInterestToggle={(id) =>
-                    setSelectedInterestIds((current) =>
-                      current.includes(id)
-                        ? current.filter((item) => item !== id)
-                        : [...current, id],
-                    )
-                  }
-                  onInterestConfirm={() => {
-                    const labels = selectedInterestIds.map((id) => {
-                      const option = interestOptions.find((item) => item.id === id);
-                      return option ? t(option.titleKey) : id;
-                    });
-                    return submitAnswer({ interestIds: selectedInterestIds }, labels.join(", "));
-                  }}
-                  onGenerate={handleGenerate}
-                  onViewTrip={() => setShowDetail(true)}
-                />
-              ) : null}
-            </View>
-          );
-        })}
-
-        {isThinking ? <ThinkingBubble /> : null}
-      </ScrollView>
-
-      {showComposer ? (
-        <View style={styles.composerArea}>
-          <View style={styles.composer}>
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              onSubmitEditing={() => submitTextAnswer()}
-              placeholder={t(`travelPlan.chat.placeholders.${activeUi}`)}
-              placeholderTextColor={theme.colors.light.gray[400]}
-              returnKeyType="send"
-              style={styles.composerInput}
-            />
-            <Pressable
-              accessibilityLabel={t("travelPlan.chat.send")}
-              disabled={!draft.trim() || isThinking}
-              onPress={() => submitTextAnswer()}
-              style={({ pressed }) => [
-                styles.sendButton,
-                !draft.trim() || isThinking ? styles.disabledButton : null,
-                pressed ? styles.pressedButton : null,
-              ]}
-            >
-              <Ionicons name="arrow-up" size={20} color={theme.colors.light.base.white} />
-            </Pressable>
-          </View>
+        <View style={styles.heroBlock}>
+          <View style={styles.heroIcon}><Ionicons name="map-outline" size={30} color={theme.colors.light.accent} /></View>
+          <Text style={styles.heroEyebrow}>{t("travelPlan.workspace.eyebrow")}</Text>
+          <Text style={styles.heroTitle}>{t("travelPlan.workspace.chooseTitle")}</Text>
+          <Text style={styles.heroDescription}>{t("travelPlan.workspace.chooseDescription")}</Text>
         </View>
-      ) : null}
+
+        <Pressable onPress={() => router.push("/trip/new")} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+          <Ionicons name="add-circle-outline" size={21} color={theme.colors.light.base.white} />
+          <Text style={styles.primaryButtonText}>{t("travelPlan.workspace.createTrip")}</Text>
+        </Pressable>
+        {tripsQuery.isPending ? (
+          <ActivityIndicator color={theme.colors.light.accent} />
+        ) : tripsQuery.isError ? (
+          <InlineError message={getErrorMessage(tripsQuery.error, t("travelPlan.workspace.tripListError"))} onRetry={() => void tripsQuery.refetch()} />
+        ) : ownerTrips.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>{t("travelPlan.workspace.yourTrips")}</Text>
+              <Text style={styles.sectionCount}>{ownerTrips.length}</Text>
+            </View>
+            {ownerTrips.map((trip) => <TripChoiceCard key={trip.id} trip={trip} onPress={() => setManualTripId(trip.id)} />)}
+          </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Ionicons name="calendar-outline" size={30} color={theme.colors.light.gray[400]} />
+            <Text style={styles.emptyTitle}>{t("travelPlan.workspace.noTripsTitle")}</Text>
+            <Text style={styles.emptyDescription}>{t("travelPlan.workspace.noTripsDescription")}</Text>
+          </View>
+        )}
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function PlannerStarter({ onStart }: { onStart: () => void }) {
+export function CreateTripScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const topInset = insets.top;
+  const bottomPadding = Math.max(insets.bottom, theme.spacing[3]);
+  const suggestionsQuery = useDestinationSuggestions();
+  const createTrip = useCreateTrip();
+  const scrollRef = useRef<ScrollView>(null);
+  const today = dateOnly(new Date());
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
+  const [name, setName] = useState("");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(dateOnly(addDays(new Date(), 4)));
+  const [description, setDescription] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const onCancel = () => router.back();
+  const dateError = !isDateOnly(startDate) || !isDateOnly(endDate)
+    ? t("travelPlan.workspace.invalidDate")
+    : endDate < startDate ? t("travelPlan.workspace.dateOrderError") : null;
+  const canContinue = stepIndex === 0 ? Boolean(name.trim()) : stepIndex === 1 ? !dateError : true;
+
+  const selectDestination = (destination: Destination) => {
+    setSelectedDestination(destination);
+    if (!name.trim()) {
+      setName(t("travelPlan.workspace.defaultTripName", { destination: destination.title ?? destination.location ?? "Trip" }));
+    }
+  };
+
+  const goToStep = (nextStep: number, nextDirection: 1 | -1) => {
+    setDirection(nextDirection);
+    setAttemptedStep(null);
+    setStepIndex(nextStep);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
+  };
+
+  const next = async () => {
+    if (!canContinue) {
+      setAttemptedStep(stepIndex);
+      return;
+    }
+    if (stepIndex < 2) {
+      goToStep(stepIndex + 1, 1);
+      return;
+    }
+    try {
+      const response = await createTrip.mutateAsync({
+        name: name.trim(),
+        description: description.trim() || null,
+        startDate,
+        endDate,
+        invitationEmails: [],
+        stops: selectedDestination?.apiBacked
+          ? [{ destinationId: selectedDestination.id, arrivalDate: startDate, departureDate: endDate }]
+          : [],
+      });
+      router.replace({ pathname: "/explore", params: { tripId: String(response.data.id) } });
+    } catch (error) {
+      Alert.alert(t("travelPlan.workspace.saveErrorTitle"), getErrorMessage(error, t("travelPlan.workspace.tripCreateError")));
+    }
+  };
 
   return (
-    <View style={styles.starter}>
-      <View style={styles.starterIcon}>
-        <Ionicons name="map-outline" size={32} color={theme.colors.light.accent} />
-      </View>
-      <Text style={styles.starterTitle}>{t("travelPlan.chat.starter.title")}</Text>
-      <Text style={styles.starterDescription}>{t("travelPlan.chat.starter.description")}</Text>
-      <Pressable onPress={onStart} style={({ pressed }) => [styles.startButton, pressed && styles.pressedButton]}>
-        <Ionicons name="add-circle-outline" size={22} color={theme.colors.light.base.white} />
-        <Text style={styles.startButtonText}>{t("travelPlan.chat.starter.action")}</Text>
-      </Pressable>
-    </View>
-  );
-}
+    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <PlannerHeader topInset={topInset} onBack={onCancel} />
+      <MobileProgress current={stepIndex} total={3} />
+      <ScrollView
+        ref={scrollRef}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.mobileStepContent}
+      >
+        <Animated.View key={stepIndex} entering={(direction > 0 ? FadeInRight : FadeInLeft).duration(220)} style={styles.mobileStepBody}>
+          <StepIntro
+            icon={stepIndex === 0 ? "location-outline" : stepIndex === 1 ? "calendar-outline" : "checkmark-circle-outline"}
+            eyebrow={t("travelPlan.workspace.quickTripEyebrow")}
+            title={t(`travelPlan.workspace.quickSteps.${stepIndex}.title`)}
+            hint={t(`travelPlan.workspace.quickSteps.${stepIndex}.hint`)}
+          />
 
-function ThinkingBubble() {
-  const { t } = useTranslation();
+          {stepIndex === 0 ? (
+            <View style={styles.mobileFormSection}>
+              <FormField label={t("travelPlan.workspace.tripName")} required>
+                <TextInput autoFocus maxLength={200} value={name} onChangeText={setName} placeholder={t("travelPlan.workspace.tripNamePlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} returnKeyType="done" style={styles.input} />
+              </FormField>
+              {(suggestionsQuery.data?.length ?? 0) > 0 ? (
+                <FormField label={t("travelPlan.workspace.destinationOptional")}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionRow}>
+                    {suggestionsQuery.data?.map((destination) => {
+                      const selected = selectedDestination?.id === destination.id;
+                      return (
+                        <Pressable key={destination.id} onPress={() => selectDestination(destination)} style={[styles.destinationChip, selected && styles.selectedCard]}>
+                          <Image source={{ uri: destination.image }} style={styles.destinationChipImage} contentFit="cover" />
+                          <View style={styles.destinationChipText}>
+                            <Text numberOfLines={1} style={styles.chipTitle}>{destination.title}</Text>
+                            <Text numberOfLines={1} style={styles.chipSubtitle}>{destination.location}</Text>
+                          </View>
+                          {selected ? <Ionicons name="checkmark-circle" size={20} color={theme.colors.light.accent} /> : null}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </FormField>
+              ) : null}
+              {attemptedStep === 0 && !name.trim() ? <Text selectable style={styles.errorText}>{t("travelPlan.workspace.tripNameRequired")}</Text> : null}
+            </View>
+          ) : null}
 
-  return (
-    <View style={styles.assistantRow}>
-      <View style={styles.assistantAvatar}>
-        <Ionicons name="sparkles" size={16} color={theme.colors.light.accent} />
-      </View>
-      <View style={styles.thinkingBubble}>
-        <ActivityIndicator size="small" color={theme.colors.light.accent} />
-        <Text style={styles.thinkingText}>{t("travelPlan.chat.thinking")}</Text>
-      </View>
-    </View>
-  );
-}
-
-type PlannerControlProps = {
-  ui: PlannerUi;
-  active: boolean;
-  answers: PlannerAnswers;
-  durationDays: number;
-  selectedInterestIds: string[];
-  generatedTrip: UserTravelPlan | null;
-  isGenerating: boolean;
-  onQuickText: (value: string) => void;
-  onTraveller: (id: string, label: string) => void;
-  onBudget: (id: string, label: string) => void;
-  onDurationChange: (days: number) => void;
-  onDurationConfirm: () => void;
-  onInterestToggle: (id: string) => void;
-  onInterestConfirm: () => void;
-  onGenerate: () => void;
-  onViewTrip: () => void;
-};
-
-function PlannerControl(props: PlannerControlProps) {
-  const { t } = useTranslation();
-
-  if (props.ui === "origin" || props.ui === "destination" || props.ui === "requirements") {
-    const keys =
-      props.ui === "origin"
-        ? originSuggestionKeys
-        : props.ui === "destination"
-          ? destinationSuggestionKeys
-          : requirementSuggestionKeys;
-
-    return (
-      <View style={styles.quickReplyWrap}>
-        {keys.map((key) => {
-          const label = t(key);
-          return (
-            <Pressable
-              key={key}
-              disabled={!props.active}
-              onPress={() => props.onQuickText(label)}
-              style={({ pressed }) => [
-                styles.quickReply,
-                !props.active && styles.inactiveControl,
-                pressed && styles.selectedBorder,
-              ]}
-            >
-              <Ionicons
-                name={props.ui === "requirements" ? "options-outline" : "location-outline"}
-                size={17}
-                color={theme.colors.light.accent}
+          {stepIndex === 1 ? (
+            <View style={styles.mobileFormSection}>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
               />
-              <Text style={styles.quickReplyText}>{label}</Text>
-            </Pressable>
-          );
-        })}
+              {attemptedStep === 1 && dateError ? <Text selectable style={styles.errorText}>{dateError}</Text> : null}
+            </View>
+          ) : null}
+
+          {stepIndex === 2 ? (
+            <View style={styles.mobileStepBody}>
+              <View style={styles.reviewCard}>
+                <SummaryRow icon="airplane-outline" label={t("travelPlan.workspace.tripName")} value={name.trim()} />
+                <View style={styles.summaryDivider} />
+                <SummaryRow icon="calendar-outline" label={t("travelPlan.workspace.tripDates")} value={formatDateRange(startDate, endDate)} />
+                {selectedDestination ? <><View style={styles.summaryDivider} /><SummaryRow icon="location-outline" label={t("travelPlan.workspace.destinationOptional")} value={selectedDestination.title ?? selectedDestination.location ?? String(selectedDestination.id)} /></> : null}
+              </View>
+              <View style={styles.mobileFormSection}>
+                <FormField label={t("travelPlan.workspace.tripNotes")}>
+                  <TextInput multiline maxLength={5000} value={description} onChangeText={setDescription} placeholder={t("travelPlan.workspace.tripNotesPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.textArea]} />
+                </FormField>
+              </View>
+            </View>
+          ) : null}
+        </Animated.View>
+      </ScrollView>
+      <MobileFooter
+        bottomPadding={bottomPadding}
+        backLabel={stepIndex === 0 ? t("common.cancel") : t("common.back")}
+        nextLabel={stepIndex === 2 ? t("travelPlan.workspace.createAndPlan") : t("travelPlan.actions.continue")}
+        nextIcon={stepIndex === 2 ? "checkmark" : "arrow-forward"}
+        pending={createTrip.isPending}
+        onBack={stepIndex === 0 ? onCancel : () => goToStep(stepIndex - 1, -1)}
+        onNext={() => void next()}
+      />
+    </KeyboardAvoidingView>
+  );
+}
+
+type DateField = "start" | "end";
+
+function DateRangePicker({ startDate, endDate, onStartDateChange, onEndDateChange }: { startDate: string; endDate: string; onStartDateChange: (value: string) => void; onEndDateChange: (value: string) => void }) {
+  const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [activeField, setActiveField] = useState<DateField | null>(null);
+  const [draftStartDate, setDraftStartDate] = useState(startDate);
+  const [draftEndDate, setDraftEndDate] = useState(endDate);
+  const locale = i18n.resolvedLanguage?.startsWith("vi") ? "vi-VN" : "en-US";
+
+  const openPicker = (field: DateField) => {
+    setDraftStartDate(startDate);
+    setDraftEndDate(endDate);
+    setActiveField(field);
+  };
+
+  const selectDraftDate = (date: Date) => {
+    const nextDate = dateOnly(date);
+    if (activeField === "start") {
+      setDraftStartDate(nextDate);
+      if (draftEndDate < nextDate) setDraftEndDate(nextDate);
+      setActiveField("end");
+      return;
+    }
+    setDraftEndDate(nextDate);
+  };
+
+  const selectAndroidDate = (date: Date) => {
+    const nextDate = dateOnly(date);
+    if (activeField === "start") {
+      onStartDateChange(nextDate);
+      if (endDate < nextDate) onEndDateChange(nextDate);
+    } else {
+      onEndDateChange(nextDate);
+    }
+    setActiveField(null);
+  };
+
+  const confirmRange = () => {
+    onStartDateChange(draftStartDate);
+    onEndDateChange(draftEndDate < draftStartDate ? draftStartDate : draftEndDate);
+    setActiveField(null);
+  };
+
+  const pickerValue = parseDateOnly(activeField === "end" ? draftEndDate : draftStartDate);
+  const minimumDate = activeField === "end" ? parseDateOnly(draftStartDate) : undefined;
+
+  return (
+    <>
+      <View style={styles.datePickerFields}>
+        <DateSelectionButton
+          label={t("travelPlan.workspace.startDate")}
+          value={formatFriendlyDate(startDate, locale)}
+          active={activeField === "start"}
+          onPress={() => openPicker("start")}
+        />
+        <View style={styles.dateRangeConnector}><View style={styles.dateRangeLine} /><Ionicons name="arrow-down" size={16} color={theme.colors.light.gray[400]} /></View>
+        <DateSelectionButton
+          label={t("travelPlan.workspace.endDate")}
+          value={formatFriendlyDate(endDate, locale)}
+          active={activeField === "end"}
+          onPress={() => openPicker("end")}
+        />
       </View>
-    );
-  }
 
-  if (props.ui === "groupSize") {
-    return (
-      <OptionGrid
-        options={travellerOptions}
-        active={props.active}
-        selectedId={props.answers.travellerId}
-        onSelect={props.onTraveller}
-      />
-    );
-  }
-
-  if (props.ui === "budget") {
-    return (
-      <OptionGrid
-        options={budgetOptions}
-        active={props.active}
-        selectedId={props.answers.budgetId}
-        onSelect={props.onBudget}
-      />
-    );
-  }
-
-  if (props.ui === "tripDuration") {
-    return (
-      <View style={[styles.durationControl, !props.active && styles.inactiveControl]}>
-        <Text style={styles.controlTitle}>{t("travelPlan.chat.controls.durationTitle")}</Text>
-        <View style={styles.stepperRow}>
-          <Pressable
-            accessibilityLabel={t("travelPlan.chat.controls.decreaseDays")}
-            disabled={!props.active || props.durationDays <= 1}
-            onPress={() => props.onDurationChange(Math.max(1, props.durationDays - 1))}
-            style={styles.stepperButton}
-          >
-            <Ionicons name="remove" size={22} color={theme.colors.light.gray[700]} />
-          </Pressable>
-          <Text style={styles.dayCount}>
-            {t("travelPlan.chat.answer.days", { count: props.durationDays })}
-          </Text>
-          <Pressable
-            accessibilityLabel={t("travelPlan.chat.controls.increaseDays")}
-            disabled={!props.active || props.durationDays >= 14}
-            onPress={() => props.onDurationChange(Math.min(14, props.durationDays + 1))}
-            style={styles.stepperButton}
-          >
-            <Ionicons name="add" size={22} color={theme.colors.light.gray[700]} />
-          </Pressable>
-        </View>
-        <View style={styles.durationPresets}>
-          {durationDayOptions.map((days) => (
-            <Pressable
-              key={days}
-              disabled={!props.active}
-              onPress={() => props.onDurationChange(days)}
-              style={[styles.presetChip, props.durationDays === days && styles.selectedChip]}
-            >
-              <Text style={[styles.presetText, props.durationDays === days && styles.selectedChipText]}>
-                {t("travelPlan.chat.answer.days", { count: days })}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable
-          disabled={!props.active}
-          onPress={props.onDurationConfirm}
-          style={styles.confirmButton}
+      {process.env.EXPO_OS === "ios" ? (
+        <Modal
+          visible={activeField !== null}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onDismiss={() => setActiveField(null)}
+          onRequestClose={() => setActiveField(null)}
         >
-          <Text style={styles.confirmButtonText}>{t("travelPlan.chat.confirm")}</Text>
-        </Pressable>
-      </View>
-    );
-  }
+          <View style={styles.calendarModal}>
+            <View style={styles.calendarModalHeader}>
+              <Pressable hitSlop={8} onPress={() => setActiveField(null)} style={({ pressed }) => [styles.calendarHeaderAction, pressed && styles.pressed]}>
+                <Text style={styles.calendarCancelText}>{t("common.cancel")}</Text>
+              </Pressable>
+              <Text style={styles.calendarModalTitle}>{t("travelPlan.workspace.datePickerTitle")}</Text>
+              <View style={styles.calendarHeaderAction} />
+            </View>
 
-  if (props.ui === "interests") {
-    return (
-      <View style={[styles.interestControl, !props.active && styles.inactiveControl]}>
-        <View style={styles.interestGrid}>
+            <Text style={styles.calendarHint}>{t("travelPlan.workspace.datePickerHint")}</Text>
+            <View style={styles.calendarRangeTabs}>
+              <DateSelectionButton
+                compact
+                label={t("travelPlan.workspace.startDate")}
+                value={formatFriendlyDate(draftStartDate, locale)}
+                active={activeField === "start"}
+                onPress={() => setActiveField("start")}
+              />
+              <DateSelectionButton
+                compact
+                label={t("travelPlan.workspace.endDate")}
+                value={formatFriendlyDate(draftEndDate, locale)}
+                active={activeField === "end"}
+                onPress={() => setActiveField("end")}
+              />
+            </View>
+
+            {activeField ? (
+              <DateTimePicker
+                value={pickerValue}
+                mode="date"
+                display="inline"
+                minimumDate={minimumDate}
+                accentColor={theme.colors.light.accent}
+                locale={locale.replace("-", "_")}
+                themeVariant="light"
+                onValueChange={(_, date) => selectDraftDate(date)}
+                style={styles.nativeCalendar}
+              />
+            ) : null}
+            <View style={[styles.calendarModalFooter, { paddingBottom: Math.max(insets.bottom, theme.spacing[4]) }]}>
+              <Pressable onPress={confirmRange} style={({ pressed }) => [styles.calendarDoneButton, pressed && styles.pressed]}>
+                <Ionicons name="checkmark" size={20} color={theme.colors.light.base.white} />
+                <Text style={styles.calendarDoneButtonText}>{t("travelPlan.workspace.datePickerDone")}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      ) : activeField ? (
+        <DateTimePicker
+          value={parseDateOnly(activeField === "end" ? endDate : startDate)}
+          mode="date"
+          display="calendar"
+          minimumDate={activeField === "end" ? parseDateOnly(startDate) : undefined}
+          accentColor={theme.colors.light.accent}
+          positiveButton={{ label: t("travelPlan.workspace.datePickerDone") }}
+          negativeButton={{ label: t("common.cancel") }}
+          onValueChange={(_, date) => selectAndroidDate(date)}
+          onDismiss={() => setActiveField(null)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function DateSelectionButton({ label, value, active, compact, onPress }: { label: string; value: string; active: boolean; compact?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.dateSelectionButton, compact && styles.dateSelectionButtonCompact, active && styles.dateSelectionButtonActive, pressed && styles.pressed]}
+    >
+      <View style={[styles.dateSelectionIcon, active && styles.dateSelectionIconActive]}>
+        <Ionicons name="calendar-outline" size={19} color={active ? theme.colors.light.base.white : theme.colors.light.accent} />
+      </View>
+      <View style={styles.dateSelectionText}>
+        <Text style={[styles.dateSelectionLabel, active && styles.dateSelectionLabelActive]}>{label}</Text>
+        <Text style={styles.dateSelectionValue}>{value}</Text>
+      </View>
+      {!compact ? <Ionicons name="chevron-forward" size={18} color={theme.colors.light.gray[400]} /> : null}
+    </Pressable>
+  );
+}
+
+function PlannerWizard({ trip, topInset, bottomPadding, onBack, onSaved }: { trip: TripDetailDTO; topInset: number; bottomPadding: number; onBack: () => void; onSaved: (session: PlannerSessionDTO) => void }) {
+  const { t } = useTranslation();
+  const createSession = useCreatePlannerSession();
+  const scrollRef = useRef<ScrollView>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
+  const [form, setForm] = useState(initialWizardForm);
+  const patch = (values: Partial<WizardForm>) => setForm((current) => ({ ...current, ...values }));
+  const budgetValue = form.budgetAmount.trim() ? Number(form.budgetAmount) : null;
+  const currencyValid = /^[A-Za-z]{3}$/.test(form.currency.trim());
+  const budgetValid = budgetValue === null || (Number.isFinite(budgetValue) && budgetValue >= 0);
+  const canContinue = stepIndex === 0
+    ? Boolean(form.origin.trim())
+    : stepIndex === 1 ? currencyValid && budgetValid : stepIndex === 2 ? form.interestIds.length > 0 : true;
+
+  const goToStep = (nextStep: number, nextDirection: 1 | -1) => {
+    setDirection(nextDirection);
+    setAttemptedStep(null);
+    setStepIndex(nextStep);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
+  };
+
+  const next = async () => {
+    if (!canContinue) {
+      setAttemptedStep(stepIndex);
+      return;
+    }
+    if (stepIndex < 3) {
+      goToStep(stepIndex + 1, 1);
+      return;
+    }
+    const input: PlannerSessionInput = {
+      tripId: trip.id,
+      origin: form.origin.trim(),
+      budgetAmountMinor: budgetValue === null ? null : Math.round(budgetValue * 100),
+      currency: form.currency.trim().toUpperCase(),
+      budgetScope: budgetValue === null ? null : form.budgetScope,
+      transportPreference: emptyToNull(form.transportPreference),
+      accommodationPreference: emptyToNull(form.accommodationPreference),
+      pace: form.pace,
+      interestIds: form.interestIds,
+      mustDoActivities: splitList(form.mustDoActivities).slice(0, 10),
+      dietaryAccessibility: emptyToNull(form.dietaryAccessibility),
+      avoidances: emptyToNull(form.avoidances),
+      notes: emptyToNull(form.notes),
+    };
+    try {
+      const response = await createSession.mutateAsync(input);
+      onSaved(response.data);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "PLANNER_SESSION_EXISTS" && trip.plannerSessionId) {
+        const detail = await plannerApi.getSession(trip.plannerSessionId).catch(() => null);
+        if (detail?.data) {
+          onSaved(detail.data);
+          return;
+        }
+      }
+      Alert.alert(t("travelPlan.workspace.saveErrorTitle"), getErrorMessage(error, t("travelPlan.workspace.sessionCreateError")));
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <PlannerHeader topInset={topInset} onBack={onBack} />
+      <MobileProgress current={stepIndex} total={4} />
+      <ScrollView ref={scrollRef} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.mobileStepContent}>
+        <Animated.View key={stepIndex} entering={(direction > 0 ? FadeInRight : FadeInLeft).duration(220)} style={styles.mobileStepBody}>
+          <StepIntro
+            icon={stepIndex === 0 ? "navigate-outline" : stepIndex === 1 ? "wallet-outline" : stepIndex === 2 ? "heart-outline" : "options-outline"}
+            eyebrow={t("travelPlan.workspace.step", { current: stepIndex + 1 })}
+            title={t(`travelPlan.workspace.steps.${stepIndex}.title`)}
+            hint={t(`travelPlan.workspace.steps.${stepIndex}.hint`)}
+          />
+          <View style={styles.mobileFormSection}>
+            {stepIndex === 0 ? <RouteStep trip={trip} form={form} patch={patch} /> : null}
+            {stepIndex === 1 ? <LogisticsStep form={form} patch={patch} /> : null}
+            {stepIndex === 2 ? <ExperienceStep form={form} patch={patch} /> : null}
+            {stepIndex === 3 ? <ConstraintsStep form={form} patch={patch} /> : null}
+            {attemptedStep === stepIndex && !canContinue ? <Text selectable style={styles.errorText}>{stepIndex === 0 ? t("travelPlan.workspace.originRequired") : stepIndex === 1 ? t("travelPlan.workspace.budgetInvalid") : t("travelPlan.workspace.interestRequired")}</Text> : null}
+          </View>
+          {stepIndex === 3 ? (
+            <View style={styles.aiNotice}>
+              <View style={styles.noticeIcon}><Ionicons name="sparkles" size={18} color={theme.colors.light.accent} /></View>
+              <View style={styles.noticeText}><Text style={styles.noticeTitle}>{t("travelPlan.workspace.aiSoonTitle")}</Text><Text style={styles.noticeDescription}>{t("travelPlan.workspace.aiSoonDescription")}</Text></View>
+            </View>
+          ) : null}
+        </Animated.View>
+      </ScrollView>
+      <MobileFooter
+        bottomPadding={bottomPadding}
+        backLabel={stepIndex === 0 ? t("common.cancel") : t("common.back")}
+        nextLabel={stepIndex === 3 ? t("travelPlan.workspace.saveWorkspace") : t("travelPlan.actions.continue")}
+        nextIcon={stepIndex === 3 ? "save-outline" : "arrow-forward"}
+        pending={createSession.isPending}
+        onBack={stepIndex === 0 ? onBack : () => goToStep(stepIndex - 1, -1)}
+        onNext={() => void next()}
+      />
+    </KeyboardAvoidingView>
+  );
+}
+
+type StepProps = { form: WizardForm; patch: (values: Partial<WizardForm>) => void };
+
+function RouteStep({ trip, form, patch }: StepProps & { trip: TripDetailDTO }) {
+  const { t } = useTranslation();
+  const route = trip.stops.length ? trip.stops.map((stop) => stop.destination.title).join(" → ") : t("travelPlan.workspace.destinationsLater");
+  return (
+    <View style={styles.fieldStack}>
+      <View style={styles.tripSummary}>
+        <View style={styles.tripSummaryIcon}><Ionicons name="airplane-outline" size={21} color={theme.colors.light.accent} /></View>
+        <View style={styles.tripSummaryText}>
+          <Text style={styles.tripSummaryName}>{trip.name}</Text>
+          <Text style={styles.tripSummaryMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t("travelPlan.workspace.travellerCount", { count: trip.companions.length + 1 })}</Text>
+          <Text style={styles.tripSummaryRoute}>{route}</Text>
+        </View>
+      </View>
+      <FormField label={t("travelPlan.workspace.originLabel")} required>
+        <TextInput autoFocus maxLength={255} value={form.origin} onChangeText={(origin) => patch({ origin })} placeholder={t("travelPlan.chat.placeholders.origin")} placeholderTextColor={theme.colors.light.gray[400]} returnKeyType="done" style={styles.input} />
+        <SuggestionChips values={originSuggestionKeys.map((key) => t(key))} selected={form.origin} onSelect={(origin) => patch({ origin })} />
+      </FormField>
+    </View>
+  );
+}
+
+function LogisticsStep({ form, patch }: StepProps) {
+  const { t } = useTranslation();
+  const transportSuggestions = transportSuggestionIds.map((id) => t(`travelPlan.workspace.suggestions.transport.${id}`));
+  const accommodationSuggestions = accommodationSuggestionIds.map((id) => t(`travelPlan.workspace.suggestions.accommodation.${id}`));
+  return (
+    <View style={styles.fieldStack}>
+      <View style={styles.twoColumns}>
+        <FormField label={t("travelPlan.workspace.budgetAmount")} style={styles.flexField}>
+          <TextInput keyboardType="decimal-pad" value={form.budgetAmount} onChangeText={(budgetAmount) => patch({ budgetAmount: budgetAmount.replace(/[^0-9.]/g, "") })} placeholder="1500" placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+        </FormField>
+        <FormField label={t("travelPlan.workspace.currency")} required style={styles.currencyField}>
+          <TextInput autoCapitalize="characters" maxLength={3} value={form.currency} onChangeText={(currency) => patch({ currency: currency.toUpperCase().replace(/[^A-Z]/g, "") })} placeholder="USD" placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+        </FormField>
+      </View>
+      <FormField label={t("travelPlan.workspace.budgetScope")}>
+        <OptionRow values={["group", "person"]} selected={form.budgetScope} label={(value) => t(`travelPlan.workspace.budgetScopes.${value}`)} onSelect={(budgetScope) => patch({ budgetScope: budgetScope as WizardForm["budgetScope"] })} />
+      </FormField>
+      <FormField label={t("travelPlan.workspace.transportPreference")}>
+        <TextInput maxLength={100} value={form.transportPreference} onChangeText={(transportPreference) => patch({ transportPreference })} placeholder={t("travelPlan.workspace.transportPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+        <SuggestionChips values={transportSuggestions} selected={form.transportPreference} onSelect={(transportPreference) => patch({ transportPreference })} />
+      </FormField>
+      <FormField label={t("travelPlan.workspace.accommodationPreference")}>
+        <TextInput maxLength={100} value={form.accommodationPreference} onChangeText={(accommodationPreference) => patch({ accommodationPreference })} placeholder={t("travelPlan.workspace.accommodationPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} />
+        <SuggestionChips values={accommodationSuggestions} selected={form.accommodationPreference} onSelect={(accommodationPreference) => patch({ accommodationPreference })} />
+      </FormField>
+    </View>
+  );
+}
+
+function ExperienceStep({ form, patch }: StepProps) {
+  const { t } = useTranslation();
+  const mustDoSuggestions = mustDoSuggestionIds.map((id) => t(`travelPlan.workspace.suggestions.mustDo.${id}`));
+  return (
+    <View style={styles.fieldStack}>
+      <FormField label={t("travelPlan.workspace.pace")} required>
+        <OptionRow values={paceOptions} selected={form.pace} label={(value) => t(`travelPlan.workspace.paces.${value}`)} onSelect={(pace) => patch({ pace: pace as WizardForm["pace"] })} />
+      </FormField>
+      <FormField label={t("travelPlan.workspace.interests")} description={t("travelPlan.workspace.interestsHint", { count: form.interestIds.length })} required>
+        <View style={styles.wrapRow}>
           {interestOptions.map((option) => {
-            const selected = props.selectedInterestIds.includes(option.id);
+            const selected = form.interestIds.includes(option.id);
             return (
-              <Pressable
-                key={option.id}
-                disabled={!props.active}
-                onPress={() => props.onInterestToggle(option.id)}
-                style={[styles.interestChip, selected && styles.selectedChip]}
-              >
-                <Ionicons
-                  name={option.icon as keyof typeof Ionicons.glyphMap}
-                  size={17}
-                  color={selected ? theme.colors.light.base.white : theme.colors.light.accent}
-                />
-                <Text style={[styles.interestText, selected && styles.selectedChipText]}>
-                  {t(option.titleKey)}
-                </Text>
+              <Pressable key={option.id} onPress={() => patch({ interestIds: selected ? form.interestIds.filter((id) => id !== option.id) : [...form.interestIds, option.id].slice(0, 10) })} style={[styles.choiceChip, selected && styles.selectedChip]}>
+                <Ionicons name={option.icon as keyof typeof Ionicons.glyphMap} size={17} color={selected ? theme.colors.light.base.white : theme.colors.light.gray[700]} />
+                <Text style={[styles.choiceChipText, selected && styles.selectedChipText]}>{t(option.titleKey)}</Text>
               </Pressable>
             );
           })}
         </View>
-        <Pressable
-          disabled={!props.active || props.selectedInterestIds.length === 0}
-          onPress={props.onInterestConfirm}
-          style={[
-            styles.confirmButton,
-            props.selectedInterestIds.length === 0 && styles.disabledButton,
-          ]}
-        >
-          <Text style={styles.confirmButtonText}>{t("travelPlan.chat.confirmInterests")}</Text>
-        </Pressable>
-      </View>
+      </FormField>
+      <FormField label={t("travelPlan.workspace.mustDoActivities")}>
+        <TextInput multiline maxLength={1200} value={form.mustDoActivities} onChangeText={(mustDoActivities) => patch({ mustDoActivities })} placeholder={t("travelPlan.workspace.mustDoPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.textArea]} />
+        <SuggestionChips values={mustDoSuggestions} selected="" onSelect={(value) => patch({ mustDoActivities: appendLine(form.mustDoActivities, value) })} />
+      </FormField>
+    </View>
+  );
+}
+
+function ConstraintsStep({ form, patch }: StepProps) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.fieldStack}>
+      <FormField label={t("travelPlan.workspace.accessibility")}>
+        <TextInput multiline maxLength={2000} value={form.dietaryAccessibility} onChangeText={(dietaryAccessibility) => patch({ dietaryAccessibility })} placeholder={t("travelPlan.workspace.accessibilityPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.shortTextArea]} />
+        <SuggestionChips values={requirementSuggestionKeys.map((key) => t(key))} selected={form.dietaryAccessibility} onSelect={(dietaryAccessibility) => patch({ dietaryAccessibility })} />
+      </FormField>
+      <FormField label={t("travelPlan.workspace.avoidances")}>
+        <TextInput multiline maxLength={2000} value={form.avoidances} onChangeText={(avoidances) => patch({ avoidances })} placeholder={t("travelPlan.workspace.avoidancesPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.shortTextArea]} />
+      </FormField>
+      <FormField label={t("travelPlan.workspace.notes")}>
+        <TextInput multiline maxLength={4000} value={form.notes} onChangeText={(notes) => patch({ notes })} placeholder={t("travelPlan.workspace.notesPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.textArea]} />
+      </FormField>
+    </View>
+  );
+}
+
+function WorkspaceSummary({ session, topInset, bottomPadding, onChooseAnother, onSessionChange }: { session: PlannerSessionDTO; topInset: number; bottomPadding: number; onChooseAnother: () => void; onSessionChange: (session: PlannerSessionDTO | null) => void }) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const deleteSession = useDeletePlannerSession();
+  const budget = session.budgetAmountMinor === null
+    ? t("travelPlan.workspace.notSet")
+    : `${new Intl.NumberFormat(undefined, { style: "currency", currency: session.currency }).format(session.budgetAmountMinor / 100)} · ${t(`travelPlan.workspace.budgetScopes.${session.budgetScope ?? "group"}`)}`;
+
+  if (editing) {
+    return (
+      <PlannerSessionEditor
+        session={session}
+        topInset={topInset}
+        bottomPadding={bottomPadding}
+        onCancel={() => setEditing(false)}
+        onSaved={(next) => {
+          onSessionChange(next);
+          setEditing(false);
+        }}
+      />
     );
   }
 
   return (
-    <FinalPlanControl
-      answers={props.answers}
-      active={props.active}
-      generatedTrip={props.generatedTrip}
-      isGenerating={props.isGenerating}
-      onGenerate={props.onGenerate}
-      onViewTrip={props.onViewTrip}
-    />
-  );
-}
-
-function OptionGrid({
-  options,
-  active,
-  selectedId,
-  onSelect,
-}: {
-  options: readonly (TravelPlanOption & { people?: number })[];
-  active: boolean;
-  selectedId?: string;
-  onSelect: (id: string, label: string) => void;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <View style={styles.optionGrid}>
-      {options.map((option) => {
-        const selected = selectedId === option.id;
-        return (
-          <Pressable
-            key={option.id}
-            disabled={!active}
-            onPress={() => onSelect(option.id, t(option.titleKey))}
-            style={({ pressed }) => [
-              styles.optionCard,
-              selected && styles.selectedOptionCard,
-              !active && styles.inactiveControl,
-              pressed && styles.pressedButton,
-            ]}
-          >
-            <View style={[styles.optionIcon, selected && styles.selectedOptionIcon]}>
-              <Ionicons
-                name={option.icon as keyof typeof Ionicons.glyphMap}
-                size={21}
-                color={selected ? theme.colors.light.base.white : theme.colors.light.accent}
-              />
-            </View>
-            <Text style={styles.optionTitle}>{t(option.titleKey)}</Text>
-            <Text numberOfLines={2} style={styles.optionSubtitle}>
-              {t(option.subtitleKey)}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View style={styles.screen}>
+      <PlannerHeader topInset={topInset} onBack={onChooseAnother} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.wizardContent, { paddingBottom: bottomPadding }]}>
+        <View style={styles.successHero}>
+          <View style={styles.successIcon}><Ionicons name="checkmark" size={34} color={theme.colors.light.base.white} /></View>
+          <Text style={styles.heroEyebrow}>{t("travelPlan.workspace.savedEyebrow")}</Text>
+          <Text style={styles.heroTitle}>{session.origin} → {session.destination}</Text>
+          <Text style={styles.heroDescription}>{t("travelPlan.workspace.savedDescription")}</Text>
+        </View>
+        <View style={styles.formCard}>
+          <SummaryRow icon="wallet-outline" label={t("travelPlan.workspace.budgetAmount")} value={budget} />
+          <SummaryRow icon="speedometer-outline" label={t("travelPlan.workspace.pace")} value={session.pace ? t(`travelPlan.workspace.paces.${session.pace}`) : t("travelPlan.workspace.notSet")} />
+          <SummaryRow icon="train-outline" label={t("travelPlan.workspace.transportPreference")} value={session.transportPreference || t("travelPlan.workspace.notSet")} />
+          <SummaryRow icon="bed-outline" label={t("travelPlan.workspace.accommodationPreference")} value={session.accommodationPreference || t("travelPlan.workspace.notSet")} />
+          <View style={styles.summaryDivider} />
+          <Text style={styles.fieldLabel}>{t("travelPlan.workspace.interests")}</Text>
+          <View style={styles.wrapRow}>{session.interestIds.map((interest) => { const option = interestOptions.find((item) => item.id === interest); return <View key={interest} style={styles.readOnlyChip}><Text style={styles.readOnlyChipText}>{option ? t(option.titleKey) : interest}</Text></View>; })}</View>
+        </View>
+        <View style={styles.aiNotice}>
+          <View style={styles.noticeIcon}><Ionicons name="sparkles" size={18} color={theme.colors.light.accent} /></View>
+          <View style={styles.noticeText}><Text style={styles.noticeTitle}>{t("travelPlan.workspace.aiSoonTitle")}</Text><Text style={styles.noticeDescription}>{t("travelPlan.workspace.savedAiDescription")}</Text></View>
+        </View>
+        <View style={styles.buttonRow}>
+          <SecondaryButton label={t("common.edit")} onPress={() => setEditing(true)} />
+          <PrimaryButton label={t("travelPlan.workspace.chooseAnother")} icon="map-outline" onPress={onChooseAnother} />
+        </View>
+        <Pressable onPress={() => Alert.alert(t("travelPlan.workspace.deleteTitle"), t("travelPlan.workspace.deleteDescription"), [{ text: t("common.cancel"), style: "cancel" }, { text: t("common.delete"), style: "destructive", onPress: () => deleteSession.mutate(session.id, { onSuccess: () => { onSessionChange(null); onChooseAnother(); }, onError: (error) => Alert.alert(t("travelPlan.workspace.saveErrorTitle"), error.message) }) }])} style={styles.deleteWorkspace}><Text style={styles.deleteWorkspaceText}>{t("travelPlan.workspace.deleteWorkspace")}</Text></Pressable>
+      </ScrollView>
     </View>
   );
 }
 
-function FinalPlanControl({
-  answers,
-  active,
-  generatedTrip,
-  isGenerating,
-  onGenerate,
-  onViewTrip,
-}: {
-  answers: PlannerAnswers;
-  active: boolean;
-  generatedTrip: UserTravelPlan | null;
-  isGenerating: boolean;
-  onGenerate: () => void;
-  onViewTrip: () => void;
-}) {
+function PlannerSessionEditor({ session, topInset, bottomPadding, onCancel, onSaved }: { session: PlannerSessionDTO; topInset: number; bottomPadding: number; onCancel: () => void; onSaved: (session: PlannerSessionDTO) => void }) {
   const { t } = useTranslation();
-  const traveller = getTravellerOption(answers.travellerId || "solo");
-  const budget = getBudgetOption(answers.budgetId || "cheap");
-  const rows = [
-    { icon: "navigate-outline", label: t("travelPlan.chat.summary.route"), value: `${answers.origin || ""} → ${answers.destination || ""}` },
-    { icon: "people-outline", label: t("travelPlan.chat.summary.group"), value: t(traveller.titleKey) },
-    { icon: "wallet-outline", label: t("travelPlan.chat.summary.budget"), value: t(budget.titleKey) },
-    { icon: "calendar-outline", label: t("travelPlan.chat.summary.duration"), value: t("travelPlan.chat.answer.days", { count: answers.durationDays || 0 }) },
-  ];
+  const mutation = useUpdatePlannerSession();
+  const scrollRef = useRef<ScrollView>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
+  const [form, setForm] = useState<WizardForm>({
+    origin: session.origin,
+    budgetAmount: session.budgetAmountMinor === null ? "" : String(session.budgetAmountMinor / 100),
+    currency: session.currency,
+    budgetScope: session.budgetScope ?? "group",
+    transportPreference: session.transportPreference ?? "",
+    accommodationPreference: session.accommodationPreference ?? "",
+    pace: session.pace ?? "balanced",
+    interestIds: [...session.interestIds],
+    mustDoActivities: session.mustDoActivities.join("\n"),
+    dietaryAccessibility: session.dietaryAccessibility ?? "",
+    avoidances: session.avoidances ?? "",
+    notes: session.notes ?? "",
+  });
+  const patch = (values: Partial<WizardForm>) => setForm((current) => ({ ...current, ...values }));
+  const budgetValue = form.budgetAmount.trim() ? Number(form.budgetAmount) : null;
+  const currencyValid = /^[A-Za-z]{3}$/.test(form.currency.trim());
+  const budgetValid = budgetValue === null || (Number.isFinite(budgetValue) && budgetValue >= 0);
+  const canContinue = stepIndex === 0
+    ? Boolean(form.origin.trim())
+    : stepIndex === 1 ? currencyValid && budgetValid : stepIndex === 2 ? form.interestIds.length > 0 : true;
+
+  const goToStep = (nextStep: number, nextDirection: 1 | -1) => {
+    setDirection(nextDirection);
+    setAttemptedStep(null);
+    setStepIndex(nextStep);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
+  };
+
+  const save = () => mutation.mutate({
+    id: session.id,
+    input: {
+      origin: form.origin.trim(),
+      budgetAmountMinor: budgetValue === null ? null : Math.round(budgetValue * 100),
+      currency: form.currency.trim().toUpperCase(),
+      budgetScope: budgetValue === null ? null : form.budgetScope,
+      transportPreference: emptyToNull(form.transportPreference),
+      accommodationPreference: emptyToNull(form.accommodationPreference),
+      pace: form.pace,
+      interestIds: form.interestIds,
+      mustDoActivities: splitList(form.mustDoActivities).slice(0, 10),
+      dietaryAccessibility: emptyToNull(form.dietaryAccessibility),
+      avoidances: emptyToNull(form.avoidances),
+      notes: emptyToNull(form.notes),
+    },
+  }, { onSuccess: (response) => onSaved(response.data), onError: (error) => Alert.alert(t("travelPlan.workspace.saveErrorTitle"), error.message) });
+
+  const next = () => {
+    if (!canContinue) {
+      setAttemptedStep(stepIndex);
+      return;
+    }
+    if (stepIndex < 3) {
+      goToStep(stepIndex + 1, 1);
+      return;
+    }
+    save();
+  };
 
   return (
-    <View style={[styles.finalControl, !active && !generatedTrip && styles.inactiveControl]}>
-      <View style={styles.summaryRows}>
-        {rows.map((row) => (
-          <View key={row.label} style={styles.summaryRow}>
-            <Ionicons
-              name={row.icon as keyof typeof Ionicons.glyphMap}
-              size={19}
-              color={theme.colors.light.accent}
-            />
-            <View style={styles.summaryTextGroup}>
-              <Text style={styles.summaryLabel}>{row.label}</Text>
-              <Text selectable style={styles.summaryValue}>{row.value}</Text>
-            </View>
+    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <PlannerHeader topInset={topInset} onBack={onCancel} />
+      <MobileProgress current={stepIndex} total={4} />
+      <ScrollView ref={scrollRef} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.mobileStepContent}>
+        <Animated.View key={stepIndex} entering={(direction > 0 ? FadeInRight : FadeInLeft).duration(220)} style={styles.mobileStepBody}>
+          <StepIntro
+            icon={stepIndex === 0 ? "navigate-outline" : stepIndex === 1 ? "wallet-outline" : stepIndex === 2 ? "heart-outline" : "options-outline"}
+            eyebrow={t("travelPlan.workspace.editWorkspace")}
+            title={t(`travelPlan.workspace.steps.${stepIndex}.title`)}
+            hint={t(`travelPlan.workspace.steps.${stepIndex}.hint`)}
+          />
+          <View style={styles.mobileFormSection}>
+            {stepIndex === 0 ? (
+              <View style={styles.fieldStack}>
+                <View style={styles.tripSummary}>
+                  <View style={styles.tripSummaryIcon}><Ionicons name="location-outline" size={21} color={theme.colors.light.accent} /></View>
+                  <View style={styles.tripSummaryText}><Text style={styles.tripSummaryName}>{session.destination}</Text><Text style={styles.tripSummaryMeta}>{t("travelPlan.workspace.savedDestination")}</Text></View>
+                </View>
+                <FormField label={t("travelPlan.workspace.originLabel")} required><TextInput autoFocus maxLength={255} value={form.origin} onChangeText={(origin) => patch({ origin })} placeholder={t("travelPlan.chat.placeholders.origin")} placeholderTextColor={theme.colors.light.gray[400]} style={styles.input} /></FormField>
+              </View>
+            ) : null}
+            {stepIndex === 1 ? <LogisticsStep form={form} patch={patch} /> : null}
+            {stepIndex === 2 ? <ExperienceStep form={form} patch={patch} /> : null}
+            {stepIndex === 3 ? <ConstraintsStep form={form} patch={patch} /> : null}
+            {attemptedStep === stepIndex && !canContinue ? <Text selectable style={styles.errorText}>{stepIndex === 0 ? t("travelPlan.workspace.originRequired") : stepIndex === 1 ? t("travelPlan.workspace.budgetInvalid") : t("travelPlan.workspace.interestRequired")}</Text> : null}
           </View>
+        </Animated.View>
+      </ScrollView>
+      <MobileFooter
+        bottomPadding={bottomPadding}
+        backLabel={stepIndex === 0 ? t("common.cancel") : t("common.back")}
+        nextLabel={stepIndex === 3 ? t("common.save") : t("travelPlan.actions.continue")}
+        nextIcon={stepIndex === 3 ? "save-outline" : "arrow-forward"}
+        pending={mutation.isPending}
+        onBack={stepIndex === 0 ? onCancel : () => goToStep(stepIndex - 1, -1)}
+        onNext={next}
+      />
+    </KeyboardAvoidingView>
+  );
+}
+
+function MobileProgress({ current, total }: { current: number; total: number }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.mobileProgress}>
+      <View style={styles.progressSegments}>
+        {Array.from({ length: total }, (_, index) => (
+          <View
+            key={index}
+            accessibilityLabel={t("travelPlan.workspace.progressStep", { current: index + 1, total })}
+            style={[styles.progressSegment, index <= current && styles.progressSegmentActive]}
+          />
         ))}
       </View>
-
-      {generatedTrip ? (
-        <View style={styles.readyBlock}>
-          <Ionicons name="checkmark-circle" size={27} color={theme.colors.light.success} />
-          <View style={styles.readyTextGroup}>
-            <Text style={styles.readyTitle}>{t("travelPlan.chat.ready.title")}</Text>
-            <Text style={styles.readyDescription}>{t("travelPlan.chat.ready.description")}</Text>
-          </View>
-          <Pressable onPress={onViewTrip} style={styles.viewTripButton}>
-            <Text style={styles.viewTripButtonText}>{t("travelPlan.chat.ready.action")}</Text>
-            <Ionicons name="arrow-forward" size={18} color={theme.colors.light.base.white} />
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable
-          disabled={!active || isGenerating}
-          onPress={onGenerate}
-          style={[styles.generateButton, isGenerating && styles.disabledButton]}
-        >
-          {isGenerating ? (
-            <>
-              <ActivityIndicator color={theme.colors.light.base.white} />
-              <Text style={styles.generateButtonText}>{t("travelPlan.chat.generating")}</Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="sparkles" size={19} color={theme.colors.light.base.white} />
-              <Text style={styles.generateButtonText}>{t("travelPlan.actions.generate")}</Text>
-            </>
-          )}
-        </Pressable>
-      )}
+      <Text style={styles.progressText}>{t("travelPlan.workspace.progressStep", { current: current + 1, total })}</Text>
     </View>
   );
 }
 
-function GeneratedTripDetail({
-  trip,
-  topInset,
-  bottomPadding,
-  onBack,
-  onPlanAnother,
-}: {
-  trip: UserTravelPlan;
-  topInset: number;
-  bottomPadding: number;
-  onBack: () => void;
-  onPlanAnother: () => void;
-}) {
+function StepIntro({ icon, eyebrow, title, hint }: { icon: keyof typeof Ionicons.glyphMap; eyebrow: string; title: string; hint: string }) {
+  return (
+    <View style={styles.mobileStepIntro}>
+      <View style={styles.mobileStepIcon}><Ionicons name={icon} size={25} color={theme.colors.light.accent} /></View>
+      <Text style={styles.stepEyebrow}>{eyebrow}</Text>
+      <Text style={styles.stepTitle}>{title}</Text>
+      <Text style={styles.stepDescription}>{hint}</Text>
+    </View>
+  );
+}
+
+function MobileFooter({ bottomPadding, backLabel, nextLabel, nextIcon, pending, onBack, onNext }: { bottomPadding: number; backLabel: string; nextLabel: string; nextIcon: keyof typeof Ionicons.glyphMap; pending?: boolean; onBack: () => void; onNext: () => void }) {
+  return (
+    <View style={[styles.mobileFooter, { paddingBottom: Math.max(bottomPadding, theme.spacing[3]) }]}>
+      <Pressable disabled={pending} onPress={onBack} style={({ pressed }) => [styles.mobileBackButton, pending && styles.disabled, pressed && styles.pressed]}>
+        <Ionicons name="arrow-back" size={19} color={theme.colors.light.gray[700]} />
+        <Text style={styles.secondaryButtonText}>{backLabel}</Text>
+      </Pressable>
+      <PrimaryButton label={nextLabel} icon={nextIcon} pending={pending} disabled={pending} onPress={onNext} />
+    </View>
+  );
+}
+
+function PlannerHeader({ topInset, onBack }: { topInset: number; onBack?: () => void }) {
   const { t } = useTranslation();
-
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="automatic"
-      style={styles.screen}
-      contentContainerStyle={{ paddingBottom: bottomPadding + theme.spacing[5] }}
-    >
-      <View style={[styles.detailHeader, { paddingTop: topInset + theme.spacing[2] }]}> 
-        <Pressable accessibilityLabel={t("common.back")} onPress={onBack} style={styles.headerIconButton}>
-          <Ionicons name="arrow-back" size={23} color={theme.colors.light.gray[800]} />
-        </Pressable>
-        <Text style={styles.detailHeaderTitle}>{t("travelPlan.generated.title")}</Text>
-        <Pressable
-          accessibilityLabel={t("travelPlan.actions.planAnother")}
-          onPress={onPlanAnother}
-          style={styles.headerIconButton}
-        >
-          <Ionicons name="add" size={24} color={theme.colors.light.gray[800]} />
-        </Pressable>
-      </View>
-
-      <View style={styles.detailHero}>
-        <Image source={{ uri: trip.image }} style={styles.detailImage} contentFit="cover" />
-        <View style={styles.detailImageOverlay} />
-        <View style={styles.detailHeroText}>
-          <Text selectable style={styles.detailName}>{trip.name}</Text>
-          <View style={styles.routeRow}>
-            <Ionicons name="navigate-outline" size={17} color={theme.colors.light.base.white} />
-            <Text selectable style={styles.routeText}>
-              {trip.origin ? `${trip.origin} → ` : ""}{trip.destination}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.detailBody}>
-        <Text selectable style={styles.detailSummary}>{trip.summary}</Text>
-        <View style={styles.detailStats}>
-          <DetailStat icon="calendar-outline" value={trip.duration} />
-          <DetailStat icon="people-outline" value={t("travelPlan.generated.peopleCount", { count: trip.totalPeople })} />
-          <DetailStat icon="wallet-outline" value={`$${trip.estimatedCost.toFixed(0)}`} />
-        </View>
-
-        {trip.hotels.length > 0 ? (
-          <View style={styles.detailSection}>
-            <View style={styles.sectionHeadingRow}>
-              <Text style={styles.sectionTitle}>{t("travelPlan.generated.hotels")}</Text>
-              <Text style={styles.sectionCount}>{trip.hotels.length}</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hotelList}>
-              {trip.hotels.map((hotel) => (
-                <View key={`${hotel.hotelName}-${hotel.hotelAddress}`} style={styles.hotelCard}>
-                  <Image source={{ uri: hotel.hotelImageUrl }} style={styles.hotelImage} contentFit="cover" />
-                  <View style={styles.hotelContent}>
-                    <View style={styles.hotelTitleRow}>
-                      <Text numberOfLines={1} style={styles.hotelName}>{hotel.hotelName}</Text>
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={14} color={theme.colors.light.warning} />
-                        <Text style={styles.hotelRating}>{hotel.rating.toFixed(1)}</Text>
-                      </View>
-                    </View>
-                    <Text numberOfLines={2} style={styles.hotelAddress}>{hotel.hotelAddress}</Text>
-                    <Text style={styles.hotelPrice}>{hotel.pricePerNight}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        <View style={styles.detailSection}>
-          <Text style={styles.sectionTitle}>{t("travelPlan.generated.itinerary")}</Text>
-          <View style={styles.itineraryList}>
-            {trip.days.map((day) => (
-              <View key={`${trip.id}-${day.day}`} style={styles.daySection}>
-                <View style={styles.dayHeader}>
-                  <View style={styles.dayBadge}>
-                    <Text style={styles.dayBadgeText}>{day.day}</Text>
-                  </View>
-                  <View style={styles.dayHeaderText}>
-                    <Text style={styles.dayEyebrow}>{t("travelPlan.generated.day", { day: day.day })}</Text>
-                    <Text selectable style={styles.dayTitle}>{day.title}</Text>
-                    <Text style={styles.dayBestTime}>{day.bestTimeToVisitDay}</Text>
-                  </View>
-                </View>
-                <Text selectable style={styles.daySummary}>{day.summary}</Text>
-                <View style={styles.activityList}>
-                  {day.activities.map((activity) => (
-                    <View key={`${day.day}-${activity.placeName}`} style={styles.activityCard}>
-                      <Image source={{ uri: activity.placeImageUrl }} style={styles.activityImage} contentFit="cover" />
-                      <View style={styles.activityContent}>
-                        <Text selectable style={styles.activityName}>{activity.placeName}</Text>
-                        <Text numberOfLines={2} style={styles.activityDetails}>{activity.placeDetails}</Text>
-                        <View style={styles.activityMetaRow}>
-                          <Ionicons name="location-outline" size={14} color={theme.colors.light.gray[500]} />
-                          <Text numberOfLines={1} style={styles.activityMetaText}>{activity.placeAddress}</Text>
-                        </View>
-                        <View style={styles.activityTags}>
-                          <MetaTag icon="time-outline" text={activity.bestTimeToVisit} />
-                          <MetaTag icon="ticket-outline" text={activity.ticketPricing} />
-                          <MetaTag icon="car-outline" text={activity.travelTime} />
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
-
-function DetailStat({ icon, value }: { icon: string; value: string }) {
-  return (
-    <View style={styles.detailStat}>
-      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={17} color={theme.colors.light.accent} />
-      <Text numberOfLines={1} style={styles.detailStatText}>{value}</Text>
+    <View style={[styles.header, { paddingTop: topInset + theme.spacing[2] }]}>
+      {onBack ? <Pressable accessibilityRole="button" hitSlop={8} onPress={onBack} style={styles.headerButton}><Ionicons name="arrow-back" size={22} color={theme.colors.light.gray[900]} /></Pressable> : <View style={styles.headerButton} />}
+      <View style={styles.headerBrand}><View style={styles.brandMark}><Ionicons name="sparkles" size={18} color={theme.colors.light.base.white} /></View><View><Text style={styles.headerTitle}>{t("travelPlan.workspace.headerTitle")}</Text><Text style={styles.headerSubtitle}>{t("travelPlan.workspace.headerSubtitle")}</Text></View></View>
+      <View style={styles.headerButton} />
     </View>
   );
 }
 
-function MetaTag({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={styles.metaTag}>
-      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={theme.colors.light.gray[600]} />
-      <Text numberOfLines={1} style={styles.metaTagText}>{text}</Text>
-    </View>
-  );
+function TripChoiceCard({ trip, onPress }: { trip: TripDTO; onPress: () => void }) {
+  const { t } = useTranslation();
+  return <Pressable onPress={onPress} style={({ pressed }) => [styles.tripCard, pressed && styles.pressed]}><View style={styles.tripCardIcon}><Ionicons name="airplane" size={20} color={theme.colors.light.accent} /></View><View style={styles.tripCardContent}><Text numberOfLines={1} style={styles.tripCardTitle}>{trip.name}</Text><Text style={styles.tripCardDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text></View><Text style={styles.tripCardAction}>{t("travelPlan.workspace.planThisTrip")}</Text><Ionicons name="chevron-forward" size={18} color={theme.colors.light.accent} /></Pressable>;
 }
 
-function hasCompleteAnswers(answers: PlannerAnswers): answers is Required<PlannerAnswers> {
-  return Boolean(
-    answers.origin &&
-      answers.destination &&
-      answers.travellerId &&
-      answers.budgetId &&
-      answers.durationDays &&
-      answers.interestIds?.length &&
-      answers.specialRequirements,
-  );
+function FormField({ label, description, required, children, style }: { label: string; description?: string; required?: boolean; children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[styles.field, style]}><Text style={styles.fieldLabel}>{label}{required ? <Text style={styles.required}> *</Text> : null}</Text>{description ? <Text style={styles.fieldDescription}>{description}</Text> : null}{children}</View>;
 }
+
+function SuggestionChips({ values, selected, onSelect }: { values: readonly string[]; selected: string; onSelect: (value: string) => void }) {
+  return <View style={styles.wrapRow}>{values.map((value) => { const active = selected === value; return <Pressable key={value} onPress={() => onSelect(value)} style={[styles.suggestionChip, active && styles.selectedSuggestion]}><Ionicons name={active ? "checkmark" : "add"} size={14} color={active ? theme.colors.light.base.white : theme.colors.light.accent} /><Text style={[styles.suggestionText, active && styles.selectedChipText]}>{value}</Text></Pressable>; })}</View>;
+}
+
+function OptionRow({ values, selected, label, onSelect }: { values: readonly string[]; selected: string; label: (value: string) => string; onSelect: (value: string) => void }) {
+  return <View style={styles.optionRow}>{values.map((value) => { const active = selected === value; return <Pressable key={value} onPress={() => onSelect(value)} style={[styles.optionButton, active && styles.selectedOption]}><Text style={[styles.optionButtonText, active && styles.selectedOptionText]}>{label(value)}</Text></Pressable>; })}</View>;
+}
+
+function PrimaryButton({ label, icon, onPress, pending, disabled }: { label: string; icon?: keyof typeof Ionicons.glyphMap; onPress: () => void; pending?: boolean; disabled?: boolean }) {
+  return <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.primaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}>{pending ? <ActivityIndicator size="small" color={theme.colors.light.base.white} /> : icon ? <Ionicons name={icon} size={19} color={theme.colors.light.base.white} /> : null}<Text style={styles.primaryButtonText}>{label}</Text></Pressable>;
+}
+
+function SecondaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  return <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.secondaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}><Text style={styles.secondaryButtonText}>{label}</Text></Pressable>;
+}
+
+function SummaryRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
+  return <View style={styles.summaryRow}><View style={styles.summaryIcon}><Ionicons name={icon} size={18} color={theme.colors.light.accent} /></View><View style={styles.summaryText}><Text style={styles.summaryLabel}>{label}</Text><Text selectable style={styles.summaryValue}>{value}</Text></View></View>;
+}
+
+function InlineError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
+  return <View style={styles.errorCard}><Ionicons name="alert-circle-outline" size={24} color={theme.colors.light.error[500]} /><Text selectable style={styles.errorMessage}>{message}</Text><Pressable onPress={onRetry}><Text style={styles.retryText}>{t("common.retry")}</Text></Pressable></View>;
+}
+
+function LoadingScreen({ topInset, label }: { topInset: number; label: string }) {
+  return <View style={styles.screen}><PlannerHeader topInset={topInset} /><View style={styles.centerState}><ActivityIndicator size="large" color={theme.colors.light.accent} /><Text style={styles.stateText}>{label}</Text></View></View>;
+}
+
+function ErrorScreen({ topInset, message, onBack }: { topInset: number; message: string; onBack: () => void }) {
+  return <View style={styles.screen}><PlannerHeader topInset={topInset} onBack={onBack} /><View style={styles.centerState}><Ionicons name="alert-circle-outline" size={36} color={theme.colors.light.error[500]} /><Text selectable style={styles.stateText}>{message}</Text></View></View>;
+}
+
+function emptyToNull(value: string) { return value.trim() || null; }
+function splitList(value: string) { return value.split(/[\n,]/).map((item) => item.trim().slice(0, 120)).filter(Boolean); }
+function appendLine(current: string, value: string) { const items = splitList(current); return items.includes(value) ? current : [...items, value].join("\n"); }
+function formatDateRange(startDate: string, endDate: string) { const formatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }); return `${formatter.format(new Date(startDate))} – ${formatter.format(new Date(endDate))}`; }
+function formatFriendlyDate(value: string, locale: string) { return new Intl.DateTimeFormat(locale, { weekday: "short", day: "2-digit", month: "short", year: "numeric" }).format(parseDateOnly(value)); }
+function parseDateOnly(value: string) { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day, 12); }
+function dateOnly(date: Date) { const year = date.getFullYear(); const month = String(date.getMonth() + 1).padStart(2, "0"); const day = String(date.getDate()).padStart(2, "0"); return `${year}-${month}-${day}`; }
+function addDays(date: Date, days: number) { const next = new Date(date); next.setDate(next.getDate() + days); return next; }
+function isDateOnly(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+function getErrorMessage(error: unknown, fallback: string) { return error instanceof Error && error.message ? error.message : fallback; }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.colors.light.background },
-  chatHeader: {
-    minHeight: 74,
-    paddingHorizontal: theme.spacing[4],
-    paddingBottom: theme.spacing[3],
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.light.gray[200],
-    backgroundColor: theme.colors.light.surface,
-  },
-  brandMark: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.accent,
-  },
-  headerTextGroup: { flex: 1 },
-  headerTitle: { color: theme.colors.light.gray[900], fontSize: 18, lineHeight: 24, fontWeight: "900" },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  onlineDot: { width: 7, height: 7, borderRadius: 999, backgroundColor: theme.colors.light.success },
-  headerStatus: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 16, fontWeight: "700" },
-  headerIconButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  progressArea: {
-    paddingHorizontal: theme.spacing[4],
-    paddingVertical: theme.spacing[2],
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.surface,
-  },
-  progressTrack: { flex: 1, height: 4, borderRadius: 999, overflow: "hidden", backgroundColor: theme.colors.light.gray[200] },
-  progressFill: { height: "100%", borderRadius: 999, backgroundColor: theme.colors.light.accent },
-  progressText: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 16, fontWeight: "800", fontVariant: ["tabular-nums"] },
-  chatContent: { flexGrow: 1, paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[5], gap: theme.spacing[4] },
-  starter: { flex: 1, minHeight: 470, alignItems: "center", justifyContent: "center", paddingHorizontal: theme.spacing[4], gap: theme.spacing[3] },
-  starterIcon: { width: 68, height: 68, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
-  starterTitle: { color: theme.colors.light.gray[900], fontSize: 24, lineHeight: 32, fontWeight: "900", textAlign: "center" },
-  starterDescription: { maxWidth: 320, color: theme.colors.light.gray[500], fontSize: 15, lineHeight: 22, fontWeight: "600", textAlign: "center" },
-  startButton: { minHeight: 52, marginTop: theme.spacing[3], paddingHorizontal: theme.spacing[5], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.accent },
-  startButtonText: { color: theme.colors.light.base.white, fontSize: 16, lineHeight: 22, fontWeight: "900" },
-  userMessageRow: { alignItems: "flex-end" },
-  userBubble: { maxWidth: "84%", paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[3], borderRadius: theme.radius.md, backgroundColor: theme.colors.light.accent },
-  userMessageText: { color: theme.colors.light.base.white, fontSize: 15, lineHeight: 22, fontWeight: "700" },
-  assistantMessageGroup: { gap: theme.spacing[3] },
-  assistantRow: { flexDirection: "row", alignItems: "flex-start", gap: theme.spacing[2] },
-  assistantAvatar: { width: 30, height: 30, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
-  assistantBubble: { maxWidth: "84%", paddingHorizontal: theme.spacing[4], paddingVertical: theme.spacing[3], borderRadius: theme.radius.md, backgroundColor: theme.colors.light.gray[100] },
-  assistantMessageText: { color: theme.colors.light.gray[800], fontSize: 15, lineHeight: 22, fontWeight: "600" },
-  thinkingBubble: { paddingHorizontal: theme.spacing[3], paddingVertical: theme.spacing[2], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.gray[100] },
-  thinkingText: { color: theme.colors.light.gray[500], fontSize: 14, lineHeight: 20, fontWeight: "700" },
-  quickReplyWrap: { paddingLeft: 38, flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
-  quickReply: { minHeight: 42, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.surface },
-  quickReplyText: { color: theme.colors.light.gray[800], fontSize: 14, lineHeight: 20, fontWeight: "800" },
-  optionGrid: { paddingLeft: 38, flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
-  optionCard: { width: "47%", minHeight: 132, padding: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, gap: theme.spacing[2], backgroundColor: theme.colors.light.surface },
-  selectedOptionCard: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
-  optionIcon: { width: 38, height: 38, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
-  selectedOptionIcon: { backgroundColor: theme.colors.light.accent },
-  optionTitle: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "900" },
-  optionSubtitle: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 17, fontWeight: "600" },
-  durationControl: { marginLeft: 38, padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, gap: theme.spacing[4], backgroundColor: theme.colors.light.surface },
-  controlTitle: { color: theme.colors.light.gray[900], fontSize: 16, lineHeight: 22, fontWeight: "900", textAlign: "center" },
-  stepperRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[5] },
-  stepperButton: { width: 44, height: 44, borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.gray[50] },
-  dayCount: { minWidth: 92, color: theme.colors.light.gray[900], fontSize: 20, lineHeight: 28, fontWeight: "900", textAlign: "center", fontVariant: ["tabular-nums"] },
-  durationPresets: { flexDirection: "row", justifyContent: "center", gap: theme.spacing[2] },
-  presetChip: { paddingHorizontal: theme.spacing[3], paddingVertical: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: 999, backgroundColor: theme.colors.light.surface },
-  presetText: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 16, fontWeight: "800" },
+  header: { minHeight: 76, paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[3], flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: theme.colors.light.gray[200], backgroundColor: theme.colors.light.surface },
+  headerButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerBrand: { flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
+  brandMark: { width: 38, height: 38, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
+  headerTitle: { color: theme.colors.light.gray[900], fontSize: 16, lineHeight: 21, fontWeight: "900", textAlign: "center" },
+  headerSubtitle: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "700", textAlign: "center" },
+  pageContent: { flexGrow: 1, paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[5], gap: theme.spacing[5] },
+  wizardContent: { paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[5], gap: theme.spacing[4] },
+  heroBlock: { alignItems: "flex-start", gap: theme.spacing[2] },
+  heroIcon: { width: 56, height: 56, borderRadius: theme.radius.lg, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50], borderCurve: "continuous" },
+  heroEyebrow: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.8 },
+  heroTitle: { color: theme.colors.light.gray[900], fontSize: 27, lineHeight: 34, fontWeight: "900" },
+  heroDescription: { color: theme.colors.light.gray[500], fontSize: 14, lineHeight: 21, fontWeight: "600" },
+  section: { gap: theme.spacing[3] },
+  sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sectionTitle: { color: theme.colors.light.gray[900], fontSize: 18, lineHeight: 24, fontWeight: "900" },
+  sectionCount: { minWidth: 28, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, color: theme.colors.light.accent, fontSize: 12, lineHeight: 16, fontWeight: "900", textAlign: "center", backgroundColor: theme.colors.light.orange[50], fontVariant: ["tabular-nums"] },
+  tripCard: { minHeight: 82, padding: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  tripCardIcon: { width: 42, height: 42, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
+  tripCardContent: { flex: 1, minWidth: 0, gap: 3 },
+  tripCardTitle: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "900" },
+  tripCardDate: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 15, fontWeight: "700" },
+  tripCardAction: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "900" },
+  emptyCard: { minHeight: 190, padding: theme.spacing[5], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  emptyTitle: { color: theme.colors.light.gray[900], fontSize: 17, lineHeight: 23, fontWeight: "900", textAlign: "center" },
+  emptyDescription: { color: theme.colors.light.gray[500], fontSize: 13, lineHeight: 19, fontWeight: "600", textAlign: "center" },
+  formCard: { padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.lg, gap: theme.spacing[5], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  formHeading: { gap: 2 },
+  formEyebrow: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "900", textTransform: "uppercase" },
+  formTitle: { color: theme.colors.light.gray[900], fontSize: 20, lineHeight: 27, fontWeight: "900" },
+  fieldStack: { gap: theme.spacing[5] },
+  field: { gap: theme.spacing[2] },
+  flexField: { flex: 1 },
+  currencyField: { width: 94 },
+  fieldLabel: { color: theme.colors.light.gray[800], fontSize: 13, lineHeight: 18, fontWeight: "800" },
+  fieldDescription: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 16, fontWeight: "600" },
+  required: { color: theme.colors.light.error[500] },
+  input: { minHeight: 54, paddingHorizontal: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, color: theme.colors.light.gray[900], fontSize: 16, lineHeight: 21, fontWeight: "600", backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  datePickerFields: { gap: theme.spacing[1] },
+  dateSelectionButton: { minHeight: 72, paddingHorizontal: theme.spacing[3], paddingVertical: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.lg, flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  dateSelectionButtonCompact: { flex: 1, minHeight: 76, paddingHorizontal: theme.spacing[2] },
+  dateSelectionButtonActive: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
+  dateSelectionIcon: { width: 40, height: 40, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50], borderCurve: "continuous" },
+  dateSelectionIconActive: { backgroundColor: theme.colors.light.accent },
+  dateSelectionText: { flex: 1, minWidth: 0, gap: 2 },
+  dateSelectionLabel: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 15, fontWeight: "800", textTransform: "uppercase" },
+  dateSelectionLabelActive: { color: theme.colors.light.accent },
+  dateSelectionValue: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 21, fontWeight: "800" },
+  dateRangeConnector: { height: 24, paddingLeft: 31, flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
+  dateRangeLine: { width: 1, height: 20, backgroundColor: theme.colors.light.gray[300] },
+  calendarModal: { flex: 1, paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3], gap: theme.spacing[4], backgroundColor: theme.colors.light.background },
+  calendarModalHeader: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.spacing[2] },
+  calendarHeaderAction: { minWidth: 58, minHeight: 40, alignItems: "center", justifyContent: "center" },
+  calendarModalTitle: { flex: 1, color: theme.colors.light.gray[900], fontSize: 16, lineHeight: 22, fontWeight: "900", textAlign: "center" },
+  calendarCancelText: { color: theme.colors.light.gray[600], fontSize: 15, lineHeight: 20, fontWeight: "700" },
+  calendarHint: { color: theme.colors.light.gray[500], fontSize: 13, lineHeight: 19, fontWeight: "600", textAlign: "center" },
+  calendarRangeTabs: { flexDirection: "row", gap: theme.spacing[2] },
+  nativeCalendar: { width: "100%", minHeight: 350 },
+  calendarModalFooter: { flex: 1, justifyContent: "flex-end" },
+  calendarDoneButton: { minHeight: 54, borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.accent, borderCurve: "continuous" },
+  calendarDoneButtonText: { color: theme.colors.light.base.white, fontSize: 15, lineHeight: 21, fontWeight: "900" },
+  textArea: { minHeight: 108, paddingTop: theme.spacing[3] },
+  shortTextArea: { minHeight: 82, paddingTop: theme.spacing[3] },
+  twoColumns: { flexDirection: "row", gap: theme.spacing[3] },
+  suggestionRow: { gap: theme.spacing[2], paddingRight: theme.spacing[3] },
+  destinationChip: { width: 240, padding: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.background },
+  destinationChipImage: { width: 44, height: 44, borderRadius: theme.radius.sm, backgroundColor: theme.colors.light.gray[100] },
+  destinationChipText: { flex: 1, minWidth: 0 },
+  chipTitle: { color: theme.colors.light.gray[900], fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  chipSubtitle: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "600" },
+  selectedCard: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
+  buttonRow: { flexDirection: "row", gap: theme.spacing[3] },
+  flexButton: { flex: 1 },
+  primaryButton: { minHeight: 52, paddingHorizontal: theme.spacing[4], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.accent, borderCurve: "continuous" },
+  primaryButtonText: { color: theme.colors.light.base.white, fontSize: 14, lineHeight: 20, fontWeight: "900", textAlign: "center" },
+  secondaryButton: { minHeight: 52, paddingHorizontal: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[300], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  secondaryButtonText: { color: theme.colors.light.gray[700], fontSize: 14, lineHeight: 20, fontWeight: "800" },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.76 },
+  mobileProgress: { paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3], paddingBottom: theme.spacing[3], flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.surface },
+  progressSegments: { flex: 1, flexDirection: "row", gap: 6 },
+  progressSegment: { flex: 1, height: 5, borderRadius: 999, backgroundColor: theme.colors.light.gray[200] },
+  progressSegmentActive: { backgroundColor: theme.colors.light.accent },
+  progressText: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 16, fontWeight: "900", fontVariant: ["tabular-nums"] },
+  mobileStepContent: { flexGrow: 1, paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[5], paddingBottom: theme.spacing[6] },
+  mobileStepBody: { gap: theme.spacing[5] },
+  mobileStepIntro: { alignItems: "flex-start", gap: 5 },
+  mobileStepIcon: { width: 52, height: 52, borderRadius: theme.radius.lg, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50], borderCurve: "continuous" },
+  mobileFormSection: { gap: theme.spacing[5] },
+  mobileFooter: { paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[3], borderTopWidth: 1, borderTopColor: theme.colors.light.gray[200], flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.surface, boxShadow: "0 -4px 18px rgba(16, 24, 40, 0.06)" },
+  mobileBackButton: { minHeight: 52, paddingHorizontal: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
+  stepEyebrow: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "900", textTransform: "uppercase" },
+  stepTitle: { color: theme.colors.light.gray[900], fontSize: 28, lineHeight: 35, fontWeight: "900" },
+  stepDescription: { color: theme.colors.light.gray[500], fontSize: 14, lineHeight: 21, fontWeight: "600" },
+  tripSummary: { padding: theme.spacing[3], borderRadius: theme.radius.md, flexDirection: "row", gap: theme.spacing[3], backgroundColor: theme.colors.light.gray[50] },
+  tripSummaryIcon: { width: 40, height: 40, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
+  tripSummaryText: { flex: 1, gap: 3 },
+  tripSummaryName: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "900" },
+  tripSummaryMeta: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 15, fontWeight: "700" },
+  tripSummaryRoute: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  wrapRow: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
+  suggestionChip: { minHeight: 34, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.orange[200], borderRadius: 999, flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: theme.colors.light.orange[50] },
+  suggestionText: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "800" },
+  selectedSuggestion: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accent },
+  optionRow: { flexDirection: "row", gap: theme.spacing[2] },
+  optionButton: { flex: 1, minHeight: 44, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.background },
+  optionButtonText: { color: theme.colors.light.gray[600], fontSize: 12, lineHeight: 17, fontWeight: "800", textAlign: "center" },
+  selectedOption: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
+  selectedOptionText: { color: theme.colors.light.accent },
+  choiceChip: { minHeight: 42, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: 999, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.background },
+  choiceChipText: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 17, fontWeight: "800" },
   selectedChip: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accent },
   selectedChipText: { color: theme.colors.light.base.white },
-  confirmButton: { minHeight: 44, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
-  confirmButtonText: { color: theme.colors.light.base.white, fontSize: 14, lineHeight: 20, fontWeight: "900" },
-  interestControl: { marginLeft: 38, gap: theme.spacing[3] },
-  interestGrid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
-  interestChip: { minHeight: 42, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: 999, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.surface },
-  interestText: { color: theme.colors.light.gray[700], fontSize: 13, lineHeight: 18, fontWeight: "800" },
-  finalControl: { marginLeft: 38, padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, gap: theme.spacing[4], backgroundColor: theme.colors.light.surface },
-  summaryRows: { gap: theme.spacing[3] },
+  aiNotice: { padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.orange[200], borderRadius: theme.radius.md, flexDirection: "row", gap: theme.spacing[3], backgroundColor: theme.colors.light.orange[50], borderCurve: "continuous" },
+  noticeIcon: { width: 36, height: 36, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.base.white },
+  noticeText: { flex: 1, gap: 3 },
+  noticeTitle: { color: theme.colors.light.accent, fontSize: 14, lineHeight: 19, fontWeight: "900" },
+  noticeDescription: { color: theme.colors.light.gray[600], fontSize: 11, lineHeight: 17, fontWeight: "600" },
+  persistenceNote: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 15, fontWeight: "600", textAlign: "center" },
+  errorText: { color: theme.colors.light.error[500], fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  errorCard: { padding: theme.spacing[4], borderRadius: theme.radius.md, alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.error[50] },
+  errorMessage: { color: theme.colors.light.error[700], fontSize: 13, lineHeight: 19, fontWeight: "700", textAlign: "center" },
+  retryText: { color: theme.colors.light.accent, fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  centerState: { flex: 1, padding: theme.spacing[6], alignItems: "center", justifyContent: "center", gap: theme.spacing[3] },
+  stateText: { color: theme.colors.light.gray[600], fontSize: 14, lineHeight: 21, fontWeight: "700", textAlign: "center" },
+  successHero: { alignItems: "center", gap: theme.spacing[2], paddingVertical: theme.spacing[3] },
+  successIcon: { width: 68, height: 68, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.success },
   summaryRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing[3] },
-  summaryTextGroup: { flex: 1 },
-  summaryLabel: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 15, fontWeight: "800", textTransform: "uppercase" },
-  summaryValue: { color: theme.colors.light.gray[900], fontSize: 14, lineHeight: 20, fontWeight: "800" },
-  generateButton: { minHeight: 50, borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.accent },
-  generateButtonText: { color: theme.colors.light.base.white, fontSize: 15, lineHeight: 20, fontWeight: "900" },
-  readyBlock: { gap: theme.spacing[3], alignItems: "center" },
-  readyTextGroup: { alignItems: "center", gap: theme.spacing[1] },
-  readyTitle: { color: theme.colors.light.gray[900], fontSize: 17, lineHeight: 23, fontWeight: "900", textAlign: "center" },
-  readyDescription: { color: theme.colors.light.gray[500], fontSize: 13, lineHeight: 19, fontWeight: "600", textAlign: "center" },
-  viewTripButton: { minHeight: 46, alignSelf: "stretch", borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.gray[900] },
-  viewTripButtonText: { color: theme.colors.light.base.white, fontSize: 14, lineHeight: 20, fontWeight: "900" },
-  composerArea: { paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[2], paddingBottom: theme.spacing[3], borderTopWidth: 1, borderTopColor: theme.colors.light.gray[200], backgroundColor: theme.colors.light.surface },
-  composer: { minHeight: 50, paddingLeft: theme.spacing[4], paddingRight: 5, borderWidth: 1, borderColor: theme.colors.light.gray[300], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.surface },
-  composerInput: { flex: 1, minHeight: 46, color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "600" },
-  sendButton: { width: 40, height: 40, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
-  disabledButton: { opacity: 0.45 },
-  inactiveControl: { opacity: 0.58 },
-  selectedBorder: { borderColor: theme.colors.light.accent },
-  pressedButton: { opacity: 0.78 },
-  detailHeader: { minHeight: 72, paddingHorizontal: theme.spacing[4], paddingBottom: theme.spacing[3], flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: theme.colors.light.surface },
-  detailHeaderTitle: { color: theme.colors.light.gray[900], fontSize: 18, lineHeight: 24, fontWeight: "900" },
-  detailHero: { height: 290, position: "relative", backgroundColor: theme.colors.light.gray[100] },
-  detailImage: { width: "100%", height: "100%" },
-  detailImageOverlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(12, 17, 29, 0.38)" },
-  detailHeroText: { position: "absolute", left: theme.spacing[5], right: theme.spacing[5], bottom: theme.spacing[5], gap: theme.spacing[2] },
-  detailName: { color: theme.colors.light.base.white, fontSize: 28, lineHeight: 36, fontWeight: "900" },
-  routeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
-  routeText: { flex: 1, color: theme.colors.light.base.white, fontSize: 14, lineHeight: 20, fontWeight: "800" },
-  detailBody: { paddingHorizontal: theme.spacing[4], paddingTop: theme.spacing[5], gap: theme.spacing[6] },
-  detailSummary: { color: theme.colors.light.gray[600], fontSize: 15, lineHeight: 23, fontWeight: "600" },
-  detailStats: { flexDirection: "row", gap: theme.spacing[2] },
-  detailStat: { flex: 1, minWidth: 0, minHeight: 62, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", gap: theme.spacing[1], backgroundColor: theme.colors.light.surface },
-  detailStatText: { maxWidth: "100%", color: theme.colors.light.gray[800], fontSize: 11, lineHeight: 15, fontWeight: "800", textAlign: "center" },
-  detailSection: { gap: theme.spacing[3] },
-  sectionHeadingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  sectionTitle: { color: theme.colors.light.gray[900], fontSize: 20, lineHeight: 28, fontWeight: "900" },
-  sectionCount: { color: theme.colors.light.gray[500], fontSize: 13, lineHeight: 18, fontWeight: "800" },
-  hotelList: { gap: theme.spacing[3], paddingRight: theme.spacing[4] },
-  hotelCard: { width: 276, overflow: "hidden", borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, backgroundColor: theme.colors.light.surface },
-  hotelImage: { width: "100%", height: 132, backgroundColor: theme.colors.light.gray[100] },
-  hotelContent: { padding: theme.spacing[3], gap: theme.spacing[2] },
-  hotelTitleRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
-  hotelName: { flex: 1, color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "900" },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  hotelRating: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 16, fontWeight: "800", fontVariant: ["tabular-nums"] },
-  hotelAddress: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 17, fontWeight: "600" },
-  hotelPrice: { color: theme.colors.light.accent, fontSize: 14, lineHeight: 20, fontWeight: "900" },
-  itineraryList: { gap: theme.spacing[6] },
-  daySection: { gap: theme.spacing[3] },
-  dayHeader: { flexDirection: "row", alignItems: "flex-start", gap: theme.spacing[3] },
-  dayBadge: { width: 36, height: 36, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
-  dayBadgeText: { color: theme.colors.light.base.white, fontSize: 15, lineHeight: 20, fontWeight: "900", fontVariant: ["tabular-nums"] },
-  dayHeaderText: { flex: 1 },
-  dayEyebrow: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "900", textTransform: "uppercase" },
-  dayTitle: { color: theme.colors.light.gray[900], fontSize: 17, lineHeight: 23, fontWeight: "900" },
-  dayBestTime: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 17, fontWeight: "700" },
-  daySummary: { color: theme.colors.light.gray[600], fontSize: 14, lineHeight: 21, fontWeight: "600" },
-  activityList: { gap: theme.spacing[3] },
-  activityCard: { minHeight: 132, overflow: "hidden", borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", backgroundColor: theme.colors.light.surface },
-  activityImage: { width: 104, alignSelf: "stretch", backgroundColor: theme.colors.light.gray[100] },
-  activityContent: { flex: 1, minWidth: 0, padding: theme.spacing[3], gap: theme.spacing[1] },
-  activityName: { color: theme.colors.light.gray[900], fontSize: 14, lineHeight: 19, fontWeight: "900" },
-  activityDetails: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 16, fontWeight: "600" },
-  activityMetaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  activityMetaText: { flex: 1, color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "700" },
-  activityTags: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-  metaTag: { maxWidth: "100%", paddingHorizontal: 6, paddingVertical: 3, borderRadius: theme.radius.sm, flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: theme.colors.light.gray[100] },
-  metaTagText: { flexShrink: 1, color: theme.colors.light.gray[600], fontSize: 9, lineHeight: 12, fontWeight: "800" },
+  summaryIcon: { width: 38, height: 38, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.orange[50] },
+  summaryText: { flex: 1, gap: 2 },
+  summaryLabel: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "800", textTransform: "uppercase" },
+  summaryValue: { color: theme.colors.light.gray[900], fontSize: 14, lineHeight: 19, fontWeight: "800" },
+  summaryDivider: { height: 1, backgroundColor: theme.colors.light.gray[200] },
+  reviewCard: { padding: theme.spacing[4], borderRadius: theme.radius.lg, gap: theme.spacing[3], backgroundColor: theme.colors.light.surface, borderCurve: "continuous", boxShadow: "0 2px 12px rgba(16, 24, 40, 0.06)" },
+  readOnlyChip: { paddingHorizontal: theme.spacing[3], paddingVertical: theme.spacing[2], borderRadius: 999, backgroundColor: theme.colors.light.gray[100] },
+  readOnlyChipText: { color: theme.colors.light.gray[700], fontSize: 11, lineHeight: 15, fontWeight: "800" },
+  deleteWorkspace: { minHeight: 42, alignItems: "center", justifyContent: "center" },
+  deleteWorkspaceText: { color: theme.colors.light.error[600], fontSize: 12, lineHeight: 17, fontWeight: "800" },
 });

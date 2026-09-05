@@ -7,28 +7,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CityFeaturedCard } from "@/features/travel/components/city-featured-card";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
-import { getTravelCity, travelCities } from "@/features/travel/city.data";
-import {
-  getDestination,
-  type Destination,
-} from "@/features/travel/travel.data";
+import { useCity } from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
 
 export function CityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const city = getTravelCity(id) ?? travelCities[0];
-  const relatedDestinations = city.relatedDestinationIds
-    .map((destinationId) => getDestination(destinationId))
-    .filter(
-      (destination): destination is Destination => Boolean(destination),
-    );
+  const { city } = useCity(id);
+  const relatedDestinations = city.relatedDestinations ?? [];
+  const cityName = city.name ?? t(`travel.cities.${city.id}.name`);
 
   return (
     <View style={styles.screen}>
       <TravelScreenHeader
-        title={t(`travel.cities.${city.id}.name`)}
+        title={cityName}
         showBack
       />
 
@@ -43,7 +36,7 @@ export function CityDetailScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
               {t("travel.cityScreen.popularPlaces", {
-                city: t(`travel.cities.${city.id}.name`),
+                city: cityName,
               })}
             </Text>
             <View style={styles.pagination}>
@@ -59,7 +52,7 @@ export function CityDetailScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
               {t("travel.cityScreen.galleries", {
-                city: t(`travel.cities.${city.id}.name`),
+                city: cityName,
               })}
             </Text>
             <Pressable>
