@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 
+import { useAuth } from "@/features/auth/auth-provider";
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_TOP_HEIGHT,
@@ -23,6 +24,12 @@ type HomeHeaderProps = {
 
 export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
   const { t } = useTranslation();
+  const { session } = useAuth();
+  const userName =
+    session?.user.name?.trim() ||
+    session?.user.email.split("@")[0] ||
+    t("home.userName");
+  const userInitial = userName.charAt(0).toLocaleUpperCase();
 
   const primaryTintStyle = useAnimatedStyle(() => ({
     color: interpolateColor(
@@ -61,14 +68,14 @@ export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
       <View style={styles.topBar}>
         <Pressable style={styles.userCluster}>
           <Animated.View style={[styles.avatar, avatarStyle]}>
-            <Text style={styles.avatarText}>L</Text>
+            <Text style={styles.avatarText}>{userInitial}</Text>
           </Animated.View>
           <View>
             <Animated.Text style={[styles.userEyebrow, secondaryTintStyle]}>
               {t("home.userEyebrow")}
             </Animated.Text>
             <Animated.Text style={[styles.userName, primaryTintStyle]}>
-              {t("home.userName")}
+              {userName}
             </Animated.Text>
           </View>
         </Pressable>

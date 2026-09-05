@@ -10,7 +10,12 @@ Loka is an Expo SDK 57 app using Expo Router and a feature-first source layout.
    npm install
    ```
 
-2. Start the app
+2. Copy `.env.example` to `.env` and set `EXPO_PUBLIC_API_URL` to the PlanD
+   backend. This workspace currently uses `http://localhost:3000` for the iOS
+   simulator. Android emulator uses `http://10.0.2.2:3000`; a physical device
+   must use your computer's LAN IP.
+
+3. Start the app
 
    ```bash
    npx expo start
@@ -26,6 +31,10 @@ In the output, you'll find options to open the app in a
 Routes live in `src/app`, while screen implementations and business logic live in
 `src/features`. See [the architecture notes](./docs/architecture.md) before adding
 new modules.
+
+Authentication uses the backend's Better Auth Google provider. The backend must
+trust the `loka://` scheme and Google OAuth must allow the backend callback URL
+`<BETTER_AUTH_URL>/api/auth/callback/google`.
 
 ### Other setup steps
 

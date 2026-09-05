@@ -3,12 +3,22 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+import { useAuth } from "@/features/auth/auth-provider";
 import { ProfileMenuItem } from "@/features/profile/components/profile-menu-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { i18n, type SupportedLanguage } from "@/i18n";
+import { authClient } from "@/lib/auth/auth-client";
+import { queryClient } from "@/lib/query/query-client";
 import { theme } from "@/theme/theme";
 
 const languages: SupportedLanguage[] = ["vi", "en"];
@@ -33,8 +43,26 @@ const deferredWebItems = [
 
 export function ProfileScreen() {
   const { t } = useTranslation();
+  const { session } = useAuth();
   const bottomPadding = useTabBottomPadding();
   const [languageExpanded, setLanguageExpanded] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const user = session?.user;
+  const displayName = user?.name?.trim() || t("profile.fallbackName");
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error(result.error.message);
+      queryClient.clear();
+    } catch {
+      Alert.alert(t("profile.signOutErrorTitle"), t("profile.signOutError"));
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -49,13 +77,19 @@ export function ProfileScreen() {
       >
         <View style={styles.identity}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=500&auto=format&fit=crop",
-              }}
-              style={styles.avatar}
-              contentFit="cover"
-            />
+            {user?.image ? (
+              <Image
+                source={{ uri: user.image }}
+                style={styles.avatar}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarInitial}>
+                  {displayName.charAt(0).toLocaleUpperCase()}
+                </Text>
+              </View>
+            )}
             <View style={styles.verifiedBadge}>
               <Ionicons
                 name="checkmark-circle"
@@ -64,7 +98,7 @@ export function ProfileScreen() {
               />
             </View>
           </View>
-          <Text style={styles.name}>{t("profile.name")}</Text>
+          <Text style={styles.name}>{displayName}</Text>
         </View>
 
         <View style={styles.contactCard}>
@@ -76,8 +110,8 @@ export function ProfileScreen() {
             />
           </View>
           <View style={styles.contactDetails}>
-            <Text style={styles.email}>{t("profile.email")}</Text>
-            <Text style={styles.phone}>{t("profile.phone")}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
+            <Text style={styles.phone}>{t("profile.googleAccount")}</Text>
           </View>
           <Pressable
             accessibilityLabel={t("profile.editProfile")}
@@ -165,6 +199,17 @@ export function ProfileScreen() {
             title={t("profile.items.deleteAccount.title")}
             subtitle={t("profile.items.deleteAccount.subtitle")}
             tone="danger"
+          />
+          <ProfileMenuItem
+            icon="log-out-outline"
+            title={
+              isSigningOut
+                ? t("profile.items.signOut.pending")
+                : t("profile.items.signOut.title")
+            }
+            subtitle={t("profile.items.signOut.subtitle")}
+            onPress={isSigningOut ? undefined : handleSignOut}
+            tone="danger"
             isLast
           />
         </View>
@@ -195,6 +240,17 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: theme.radius.full,
     backgroundColor: theme.colors.light.gray[100],
+  },
+  avatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.light.orange[100],
+  },
+  avatarInitial: {
+    color: theme.colors.light.accent,
+    fontSize: theme.typography.fontSize["3xl"],
+    lineHeight: theme.typography.lineHeight["3xl"],
+    fontWeight: "900",
   },
   verifiedBadge: {
     position: "absolute",

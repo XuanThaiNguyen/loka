@@ -1,10 +1,15 @@
-import { AxiosError, create } from "axios";
+import { fetch } from "expo/fetch";
+import { Platform } from "react-native";
 
 import { env } from "@/config/env";
+import { authClient } from "@/lib/auth/auth-client";
 
 export type ApiErrorPayload = {
-  message?: string;
-  code?: string;
+  error?: {
+    message?: string;
+    code?: string;
+    details?: unknown;
+  };
 };
 
 export class ApiError extends Error {
@@ -18,26 +23,49 @@ export class ApiError extends Error {
   }
 }
 
-export const apiClient = create({
-  baseURL: env.apiBaseURL,
-  timeout: 15000,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
+export async function apiRequest<T>(
+  path: `/${string}`,
+  options: RequestInit = {},
+): Promise<T> {
+  const headers = new Headers(options.headers);
+  headers.set("Accept", "application/json");
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError<ApiErrorPayload>) => {
-    if (error.response) {
-      throw new ApiError(
-        error.response.data?.message ?? error.message,
-        error.response.status,
-        error.response.data?.code,
-      );
-    }
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
-    throw new ApiError(error.message || "Network error", 0, "NETWORK_ERROR");
-  },
-);
+  if (Platform.OS !== "web") {
+    const cookie = await authClient.getCookie();
+    if (cookie) headers.set("Cookie", cookie);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${env.apiBaseURL}${path}`, {
+      ...options,
+      credentials: Platform.OS === "web" ? "include" : "omit",
+      headers,
+    });
+  } catch (error) {
+    throw new ApiError(
+      error instanceof Error ? error.message : "Network error",
+      0,
+      "NETWORK_ERROR",
+    );
+  }
+
+  const payload = (await response
+    .json()
+    .catch(() => null)) as ApiErrorPayload | T | null;
+
+  if (!response.ok) {
+    const apiError = payload as ApiErrorPayload | null;
+    throw new ApiError(
+      apiError?.error?.message ?? `Request failed (${response.status})`,
+      response.status,
+      apiError?.error?.code,
+    );
+  }
+
+  return payload as T;
+}

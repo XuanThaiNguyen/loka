@@ -464,12 +464,26 @@ const vi = {
       culture: "Văn hóa",
     },
   },
+  auth: {
+    title: "Bắt đầu hành trình của bạn",
+    description:
+      "Đăng nhập để đồng bộ chuyến đi, địa điểm yêu thích và kế hoạch trên mọi thiết bị.",
+    google: "Tiếp tục với Google",
+    signingIn: "Đang đăng nhập...",
+    legal:
+      "Khi tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư của Loka.",
+    errors: {
+      signIn: "Không thể đăng nhập bằng Google. Vui lòng thử lại.",
+      network: "Không thể kết nối đến máy chủ. Hãy kiểm tra địa chỉ API và kết nối mạng.",
+    },
+  },
   profile: {
     title: "Hồ sơ của tôi",
-    name: "Người dùng Loka",
-    email: "loka.user@example.com",
-    phone: "+84 987 654 321",
+    fallbackName: "Người dùng Loka",
+    googleAccount: "Tài khoản Google",
     editProfile: "Chỉnh sửa hồ sơ",
+    signOutErrorTitle: "Chưa thể đăng xuất",
+    signOutError: "Không thể kết nối đến máy chủ. Vui lòng thử lại.",
     languages: {
       vi: "Tiếng Việt",
       en: "Tiếng Anh",
@@ -505,6 +519,11 @@ const vi = {
       deleteAccount: {
         title: "Xóa tài khoản",
         subtitle: "Yêu cầu xóa tài khoản vĩnh viễn",
+      },
+      signOut: {
+        title: "Đăng xuất",
+        pending: "Đang đăng xuất...",
+        subtitle: "Đăng xuất khỏi tài khoản này",
       },
     },
   },

@@ -5,6 +5,7 @@ import type { PropsWithChildren } from "react";
 import { I18nManager } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { AuthProvider } from "@/features/auth/auth-provider";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import { queryClient } from "@/lib/query/query-client";
 import { AppThemeProvider } from "@/theme/theme-provider";
@@ -32,7 +33,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <AppThemeProvider>
           <HeroUINativeProvider config={heroUIConfig}>
             <QueryClientProvider client={queryClient}>
-              {children}
+              <AuthProvider>{children}</AuthProvider>
             </QueryClientProvider>
           </HeroUINativeProvider>
         </AppThemeProvider>

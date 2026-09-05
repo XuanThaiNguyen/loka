@@ -39,9 +39,9 @@ and `tsconfig.json` remain at the project root, as recommended by Expo Router.
 
 ## Routing notes
 
-- `(tabs)` is the current protected-product shell candidate, but authentication is
-  not implemented yet. Add `(auth)` and a protected `(main)` group only when the
-  app has a real session source.
+- `(tabs)` and the detail routes are protected by the Better Auth session in the
+  root stack. Unauthenticated users are routed to `/sign-in`; native session
+  cookies and the session cache are persisted through Expo SecureStore.
 - The current JavaScript tab navigator is intentional because the center action has
   custom presentation. Native tabs can replace it later if that visual requirement
   is removed or supported by the SDK API.

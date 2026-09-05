@@ -463,12 +463,26 @@ const en = {
       culture: "Culture",
     },
   },
+  auth: {
+    title: "Start your next journey",
+    description:
+      "Sign in to sync your trips, favorites, and travel plans across devices.",
+    google: "Continue with Google",
+    signingIn: "Signing in...",
+    legal:
+      "By continuing, you agree to Loka's Terms of Use and Privacy Policy.",
+    errors: {
+      signIn: "Google sign-in could not be completed. Please try again.",
+      network: "The server could not be reached. Check the API URL and your connection.",
+    },
+  },
   profile: {
     title: "My Profile",
-    name: "Loka User",
-    email: "loka.user@example.com",
-    phone: "+84 987 654 321",
+    fallbackName: "Loka User",
+    googleAccount: "Google account",
     editProfile: "Edit profile",
+    signOutErrorTitle: "Unable to sign out",
+    signOutError: "The server could not be reached. Please try again.",
     languages: {
       vi: "Vietnamese",
       en: "English",
@@ -504,6 +518,11 @@ const en = {
       deleteAccount: {
         title: "Delete account",
         subtitle: "Request permanent account deletion",
+      },
+      signOut: {
+        title: "Sign out",
+        pending: "Signing out...",
+        subtitle: "Sign out of this account",
       },
     },
   },

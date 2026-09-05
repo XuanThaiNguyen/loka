@@ -9,8 +9,8 @@ not implemented yet and can be adjusted by the backend team before integration.
 
 ## 1. Current application overview
 
-The app currently opens directly into the main tab layout. Authentication,
-onboarding, and session restoration are not implemented.
+The app opens into Google sign-in when no Better Auth session is available. A
+restored session opens the protected main tab layout directly.
 
 ### Main tabs
 
@@ -37,7 +37,8 @@ onboarding, and session restoration are not implemented.
 - My Trips contains two hard-coded bookings and one in-memory demo travel plan.
 - Newly generated travel plans remain available only until the app process restarts.
 - Profile identity, contact details, booking counts, and payment labels are static.
-- The shared Axios API client exists but is not used by a feature yet.
+- The shared API request helper attaches the Better Auth cookie on native and uses
+  browser credentials on web, but feature data still comes from local mocks.
 - AI Planner calls OpenRouter directly from the app when a public API key is present.
 - Vietnamese and English UI dictionaries are bundled in the app.
 
@@ -376,9 +377,9 @@ date-selection step, rather than inventing fixed dates.
 
 ## 2.10 Authentication and session
 
-Authentication UI does not exist yet, but most personalized APIs require a user
-identity. Backend and frontend should agree on the authentication strategy before
-favorites, bookings, profile, or travel-plan persistence are integrated.
+Google authentication, session restoration, protected navigation, and sign-out are
+integrated with the backend's Better Auth routes. Personalized feature data still
+needs to replace the local mocks incrementally.
 
 Minimum expected flows:
 
@@ -840,8 +841,8 @@ This phase allows frontend integration without changing transactional behavior.
 
 ## 7. Frontend integration notes
 
-- The existing shared Axios client can be used once `EXPO_PUBLIC_API_URL` points to
-  the backend.
+- The shared `apiRequest` helper can be used once `EXPO_PUBLIC_API_URL` points to
+  the backend; it forwards the persisted Better Auth session cookie.
 - TanStack Query is already configured and should own server state, caching, retry,
   and invalidation.
 - Local component state should remain only for transient presentation state such as
