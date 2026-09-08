@@ -140,9 +140,33 @@ export function DestinationDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t("travel.detail.details")}</Text>
+          {destination.tags?.length ? (
+            <View style={styles.tagList}>
+              {destination.tags.map((tag) => (
+                <View key={tag} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           <Text style={styles.description}>
             {destination.description ?? t(`travel.destinations.${destination.id}.description`)}
           </Text>
+          {destination.openingHours ? (
+            <View style={styles.detailRow}>
+              <Ionicons name="time-outline" size={18} color={theme.colors.light.accent} />
+              <View style={styles.detailRowText}>
+                <Text style={styles.detailLabel}>{t("travel.detail.openingHours")}</Text>
+                <Text selectable style={styles.detailValue}>{destination.openingHours}</Text>
+              </View>
+            </View>
+          ) : null}
+          {destination.tips ? (
+            <View style={styles.tipCard}>
+              <Text style={styles.tipLabel}>{t("travel.detail.visitorTip")}</Text>
+              <Text selectable style={styles.tipText}>{destination.tips}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -164,7 +188,7 @@ export function DestinationDetailScreen() {
                 />
                 {index === destinationGallery.length - 1 ? (
                   <View style={styles.galleryCount}>
-                    <Text style={styles.galleryCountText}>12+</Text>
+                    <Text style={styles.galleryCountText}>{destinationGallery.length}</Text>
                   </View>
                 ) : null}
               </View>
@@ -316,6 +340,65 @@ const styles = StyleSheet.create({
     color: theme.colors.light.gray[500],
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
+  },
+  tagList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing[2],
+  },
+  tag: {
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: theme.spacing[1],
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.light.orange[50],
+  },
+  tagText: {
+    color: theme.colors.light.accent,
+    fontSize: theme.typography.fontSize.xs,
+    lineHeight: theme.typography.lineHeight.xs,
+    fontWeight: "700",
+  },
+  detailRow: {
+    padding: theme.spacing[3],
+    borderRadius: theme.radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing[3],
+    backgroundColor: theme.colors.light.gray[50],
+  },
+  detailRowText: {
+    flex: 1,
+    gap: 2,
+  },
+  detailLabel: {
+    color: theme.colors.light.gray[500],
+    fontSize: theme.typography.fontSize.xs,
+    lineHeight: theme.typography.lineHeight.xs,
+    fontWeight: "700",
+  },
+  detailValue: {
+    color: theme.colors.light.gray[900],
+    fontSize: theme.typography.fontSize.sm,
+    lineHeight: theme.typography.lineHeight.sm,
+    fontWeight: "700",
+  },
+  tipCard: {
+    padding: theme.spacing[4],
+    borderRadius: theme.radius.md,
+    gap: theme.spacing[1],
+    backgroundColor: theme.colors.light.orange[50],
+  },
+  tipLabel: {
+    color: theme.colors.light.accent,
+    fontSize: theme.typography.fontSize.xs,
+    lineHeight: theme.typography.lineHeight.xs,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  tipText: {
+    color: theme.colors.light.gray[700],
+    fontSize: theme.typography.fontSize.sm,
+    lineHeight: theme.typography.lineHeight.sm,
   },
   seeAll: {
     color: theme.colors.light.accent,

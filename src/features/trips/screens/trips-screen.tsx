@@ -27,6 +27,7 @@ import {
   useTrips,
 } from "@/features/trips/services/trips-api-service";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
+import { minorToMajor } from "@/lib/money";
 import { theme } from "@/theme/theme";
 
 type WorkspaceTab = "trips" | "booking" | "planning";
@@ -107,7 +108,7 @@ export function TripsScreen() {
                 destination={booking.destinationView}
                 date={formatDateRange(booking.startDate, booking.endDate)}
                 countdown={formatCountdown(booking.startDate)}
-                totalPrice={booking.total.amountMinor / 100}
+                totalPrice={minorToMajor(booking.total.amountMinor, booking.total.currency)}
                 currency={booking.total.currency}
                 travellerCount={booking.travellerCount}
                 reminderEnabled={booking.reminderEnabled}
@@ -151,7 +152,7 @@ function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter,
           <Text style={styles.workspaceTitle}>{t("trips.workspaceTitle")}</Text>
           <Text style={styles.workspaceDescription}>{t("trips.workspaceDescription")}</Text>
         </View>
-        <Pressable accessibilityLabel={t("trips.createTrip")} onPress={() => router.push("/explore")} style={styles.addButton}>
+        <Pressable accessibilityLabel={t("trips.createTrip")} onPress={() => router.push("/trip/new")} style={styles.addButton}>
           <Ionicons name="add" size={21} color={theme.colors.light.base.white} />
         </Pressable>
       </View>
@@ -184,7 +185,7 @@ function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter,
 
       {isPending ? <LoadingState /> : error ? <ErrorState message={errorMessage(error, t("trips.errors.trips"))} onRetry={onRetry} /> : trips.length > 0 ? (
         <View style={styles.list}>{trips.map((trip) => <TripWorkspaceCard key={trip.id} trip={trip} now={now} />)}</View>
-      ) : <EmptyState icon="map-outline" title={filter === "all" ? t("trips.emptyTripsTitle") : t("trips.emptyFilteredTitle")} description={t("trips.emptyTripsDescription")} action={t("trips.createTrip")} onAction={() => router.push("/explore")} />}
+      ) : <EmptyState icon="map-outline" title={filter === "all" ? t("trips.emptyTripsTitle") : t("trips.emptyFilteredTitle")} description={t("trips.emptyTripsDescription")} action={t("trips.createTrip")} onAction={() => router.push("/trip/new")} />}
     </>
   );
 }
@@ -197,7 +198,7 @@ function TripWorkspaceCard({ trip, now }: { trip: TripDTO; now: number }) {
       <View style={styles.tripIcon}><Ionicons name={phase === "past" ? "checkmark" : phase === "ongoing" ? "navigate" : "airplane"} size={21} color={theme.colors.light.accent} /></View>
       <View style={styles.flexText}>
         <View style={styles.itemTitleRow}><Text selectable numberOfLines={1} style={styles.itemTitle}>{trip.name}</Text><View style={styles.statusPill}><Text style={styles.statusText}>{t(`trips.filters.${trip.status}`)}</Text></View></View>
-        <Text selectable numberOfLines={1} style={styles.itemMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t(`trips.phases.${phase}`)}</Text>
+        <Text selectable numberOfLines={1} style={styles.itemMeta}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)} · {t(`trips.phases.${phase}`)}</Text>
         {trip.description ? <Text selectable numberOfLines={2} style={styles.itemDescription}>{trip.description}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={19} color={theme.colors.light.gray[400]} />

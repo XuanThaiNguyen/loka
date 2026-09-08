@@ -14,6 +14,7 @@ import {
   type DataEnvelope,
   type PageEnvelope,
 } from "@/lib/api/client";
+import { formatMoneyMinor, majorToMinor, minorToMajor } from "@/lib/money";
 
 type TravelPlanStatus = "planning" | "archived";
 type TravellerType = "solo" | "couple" | "family" | "friends";
@@ -194,7 +195,9 @@ function mapTravelPlanSummary(plan: TravelPlanSummaryDTO): UserTravelPlan {
     rawStartDate: plan.startDate,
     rawEndDate: plan.endDate,
     totalPeople: plan.travellerCount,
-    estimatedCost: (plan.estimatedCost?.amountMinor ?? 0) / 100,
+    estimatedCost: plan.estimatedCost
+      ? minorToMajor(plan.estimatedCost.amountMinor, plan.estimatedCost.currency)
+      : 0,
     rating: (plan.rating ?? 0).toFixed(1),
     status: plan.status === "planning" ? "planned" : "completed",
     apiStatus: plan.status,
@@ -209,18 +212,21 @@ function mapTravelPlanSummary(plan: TravelPlanSummaryDTO): UserTravelPlan {
 }
 
 function mapTravelPlan(plan: TravelPlanDTO): UserTravelPlan {
+  const currency = plan.estimatedCost?.currency ?? "USD";
   return {
     ...mapTravelPlanSummary(plan),
-    hotels: plan.itinerary.hotels.map(mapHotel),
-    days: plan.itinerary.days.map(mapDay),
+    hotels: plan.itinerary.hotels.map((hotel) => mapHotel(hotel, currency)),
+    days: plan.itinerary.days.map((day) => mapDay(day, currency)),
   };
 }
 
-function mapHotel(hotel: ApiHotel): TravelPlanHotel {
+function mapHotel(hotel: ApiHotel, currency: string): TravelPlanHotel {
   return {
     hotelName: hotel.name,
     hotelAddress: hotel.address ?? "",
-    pricePerNight: hotel.nightlyPriceMinor == null ? "—" : `$${(hotel.nightlyPriceMinor / 100).toFixed(0)}`,
+    pricePerNight: hotel.nightlyPriceMinor == null
+      ? "—"
+      : formatMoneyMinor(hotel.nightlyPriceMinor, currency),
     hotelImageUrl: hotel.imageUrl ?? getDestinationImage(hotel.name),
     geoCoordinates: { latitude: 0, longitude: 0 },
     rating: hotel.rating ?? 0,
@@ -228,17 +234,17 @@ function mapHotel(hotel: ApiHotel): TravelPlanHotel {
   };
 }
 
-function mapDay(day: ApiDay): TravelPlanDay {
+function mapDay(day: ApiDay, currency: string): TravelPlanDay {
   return {
     day: day.day,
     title: day.title ?? `Day ${day.day}`,
     summary: "",
     bestTimeToVisitDay: "",
-    activities: day.activities.map(mapActivity),
+    activities: day.activities.map((activity) => mapActivity(activity, currency)),
   };
 }
 
-function mapActivity(activity: ApiActivity): TravelPlanActivity {
+function mapActivity(activity: ApiActivity, currency: string): TravelPlanActivity {
   return {
     placeName: activity.name,
     placeDetails: activity.description ?? "",
@@ -248,13 +254,16 @@ function mapActivity(activity: ApiActivity): TravelPlanActivity {
       longitude: activity.longitude ?? 0,
     },
     placeAddress: activity.address ?? "",
-    ticketPricing: activity.ticketPriceMinor == null ? "—" : `$${(activity.ticketPriceMinor / 100).toFixed(0)}`,
+    ticketPricing: activity.ticketPriceMinor == null
+      ? "—"
+      : formatMoneyMinor(activity.ticketPriceMinor, currency),
     travelTime: activity.travelTimeMinutes == null ? "—" : `${activity.travelTimeMinutes} min`,
     bestTimeToVisit: activity.bestTime ?? "",
   };
 }
 
 function toCreateInput(plan: UserTravelPlan): TravelPlanCreateInput {
+  const currency = plan.currency ?? "USD";
   return {
     name: plan.name,
     origin: plan.origin ?? "Unknown",
@@ -269,15 +278,15 @@ function toCreateInput(plan: UserTravelPlan): TravelPlanCreateInput {
     specialRequirements: plan.specialRequirements ?? null,
     summary: plan.summary,
     coverImageUrl: plan.image,
-    estimatedCostMinor: Math.round(plan.estimatedCost * 100),
-    currency: "USD",
+    estimatedCostMinor: majorToMinor(plan.estimatedCost, currency),
+    currency,
     rating: Number(plan.rating) || null,
     itinerary: {
       hotels: plan.hotels.map((hotel) => ({
         name: hotel.hotelName,
         address: hotel.hotelAddress || null,
         imageUrl: hotel.hotelImageUrl || null,
-        nightlyPriceMinor: moneyStringToMinor(hotel.pricePerNight),
+        nightlyPriceMinor: moneyStringToMinor(hotel.pricePerNight, currency),
         rating: hotel.rating || null,
       })),
       days: plan.days.map((day) => ({
@@ -291,7 +300,7 @@ function toCreateInput(plan: UserTravelPlan): TravelPlanCreateInput {
           latitude: activity.geoCoordinates.latitude || null,
           longitude: activity.geoCoordinates.longitude || null,
           bestTime: activity.bestTimeToVisit || null,
-          ticketPriceMinor: moneyStringToMinor(activity.ticketPricing),
+          ticketPriceMinor: moneyStringToMinor(activity.ticketPricing, currency),
           travelTimeMinutes: Number.parseInt(activity.travelTime, 10) || null,
         })),
       })),
@@ -307,9 +316,9 @@ function toBudgetType(value: string): BudgetType {
   return value === "balanced" || value === "premium" ? value : "cheap";
 }
 
-function moneyStringToMinor(value: string) {
+function moneyStringToMinor(value: string, currency: string) {
   const amount = Number(value.replace(/[^0-9.]/g, ""));
-  return Number.isFinite(amount) ? Math.round(amount * 100) : null;
+  return Number.isFinite(amount) ? majorToMinor(amount, currency) : null;
 }
 
 function formatDate(value: string) {

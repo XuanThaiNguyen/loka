@@ -12,7 +12,15 @@ import {
 } from "@/lib/api/client";
 
 export type TripStatus = "planning" | "confirmed" | "completed" | "cancelled";
+export type TripBudgetScope = "person" | "group";
 export type BookingStatus = "upcoming" | "confirmed" | "completed" | "cancelled" | "no_show";
+
+export type TripCityDTO = {
+  id: string;
+  name: string;
+  country: string;
+  coverImageUrl: string;
+};
 
 export type TripDTO = {
   id: number;
@@ -21,6 +29,11 @@ export type TripDTO = {
   status: TripStatus;
   startDate: string;
   endDate: string;
+  cityId: string | null;
+  city: TripCityDTO | null;
+  budgetVnd: number | null;
+  budgetScope: TripBudgetScope | null;
+  crewNumber: number;
   accessRole: "owner" | "viewer" | "editor";
   createdAt: string;
   updatedAt: string;
@@ -47,8 +60,6 @@ type TripStopDTO = {
   id: string;
   destinationId: string;
   position: number;
-  arrivalDate: string;
-  departureDate: string;
   destination: Pick<DestinationDTO, "id" | "title" | "slug" | "coverImageUrl"> & {
     location: { city: string; country: string; latitude?: number; longitude?: number };
   };
@@ -94,7 +105,11 @@ export type TripWrite = {
   startDate: string;
   endDate: string;
   status?: TripStatus;
-  stops?: { destinationId: string; arrivalDate: string; departureDate: string }[];
+  cityId?: string | null;
+  budgetVnd?: number | null;
+  budgetScope?: TripBudgetScope | null;
+  crewNumber?: number;
+  stops?: { destinationId: string }[];
   invitationEmails?: string[];
 };
 

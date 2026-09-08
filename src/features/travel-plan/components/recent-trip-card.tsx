@@ -58,7 +58,13 @@ export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
           <Text style={styles.people}>
             {t("travelPlan.generated.peopleCount", { count: trip.totalPeople })}
           </Text>
-          <Text style={styles.price}>${trip.estimatedCost.toFixed(0)}</Text>
+          <Text style={styles.price}>
+            {new Intl.NumberFormat(undefined, {
+              style: "currency",
+              currency: trip.currency ?? "USD",
+              maximumFractionDigits: 0,
+            }).format(trip.estimatedCost)}
+          </Text>
         </View>
       </View>
     </Pressable>

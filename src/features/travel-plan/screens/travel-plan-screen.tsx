@@ -42,10 +42,13 @@ import {
   useTrip,
   useTrips,
 } from "@/features/trips/services/trips-api-service";
-import { useDestinationSuggestions } from "@/features/travel/services/travel-api-service";
-import type { Destination } from "@/features/travel/travel.data";
+import {
+  type CityDTO,
+  useCitySuggestions,
+} from "@/features/travel/services/travel-api-service";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { ApiError } from "@/lib/api/client";
+import { formatMoneyMinor, majorToMinor, minorToMajor } from "@/lib/money";
 import { theme } from "@/theme/theme";
 
 type WizardForm = {
@@ -82,6 +85,9 @@ const paceOptions = ["relaxed", "balanced", "packed"] as const;
 const transportSuggestionIds = ["train", "rentalCar", "flights"] as const;
 const accommodationSuggestionIds = ["hotel", "homestay", "apartment"] as const;
 const mustDoSuggestionIds = ["localFood", "sunsetViewpoint", "historicLandmarks"] as const;
+const tripBudgetPresets = [5_000_000, 10_000_000, 20_000_000, 50_000_000] as const;
+const maxTripBudgetVnd = 1_000_000_000_000;
+const maxTripCrew = 50;
 
 export function TravelPlanScreen() {
   const { t } = useTranslation();
@@ -188,7 +194,7 @@ export function CreateTripScreen() {
   const insets = useSafeAreaInsets();
   const topInset = insets.top;
   const bottomPadding = Math.max(insets.bottom, theme.spacing[3]);
-  const suggestionsQuery = useDestinationSuggestions();
+  const citiesQuery = useCitySuggestions();
   const createTrip = useCreateTrip();
   const scrollRef = useRef<ScrollView>(null);
   const today = dateOnly(new Date());
@@ -199,17 +205,25 @@ export function CreateTripScreen() {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(dateOnly(addDays(new Date(), 4)));
   const [description, setDescription] = useState("");
-  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [selectedCity, setSelectedCity] = useState<CityDTO | null>(null);
+  const [crewNumber, setCrewNumber] = useState(2);
+  const [budgetVnd, setBudgetVnd] = useState("");
+  const [budgetScope, setBudgetScope] = useState<"person" | "group">("person");
   const onCancel = () => router.back();
+  const budgetValue = budgetVnd ? Number(budgetVnd) : null;
   const dateError = !isDateOnly(startDate) || !isDateOnly(endDate)
     ? t("travelPlan.workspace.invalidDate")
     : endDate < startDate ? t("travelPlan.workspace.dateOrderError") : null;
-  const canContinue = stepIndex === 0 ? Boolean(name.trim()) : stepIndex === 1 ? !dateError : true;
+  const tripContextValid = Number.isInteger(crewNumber)
+    && crewNumber >= 1
+    && crewNumber <= maxTripCrew
+    && (budgetValue === null || (Number.isInteger(budgetValue) && budgetValue >= 0 && budgetValue <= maxTripBudgetVnd));
+  const canContinue = stepIndex === 0 ? Boolean(name.trim()) : stepIndex === 1 ? !dateError : tripContextValid;
 
-  const selectDestination = (destination: Destination) => {
-    setSelectedDestination(destination);
+  const selectCity = (city: CityDTO) => {
+    setSelectedCity(city);
     if (!name.trim()) {
-      setName(t("travelPlan.workspace.defaultTripName", { destination: destination.title ?? destination.location ?? "Trip" }));
+      setName(t("travelPlan.workspace.defaultTripName", { destination: city.name }));
     }
   };
 
@@ -235,10 +249,11 @@ export function CreateTripScreen() {
         description: description.trim() || null,
         startDate,
         endDate,
+        cityId: selectedCity?.id ?? null,
+        crewNumber,
+        budgetVnd: budgetValue,
+        budgetScope: budgetValue === null ? null : budgetScope,
         invitationEmails: [],
-        stops: selectedDestination?.apiBacked
-          ? [{ destinationId: selectedDestination.id, arrivalDate: startDate, departureDate: endDate }]
-          : [],
       });
       router.replace({ pathname: "/explore", params: { tripId: String(response.data.id) } });
     } catch (error) {
@@ -270,23 +285,24 @@ export function CreateTripScreen() {
               <FormField label={t("travelPlan.workspace.tripName")} required>
                 <TextInput autoFocus maxLength={200} value={name} onChangeText={setName} placeholder={t("travelPlan.workspace.tripNamePlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} returnKeyType="done" style={styles.input} />
               </FormField>
-              {(suggestionsQuery.data?.length ?? 0) > 0 ? (
-                <FormField label={t("travelPlan.workspace.destinationOptional")}>
+              {(citiesQuery.data?.length ?? 0) > 0 ? (
+                <FormField label={t("travelPlan.workspace.cityOptional")}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionRow}>
-                    {suggestionsQuery.data?.map((destination) => {
-                      const selected = selectedDestination?.id === destination.id;
+                    {citiesQuery.data?.map((city) => {
+                      const selected = selectedCity?.id === city.id;
                       return (
-                        <Pressable key={destination.id} onPress={() => selectDestination(destination)} style={[styles.destinationChip, selected && styles.selectedCard]}>
-                          <Image source={{ uri: destination.image }} style={styles.destinationChipImage} contentFit="cover" />
+                        <Pressable key={city.id} onPress={() => selectCity(city)} style={[styles.destinationChip, selected && styles.selectedCard]}>
+                          <Image source={{ uri: city.coverImageUrl }} style={styles.destinationChipImage} contentFit="cover" />
                           <View style={styles.destinationChipText}>
-                            <Text numberOfLines={1} style={styles.chipTitle}>{destination.title}</Text>
-                            <Text numberOfLines={1} style={styles.chipSubtitle}>{destination.location}</Text>
+                            <Text numberOfLines={1} style={styles.chipTitle}>{city.name}</Text>
+                            <Text numberOfLines={1} style={styles.chipSubtitle}>{city.country}</Text>
                           </View>
                           {selected ? <Ionicons name="checkmark-circle" size={20} color={theme.colors.light.accent} /> : null}
                         </Pressable>
                       );
                     })}
                   </ScrollView>
+                  {selectedCity ? <Pressable onPress={() => setSelectedCity(null)}><Text style={styles.clearSelectionText}>{t("common.clear")}</Text></Pressable> : null}
                 </FormField>
               ) : null}
               {attemptedStep === 0 && !name.trim() ? <Text selectable style={styles.errorText}>{t("travelPlan.workspace.tripNameRequired")}</Text> : null}
@@ -311,12 +327,42 @@ export function CreateTripScreen() {
                 <SummaryRow icon="airplane-outline" label={t("travelPlan.workspace.tripName")} value={name.trim()} />
                 <View style={styles.summaryDivider} />
                 <SummaryRow icon="calendar-outline" label={t("travelPlan.workspace.tripDates")} value={formatDateRange(startDate, endDate)} />
-                {selectedDestination ? <><View style={styles.summaryDivider} /><SummaryRow icon="location-outline" label={t("travelPlan.workspace.destinationOptional")} value={selectedDestination.title ?? selectedDestination.location ?? String(selectedDestination.id)} /></> : null}
+                {selectedCity ? <><View style={styles.summaryDivider} /><SummaryRow icon="location-outline" label={t("travelPlan.workspace.cityOptional")} value={`${selectedCity.name}, ${selectedCity.country}`} /></> : null}
               </View>
               <View style={styles.mobileFormSection}>
+                <FormField label={t("travelPlan.workspace.crewSize")} description={t("travelPlan.workspace.crewSizeHint", { max: maxTripCrew })} required>
+                  <NumberStepper value={crewNumber} min={1} max={maxTripCrew} onChange={setCrewNumber} />
+                </FormField>
+                <FormField label={t("travelPlan.workspace.tripBudget")} description={t("travelPlan.workspace.tripBudgetHint")}>
+                  <TextInput
+                    keyboardType="number-pad"
+                    maxLength={13}
+                    value={budgetVnd}
+                    onChangeText={(value) => setBudgetVnd(value.replace(/\D/g, "").slice(0, 13))}
+                    placeholder={t("travelPlan.workspace.tripBudgetPlaceholder")}
+                    placeholderTextColor={theme.colors.light.gray[400]}
+                    style={styles.input}
+                  />
+                  <View style={styles.wrapRow}>
+                    {tripBudgetPresets.map((amount) => (
+                      <Pressable key={amount} onPress={() => setBudgetVnd(String(amount))} style={[styles.suggestionChip, budgetValue === amount && styles.selectedSuggestion]}>
+                        <Text style={[styles.suggestionText, budgetValue === amount && styles.selectedChipText]}>{formatMoneyMinor(amount, "VND")}</Text>
+                      </Pressable>
+                    ))}
+                    {budgetValue !== null ? (
+                      <Pressable onPress={() => setBudgetVnd("")} style={styles.suggestionChip}>
+                        <Text style={styles.suggestionText}>{t("common.clear")}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  {budgetValue !== null ? (
+                    <OptionRow values={["person", "group"]} selected={budgetScope} label={(value) => t(`travelPlan.workspace.budgetScopes.${value}`)} onSelect={(value) => setBudgetScope(value as "person" | "group")} />
+                  ) : null}
+                </FormField>
                 <FormField label={t("travelPlan.workspace.tripNotes")}>
                   <TextInput multiline maxLength={5000} value={description} onChangeText={setDescription} placeholder={t("travelPlan.workspace.tripNotesPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.textArea]} />
                 </FormField>
+                {attemptedStep === 2 && !tripContextValid ? <Text selectable style={styles.errorText}>{t("travelPlan.workspace.tripContextInvalid")}</Text> : null}
               </View>
             </View>
           ) : null}
@@ -500,7 +546,14 @@ function PlannerWizard({ trip, topInset, bottomPadding, onBack, onSaved }: { tri
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
-  const [form, setForm] = useState(initialWizardForm);
+  const [form, setForm] = useState<WizardForm>(() => trip.budgetVnd == null
+    ? initialWizardForm
+    : {
+        ...initialWizardForm,
+        budgetAmount: String(trip.budgetVnd),
+        currency: "VND",
+        budgetScope: trip.budgetScope ?? "person",
+      });
   const patch = (values: Partial<WizardForm>) => setForm((current) => ({ ...current, ...values }));
   const budgetValue = form.budgetAmount.trim() ? Number(form.budgetAmount) : null;
   const currencyValid = /^[A-Za-z]{3}$/.test(form.currency.trim());
@@ -528,7 +581,7 @@ function PlannerWizard({ trip, topInset, bottomPadding, onBack, onSaved }: { tri
     const input: PlannerSessionInput = {
       tripId: trip.id,
       origin: form.origin.trim(),
-      budgetAmountMinor: budgetValue === null ? null : Math.round(budgetValue * 100),
+      budgetAmountMinor: budgetValue === null ? null : majorToMinor(budgetValue, form.currency),
       currency: form.currency.trim().toUpperCase(),
       budgetScope: budgetValue === null ? null : form.budgetScope,
       transportPreference: emptyToNull(form.transportPreference),
@@ -606,7 +659,7 @@ function RouteStep({ trip, form, patch }: StepProps & { trip: TripDetailDTO }) {
         <View style={styles.tripSummaryIcon}><Ionicons name="airplane-outline" size={21} color={theme.colors.light.accent} /></View>
         <View style={styles.tripSummaryText}>
           <Text style={styles.tripSummaryName}>{trip.name}</Text>
-          <Text style={styles.tripSummaryMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t("travelPlan.workspace.travellerCount", { count: trip.companions.length + 1 })}</Text>
+          <Text style={styles.tripSummaryMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t("travelPlan.workspace.travellerCount", { count: trip.crewNumber ?? trip.companions.length + 1 })}</Text>
           <Text style={styles.tripSummaryRoute}>{route}</Text>
         </View>
       </View>
@@ -700,7 +753,7 @@ function WorkspaceSummary({ session, topInset, bottomPadding, onChooseAnother, o
   const deleteSession = useDeletePlannerSession();
   const budget = session.budgetAmountMinor === null
     ? t("travelPlan.workspace.notSet")
-    : `${new Intl.NumberFormat(undefined, { style: "currency", currency: session.currency }).format(session.budgetAmountMinor / 100)} · ${t(`travelPlan.workspace.budgetScopes.${session.budgetScope ?? "group"}`)}`;
+    : `${formatMoneyMinor(session.budgetAmountMinor, session.currency)} · ${t(`travelPlan.workspace.budgetScopes.${session.budgetScope ?? "group"}`)}`;
 
   if (editing) {
     return (
@@ -759,7 +812,7 @@ function PlannerSessionEditor({ session, topInset, bottomPadding, onCancel, onSa
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
   const [form, setForm] = useState<WizardForm>({
     origin: session.origin,
-    budgetAmount: session.budgetAmountMinor === null ? "" : String(session.budgetAmountMinor / 100),
+    budgetAmount: session.budgetAmountMinor === null ? "" : String(minorToMajor(session.budgetAmountMinor, session.currency)),
     currency: session.currency,
     budgetScope: session.budgetScope ?? "group",
     transportPreference: session.transportPreference ?? "",
@@ -790,7 +843,7 @@ function PlannerSessionEditor({ session, topInset, bottomPadding, onCancel, onSa
     id: session.id,
     input: {
       origin: form.origin.trim(),
-      budgetAmountMinor: budgetValue === null ? null : Math.round(budgetValue * 100),
+      budgetAmountMinor: budgetValue === null ? null : majorToMinor(budgetValue, form.currency),
       currency: form.currency.trim().toUpperCase(),
       budgetScope: budgetValue === null ? null : form.budgetScope,
       transportPreference: emptyToNull(form.transportPreference),
@@ -912,7 +965,7 @@ function PlannerHeader({ topInset, onBack }: { topInset: number; onBack?: () => 
 
 function TripChoiceCard({ trip, onPress }: { trip: TripDTO; onPress: () => void }) {
   const { t } = useTranslation();
-  return <Pressable onPress={onPress} style={({ pressed }) => [styles.tripCard, pressed && styles.pressed]}><View style={styles.tripCardIcon}><Ionicons name="airplane" size={20} color={theme.colors.light.accent} /></View><View style={styles.tripCardContent}><Text numberOfLines={1} style={styles.tripCardTitle}>{trip.name}</Text><Text style={styles.tripCardDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text></View><Text style={styles.tripCardAction}>{t("travelPlan.workspace.planThisTrip")}</Text><Ionicons name="chevron-forward" size={18} color={theme.colors.light.accent} /></Pressable>;
+  return <Pressable onPress={onPress} style={({ pressed }) => [styles.tripCard, pressed && styles.pressed]}><View style={styles.tripCardIcon}><Ionicons name="airplane" size={20} color={theme.colors.light.accent} /></View><View style={styles.tripCardContent}><Text numberOfLines={1} style={styles.tripCardTitle}>{trip.name}</Text><Text numberOfLines={1} style={styles.tripCardDate}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)}</Text></View><Text style={styles.tripCardAction}>{t("travelPlan.workspace.planThisTrip")}</Text><Ionicons name="chevron-forward" size={18} color={theme.colors.light.accent} /></Pressable>;
 }
 
 function FormField({ label, description, required, children, style }: { label: string; description?: string; required?: boolean; children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -925,6 +978,20 @@ function SuggestionChips({ values, selected, onSelect }: { values: readonly stri
 
 function OptionRow({ values, selected, label, onSelect }: { values: readonly string[]; selected: string; label: (value: string) => string; onSelect: (value: string) => void }) {
   return <View style={styles.optionRow}>{values.map((value) => { const active = selected === value; return <Pressable key={value} onPress={() => onSelect(value)} style={[styles.optionButton, active && styles.selectedOption]}><Text style={[styles.optionButtonText, active && styles.selectedOptionText]}>{label(value)}</Text></Pressable>; })}</View>;
+}
+
+function NumberStepper({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (value: number) => void }) {
+  return (
+    <View style={styles.numberStepper}>
+      <Pressable accessibilityRole="button" disabled={value <= min} hitSlop={8} onPress={() => onChange(Math.max(min, value - 1))} style={[styles.numberStepperButton, value <= min && styles.disabled]}>
+        <Ionicons name="remove" size={20} color={theme.colors.light.gray[700]} />
+      </Pressable>
+      <Text selectable style={styles.numberStepperValue}>{value}</Text>
+      <Pressable accessibilityRole="button" disabled={value >= max} hitSlop={8} onPress={() => onChange(Math.min(max, value + 1))} style={[styles.numberStepperButton, value >= max && styles.disabled]}>
+        <Ionicons name="add" size={20} color={theme.colors.light.gray[700]} />
+      </Pressable>
+    </View>
+  );
 }
 
 function PrimaryButton({ label, icon, onPress, pending, disabled }: { label: string; icon?: keyof typeof Ionicons.glyphMap; onPress: () => void; pending?: boolean; disabled?: boolean }) {
@@ -1037,6 +1104,7 @@ const styles = StyleSheet.create({
   destinationChip: { width: 240, padding: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.background },
   destinationChipImage: { width: 44, height: 44, borderRadius: theme.radius.sm, backgroundColor: theme.colors.light.gray[100] },
   destinationChipText: { flex: 1, minWidth: 0 },
+  clearSelectionText: { alignSelf: "flex-start", color: theme.colors.light.accent, fontSize: 12, lineHeight: 17, fontWeight: "800" },
   chipTitle: { color: theme.colors.light.gray[900], fontSize: 13, lineHeight: 18, fontWeight: "900" },
   chipSubtitle: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "600" },
   selectedCard: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
@@ -1078,6 +1146,9 @@ const styles = StyleSheet.create({
   optionButtonText: { color: theme.colors.light.gray[600], fontSize: 12, lineHeight: 17, fontWeight: "800", textAlign: "center" },
   selectedOption: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.orange[50] },
   selectedOptionText: { color: theme.colors.light.accent },
+  numberStepper: { alignSelf: "flex-start", minHeight: 48, padding: 4, borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.background },
+  numberStepperButton: { width: 40, height: 40, borderRadius: theme.radius.sm, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.gray[100] },
+  numberStepperValue: { minWidth: 28, color: theme.colors.light.gray[900], fontSize: 17, lineHeight: 22, fontWeight: "900", textAlign: "center", fontVariant: ["tabular-nums"] },
   choiceChip: { minHeight: 42, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: 999, flexDirection: "row", alignItems: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.background },
   choiceChipText: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 17, fontWeight: "800" },
   selectedChip: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accent },

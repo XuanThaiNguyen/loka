@@ -24,6 +24,7 @@ export type CollectionSlug = string;
 
 export type Destination = {
   id: DestinationId;
+  cityId?: string;
   title?: string;
   location?: string;
   description?: string;
@@ -34,6 +35,14 @@ export type Destination = {
   currency?: string;
   visitors: string;
   category: "adventure" | "beach" | "culture" | "city" | "food";
+  tags?: readonly string[];
+  openingHours?: string;
+  tips?: string;
+  popularityRank?: number;
+  ratingCount?: number;
+  latitude?: number;
+  longitude?: number;
+  lastCuratedAt?: string;
   isFavorite?: boolean;
   isFeatured?: boolean;
   apiBacked?: boolean;

@@ -113,7 +113,7 @@ function HomeTripCard({ trip }: { trip: TripDTO }) {
   return (
     <Pressable onPress={() => router.push({ pathname: "/trip/[id]", params: { id: String(trip.id) } })} style={styles.tripCard}>
       <View style={styles.tripIcon}><Ionicons name="airplane" size={22} color={theme.colors.light.accent} /></View>
-      <View style={styles.plannerText}><Text selectable numberOfLines={1} style={styles.tripTitle}>{trip.name}</Text><Text selectable style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text><Text style={styles.tripRole}>{trip.accessRole === "owner" ? t("home.tripOwner") : t("home.tripShared")}</Text></View>
+      <View style={styles.plannerText}><Text selectable numberOfLines={1} style={styles.tripTitle}>{trip.name}</Text><Text selectable numberOfLines={1} style={styles.tripDate}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)}</Text><Text style={styles.tripRole}>{trip.accessRole === "owner" ? t("home.tripOwner") : t("home.tripShared")}</Text></View>
       <Ionicons name="chevron-forward" size={19} color={theme.colors.light.gray[400]} />
     </Pressable>
   );

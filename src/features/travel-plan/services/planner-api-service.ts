@@ -6,8 +6,8 @@ import {
 } from "@/lib/api/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type PlannerSessionStatus = "collecting" | "generating" | "completed" | "failed" | "expired";
-export type PlannerGenerationStatus = "queued" | "generating" | "completed" | "failed";
+export type PlannerSessionStatus = "collecting" | "generating" | "completed";
+export type PlannerGenerationStatus = "queued" | "generating" | "completed";
 
 export type PlannerSessionDTO = {
   id: string;

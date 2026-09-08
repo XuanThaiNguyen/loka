@@ -17,11 +17,13 @@ import {
   type DataEnvelope,
   type PageEnvelope,
 } from "@/lib/api/client";
+import { minorToMajor } from "@/lib/money";
 
 export type CatalogCategory = "adventure" | "beach" | "culture" | "city" | "food";
 
 export type DestinationDTO = {
   id: string;
+  cityId: string | null;
   slug: string;
   title: string;
   location: {
@@ -33,11 +35,28 @@ export type DestinationDTO = {
   };
   description: string | null;
   category: CatalogCategory;
+  tags: readonly string[];
+  openingHours: string | null;
+  tips: string | null;
   coverImageUrl: string;
   gallery: readonly string[];
   rating: { average: number; count: number };
   visitorCount: number;
+  popularityRank: number | null;
   fromPrice: { amountMinor: number; currency: string; unit: "person" };
+  pricingTiers: {
+    local: {
+      currency: string;
+      adultMinor: number;
+      childSeniorMinor?: number | null;
+      notes?: string | null;
+    };
+    approxUsd?: {
+      adultMinor: number;
+      childSeniorMinor?: number | null;
+    } | null;
+  } | null;
+  lastCuratedAt: string | null;
   isFeatured: boolean;
   isFavorite: boolean;
   createdAt: string;
@@ -54,6 +73,12 @@ export type CityDTO = {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CityListQuery = {
+  featured?: boolean;
+  q?: string;
+  limit?: number;
 };
 
 type CityDetailDTO = CityDTO & { destinations: DestinationDTO[] };
@@ -74,8 +99,8 @@ type CollectionPage = PageEnvelope<DestinationDTO & { rank: number }, {
 }>;
 
 export const catalogApi = {
-  listCities: (signal?: AbortSignal) =>
-    apiRequest<DataEnvelope<CityDTO[]>>(apiPath("/api/cities", { featured: true }), { signal }),
+  listCities: (query: CityListQuery = {}, signal?: AbortSignal) =>
+    apiRequest<DataEnvelope<CityDTO[]>>(apiPath("/api/cities", query), { signal }),
   getCity: (id: string, signal?: AbortSignal) =>
     apiRequest<DataEnvelope<CityDetailDTO>>(`/api/cities/${id}`, { signal }),
   listDestinations: (
@@ -83,6 +108,7 @@ export const catalogApi = {
       q?: string;
       category?: CatalogCategory;
       cityId?: string;
+      tag?: string;
       sort?: "recommended" | "rating" | "price_asc" | "price_desc" | "newest";
       cursor?: string;
       limit?: number;
@@ -111,12 +137,23 @@ export const favoritesApi = {
 
 export const travelQueryKeys = {
   home: ["catalog", "home"] as const,
+  citySuggestions: (q: string) => ["catalog", "city-suggestions", q] as const,
   city: (id: string) => ["catalog", "city", id] as const,
   collection: (slug: string) => ["catalog", "collection", slug] as const,
   destination: (id: string) => ["catalog", "destination", id] as const,
   favorites: ["favorites"] as const,
   suggestions: ["catalog", "destination-suggestions"] as const,
 };
+
+export function useCitySuggestions(q = "") {
+  const search = q.trim();
+  return useQuery({
+    queryKey: travelQueryKeys.citySuggestions(search),
+    queryFn: ({ signal }) => catalogApi.listCities({ q: search || undefined, limit: 12 }, signal),
+    select: (response) => response.data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export function useDestinationSuggestions() {
   return useQuery({
@@ -131,7 +168,7 @@ export function useHomeCatalog() {
     queryKey: travelQueryKeys.home,
     queryFn: async ({ signal }) => {
       const [cityResponse, collectionResponse] = await Promise.all([
-        catalogApi.listCities(signal),
+        catalogApi.listCities({ featured: true }, signal),
         catalogApi.listCollections(signal),
       ]);
       const collections = collectionResponse.data.length
@@ -254,16 +291,25 @@ export function useFavoriteMutation() {
 export function mapDestination(dto: DestinationDTO): Destination {
   return {
     id: dto.id,
+    cityId: dto.cityId ?? undefined,
     title: dto.title,
     location: dto.location.label,
     description: dto.description ?? "",
     image: dto.coverImageUrl,
-    gallery: dto.gallery,
+    gallery: dto.gallery ?? [],
     rating: dto.rating.average.toFixed(1),
-    price: dto.fromPrice.amountMinor / 100,
+    price: minorToMajor(dto.fromPrice.amountMinor, dto.fromPrice.currency),
     currency: dto.fromPrice.currency,
     visitors: formatCount(dto.visitorCount),
     category: dto.category,
+    tags: dto.tags ?? [],
+    openingHours: dto.openingHours ?? undefined,
+    tips: dto.tips ?? undefined,
+    popularityRank: dto.popularityRank ?? undefined,
+    ratingCount: dto.rating.count,
+    latitude: dto.location.latitude ?? undefined,
+    longitude: dto.location.longitude ?? undefined,
+    lastCuratedAt: dto.lastCuratedAt ?? undefined,
     isFavorite: dto.isFavorite,
     isFeatured: dto.isFeatured,
     apiBacked: true,

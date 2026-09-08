@@ -17,10 +17,15 @@ import {
 } from "react-native";
 
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
-import { useDestinationSuggestions } from "@/features/travel/services/travel-api-service";
+import {
+  type CityDTO,
+  useCitySuggestions,
+  useDestinationSuggestions,
+} from "@/features/travel/services/travel-api-service";
 import type { Destination } from "@/features/travel/travel.data";
 import {
   type BookingDTO,
+  type TripBudgetScope,
   type TripDetailDTO,
   type TripStatus,
   useBookings,
@@ -36,10 +41,26 @@ import {
   useUpdateTrip,
 } from "@/features/trips/services/trips-api-service";
 import { ApiError } from "@/lib/api/client";
+import { formatMoneyMinor } from "@/lib/money";
 import { theme } from "@/theme/theme";
 
-type EditDraft = { name: string; description: string; startDate: string; endDate: string; status: TripStatus };
-type StopDraft = { destinationId: string; title: string; location: string; image: string; arrivalDate: string; departureDate: string };
+type EditDraft = {
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  status: TripStatus;
+  cityId: string | null;
+  crewNumber: number;
+  budgetVnd: number | null;
+  budgetScope: TripBudgetScope | null;
+};
+type EditFormState = Omit<EditDraft, "cityId" | "budgetVnd" | "budgetScope"> & {
+  budgetVnd: string;
+  budgetScope: TripBudgetScope;
+};
+type CityChoice = Pick<CityDTO, "id" | "name" | "country" | "coverImageUrl">;
+type StopDraft = { destinationId: string; title: string; location: string; image: string };
 
 const statuses: readonly TripStatus[] = ["planning", "confirmed", "completed", "cancelled"];
 const packages = ["standard", "flexible", "premium"] as const;
@@ -103,7 +124,8 @@ function TripDetailContent({ trip, refreshing, onRefresh }: { trip: TripDetailDT
         <View style={styles.hero}>
           <View style={styles.statusPill}><Text style={styles.statusText}>{t(`trips.filters.${trip.status}`)}</Text></View>
           <Text selectable style={styles.heroTitle}>{trip.name}</Text>
-          <Text selectable style={styles.heroMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t("tripDetail.days", { count: durationDays(trip.startDate, trip.endDate) })}</Text>
+          <Text selectable style={styles.heroMeta}>{formatDateRange(trip.startDate, trip.endDate)} · {t("tripDetail.days", { count: durationDays(trip.startDate, trip.endDate) })}{trip.city ? ` · ${trip.city.name}, ${trip.city.country}` : ""}</Text>
+          {trip.budgetVnd !== null && trip.budgetScope ? <Text selectable style={styles.heroContext}>{formatMoneyMinor(trip.budgetVnd, "VND")} · {t(`travelPlan.workspace.budgetScopes.${trip.budgetScope}`)}</Text> : null}
           <Text selectable style={styles.heroDescription}>{trip.description || t("tripDetail.noDescription")}</Text>
           <View style={styles.actionRow}>
             <ActionButton icon="sparkles-outline" label={trip.plannerSessionId ? t("tripDetail.openPlan") : isOwner ? t("tripDetail.planTrip") : t("tripDetail.planningNotStarted")} onPress={() => router.push({ pathname: "/explore", params: { tripId: String(trip.id) } })} primary disabled={!isOwner && !trip.plannerSessionId} />
@@ -116,7 +138,7 @@ function TripDetailContent({ trip, refreshing, onRefresh }: { trip: TripDetailDT
 
         <View style={styles.statsRow}>
           <Stat icon="location-outline" value={String(trip.stops.length)} label={t("tripDetail.destinations")} />
-          <Stat icon="people-outline" value={String(trip.companions.length + 1)} label={t("tripDetail.travellers")} />
+          <Stat icon="people-outline" value={String(trip.crewNumber ?? trip.companions.length + 1)} label={t("tripDetail.travellers")} />
           <Stat icon="receipt-outline" value={String(tripBookings.length)} label={t("tripDetail.bookings")} />
         </View>
 
@@ -125,7 +147,7 @@ function TripDetailContent({ trip, refreshing, onRefresh }: { trip: TripDetailDT
             <Pressable key={stop.id} onPress={() => router.push({ pathname: "/destination/[id]", params: { id: stop.destinationId } })} style={styles.stopRow}>
               <View style={styles.indexCircle}><Text style={styles.indexText}>{index + 1}</Text></View>
               <Image source={{ uri: stop.destination.coverImageUrl }} style={styles.stopImage} contentFit="cover" />
-              <View style={styles.flexText}><Text selectable numberOfLines={1} style={styles.itemTitle}>{stop.destination.title}</Text><Text selectable numberOfLines={1} style={styles.itemMeta}>{stop.destination.location.city}, {stop.destination.location.country}</Text><Text selectable style={styles.itemMeta}>{formatDateRange(stop.arrivalDate, stop.departureDate)}</Text></View>
+              <View style={styles.flexText}><Text selectable numberOfLines={1} style={styles.itemTitle}>{stop.destination.title}</Text><Text selectable numberOfLines={1} style={styles.itemMeta}>{stop.destination.location.city}, {stop.destination.location.country}</Text></View>
               <Ionicons name="chevron-forward" size={18} color={theme.colors.light.gray[400]} />
             </Pressable>
           )) : <EmptyLine text={t("tripDetail.noStops")} />}
@@ -156,21 +178,89 @@ function TripDetailContent({ trip, refreshing, onRefresh }: { trip: TripDetailDT
 
 function EditTripForm({ trip, pending, onCancel, onSave }: { trip: TripDetailDTO; pending: boolean; onCancel: () => void; onSave: (input: EditDraft) => void }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState<EditDraft>({ name: trip.name, description: trip.description ?? "", startDate: trip.startDate.slice(0, 10), endDate: trip.endDate.slice(0, 10), status: trip.status });
-  const valid = Boolean(draft.name.trim() && isDateOnly(draft.startDate) && isDateOnly(draft.endDate) && draft.endDate >= draft.startDate);
-  return <View style={styles.formCard}><Text style={styles.sectionTitle}>{t("tripDetail.editTitle")}</Text><Field label={t("travelPlan.workspace.tripName")}><TextInput maxLength={200} value={draft.name} onChangeText={(name) => setDraft((value) => ({ ...value, name }))} style={styles.input} /></Field><View style={styles.twoColumns}><Field label={t("travelPlan.workspace.startDate")}><TextInput maxLength={10} value={draft.startDate} onChangeText={(startDate) => setDraft((value) => ({ ...value, startDate }))} placeholder="YYYY-MM-DD" style={styles.input} /></Field><Field label={t("travelPlan.workspace.endDate")}><TextInput maxLength={10} value={draft.endDate} onChangeText={(endDate) => setDraft((value) => ({ ...value, endDate }))} placeholder="YYYY-MM-DD" style={styles.input} /></Field></View><Field label={t("tripDetail.status") }><View style={styles.wrap}>{statuses.map((status) => <Choice key={status} active={draft.status === status} label={t(`trips.filters.${status}`)} onPress={() => setDraft((value) => ({ ...value, status }))} />)}</View></Field><Field label={t("travelPlan.workspace.tripNotes")}><TextInput multiline maxLength={5000} value={draft.description} onChangeText={(description) => setDraft((value) => ({ ...value, description }))} style={[styles.input, styles.textArea]} /></Field><FormActions pending={pending} valid={valid} onCancel={onCancel} onSave={() => onSave({ ...draft, name: draft.name.trim(), description: draft.description.trim() })} /></View>;
+  const citiesQuery = useCitySuggestions();
+  const [selectedCity, setSelectedCity] = useState<CityChoice | null>(trip.city);
+  const [draft, setDraft] = useState<EditFormState>({
+    name: trip.name,
+    description: trip.description ?? "",
+    startDate: trip.startDate.slice(0, 10),
+    endDate: trip.endDate.slice(0, 10),
+    status: trip.status,
+    crewNumber: trip.crewNumber ?? trip.companions.length + 1,
+    budgetVnd: trip.budgetVnd == null ? "" : String(trip.budgetVnd),
+    budgetScope: trip.budgetScope ?? "person",
+  });
+  const cityChoices: CityChoice[] = trip.city && !(citiesQuery.data ?? []).some((city) => city.id === trip.city?.id)
+    ? [trip.city, ...(citiesQuery.data ?? [])]
+    : citiesQuery.data ?? [];
+  const budgetValue = draft.budgetVnd ? Number(draft.budgetVnd) : null;
+  const valid = Boolean(
+    draft.name.trim()
+    && isDateOnly(draft.startDate)
+    && isDateOnly(draft.endDate)
+    && draft.endDate >= draft.startDate
+    && Number.isInteger(draft.crewNumber)
+    && draft.crewNumber >= 1
+    && draft.crewNumber <= 50
+    && (budgetValue === null || (Number.isInteger(budgetValue) && budgetValue >= 0 && budgetValue <= 1_000_000_000_000)),
+  );
+  const save = () => onSave({
+    ...draft,
+    name: draft.name.trim(),
+    description: draft.description.trim(),
+    cityId: selectedCity?.id ?? null,
+    budgetVnd: budgetValue,
+    budgetScope: budgetValue === null ? null : draft.budgetScope,
+  });
+
+  return (
+    <View style={styles.formCard}>
+      <Text style={styles.sectionTitle}>{t("tripDetail.editTitle")}</Text>
+      <Field label={t("travelPlan.workspace.tripName")}>
+        <TextInput maxLength={200} value={draft.name} onChangeText={(name) => setDraft((value) => ({ ...value, name }))} style={styles.input} />
+      </Field>
+      {cityChoices.length ? (
+        <Field label={t("travelPlan.workspace.cityOptional")}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontal}>
+            {cityChoices.map((city) => (
+              <Pressable key={city.id} onPress={() => setSelectedCity(city)} style={[styles.destinationChoice, selectedCity?.id === city.id && styles.selectedChoice]}>
+                <Image source={{ uri: city.coverImageUrl }} style={styles.choiceImage} contentFit="cover" />
+                <Text numberOfLines={1} style={styles.choiceText}>{city.name}</Text>
+                <Text numberOfLines={1} style={styles.itemMeta}>{city.country}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          {selectedCity ? <Pressable onPress={() => setSelectedCity(null)}><Text style={styles.actionText}>{t("common.clear")}</Text></Pressable> : null}
+        </Field>
+      ) : null}
+      <View style={styles.twoColumns}>
+        <Field label={t("travelPlan.workspace.startDate")}><TextInput maxLength={10} value={draft.startDate} onChangeText={(startDate) => setDraft((value) => ({ ...value, startDate }))} placeholder="YYYY-MM-DD" style={styles.input} /></Field>
+        <Field label={t("travelPlan.workspace.endDate")}><TextInput maxLength={10} value={draft.endDate} onChangeText={(endDate) => setDraft((value) => ({ ...value, endDate }))} placeholder="YYYY-MM-DD" style={styles.input} /></Field>
+      </View>
+      <Field label={t("travelPlan.workspace.crewSize")}>
+        <TextInput keyboardType="number-pad" maxLength={2} value={String(draft.crewNumber)} onChangeText={(value) => setDraft((current) => ({ ...current, crewNumber: Number(value.replace(/\D/g, "")) }))} style={styles.input} />
+      </Field>
+      <Field label={t("travelPlan.workspace.tripBudget")}>
+        <TextInput keyboardType="number-pad" maxLength={13} value={draft.budgetVnd} onChangeText={(budgetVnd) => setDraft((value) => ({ ...value, budgetVnd: budgetVnd.replace(/\D/g, "").slice(0, 13) }))} placeholder={t("travelPlan.workspace.tripBudgetPlaceholder")} style={styles.input} />
+        {budgetValue !== null ? <View style={styles.wrap}>{(["person", "group"] as const).map((scope) => <Choice key={scope} active={draft.budgetScope === scope} label={t(`travelPlan.workspace.budgetScopes.${scope}`)} onPress={() => setDraft((value) => ({ ...value, budgetScope: scope }))} />)}</View> : null}
+      </Field>
+      <Field label={t("tripDetail.status")}><View style={styles.wrap}>{statuses.map((status) => <Choice key={status} active={draft.status === status} label={t(`trips.filters.${status}`)} onPress={() => setDraft((value) => ({ ...value, status }))} />)}</View></Field>
+      <Field label={t("travelPlan.workspace.tripNotes")}><TextInput multiline maxLength={5000} value={draft.description} onChangeText={(description) => setDraft((value) => ({ ...value, description }))} style={[styles.input, styles.textArea]} /></Field>
+      <FormActions pending={pending} valid={valid} onCancel={onCancel} onSave={save} />
+    </View>
+  );
 }
 
 function RouteEditor({ trip, onDone }: { trip: TripDetailDTO; onDone: () => void }) {
   const { t } = useTranslation();
   const mutation = useReplaceTripStops();
   const suggestions = useDestinationSuggestions();
-  const [stops, setStops] = useState<StopDraft[]>(() => trip.stops.map((stop) => ({ destinationId: stop.destinationId, title: stop.destination.title, location: `${stop.destination.location.city}, ${stop.destination.location.country}`, image: stop.destination.coverImageUrl, arrivalDate: stop.arrivalDate.slice(0, 10), departureDate: stop.departureDate.slice(0, 10) })));
+  const [stops, setStops] = useState<StopDraft[]>(() => trip.stops.map((stop) => ({ destinationId: stop.destinationId, title: stop.destination.title, location: `${stop.destination.location.city}, ${stop.destination.location.country}`, image: stop.destination.coverImageUrl })));
   const available = (suggestions.data ?? []).filter((destination) => !stops.some((stop) => stop.destinationId === destination.id));
-  const add = (destination: Destination) => setStops((current) => [...current, { destinationId: destination.id, title: destination.title ?? destination.location ?? destination.id, location: destination.location ?? "", image: destination.image, arrivalDate: current.at(-1)?.departureDate ?? trip.startDate.slice(0, 10), departureDate: trip.endDate.slice(0, 10) }].slice(0, 5));
+  const add = (destination: Destination) => setStops((current) => [...current, { destinationId: destination.id, title: destination.title ?? destination.location ?? destination.id, location: destination.location ?? "", image: destination.image }].slice(0, 5));
   const move = (index: number, direction: -1 | 1) => setStops((current) => { const target = index + direction; if (target < 0 || target >= current.length) return current; const next = [...current]; [next[index], next[target]] = [next[target], next[index]]; return next; });
-  const valid = stops.every((stop, index) => isDateOnly(stop.arrivalDate) && isDateOnly(stop.departureDate) && stop.arrivalDate >= trip.startDate.slice(0, 10) && stop.departureDate <= trip.endDate.slice(0, 10) && stop.departureDate >= stop.arrivalDate && (index === 0 || stop.arrivalDate >= stops[index - 1].departureDate));
-  return <View style={styles.editor}><Text selectable style={styles.helper}>{t("tripDetail.routeHelper")}</Text>{stops.map((stop, index) => <View key={stop.destinationId} style={styles.stopEditor}><View style={styles.personRow}><Image source={{ uri: stop.image }} style={styles.stopImage} contentFit="cover" /><Text selectable numberOfLines={1} style={[styles.itemTitle, styles.flexText]}>{index + 1}. {stop.title}</Text><Pressable disabled={index === 0} onPress={() => move(index, -1)}><Ionicons name="arrow-up" size={19} color={theme.colors.light.gray[600]} /></Pressable><Pressable disabled={index === stops.length - 1} onPress={() => move(index, 1)}><Ionicons name="arrow-down" size={19} color={theme.colors.light.gray[600]} /></Pressable><Pressable onPress={() => setStops((items) => items.filter((_, itemIndex) => itemIndex !== index))}><Ionicons name="close-circle" size={20} color={theme.colors.light.error[500]} /></Pressable></View><View style={styles.twoColumns}><TextInput value={stop.arrivalDate} onChangeText={(arrivalDate) => setStops((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, arrivalDate } : item))} maxLength={10} style={styles.input} /><TextInput value={stop.departureDate} onChangeText={(departureDate) => setStops((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, departureDate } : item))} maxLength={10} style={styles.input} /></View></View>)}{stops.length < 5 && available.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontal}>{available.slice(0, 8).map((destination) => <Pressable key={destination.id} onPress={() => add(destination)} style={styles.destinationChoice}><Image source={{ uri: destination.image }} style={styles.choiceImage} contentFit="cover" /><Text numberOfLines={1} style={styles.choiceText}>+ {destination.title}</Text></Pressable>)}</ScrollView> : null}{!valid ? <Text style={styles.validation}>{t("tripDetail.routeInvalid")}</Text> : null}<FormActions pending={mutation.isPending} valid={valid} onCancel={onDone} onSave={() => mutation.mutate({ id: trip.id, stops: stops.map(({ destinationId, arrivalDate, departureDate }) => ({ destinationId, arrivalDate, departureDate })) }, { onSuccess: onDone, onError: showMutationError })} /></View>;
+  const valid = stops.length <= 5 && new Set(stops.map((stop) => stop.destinationId)).size === stops.length;
+  return <View style={styles.editor}><Text selectable style={styles.helper}>{t("tripDetail.routeHelper")}</Text>{stops.map((stop, index) => <View key={stop.destinationId} style={styles.stopEditor}><View style={styles.personRow}><Image source={{ uri: stop.image }} style={styles.stopImage} contentFit="cover" /><View style={[styles.flexText, styles.stopText]}><Text selectable numberOfLines={1} style={styles.itemTitle}>{index + 1}. {stop.title}</Text><Text selectable numberOfLines={1} style={styles.itemMeta}>{stop.location}</Text></View><Pressable disabled={index === 0} onPress={() => move(index, -1)}><Ionicons name="arrow-up" size={19} color={theme.colors.light.gray[600]} /></Pressable><Pressable disabled={index === stops.length - 1} onPress={() => move(index, 1)}><Ionicons name="arrow-down" size={19} color={theme.colors.light.gray[600]} /></Pressable><Pressable onPress={() => setStops((items) => items.filter((_, itemIndex) => itemIndex !== index))}><Ionicons name="close-circle" size={20} color={theme.colors.light.error[500]} /></Pressable></View></View>)}{stops.length < 5 && available.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontal}>{available.slice(0, 8).map((destination) => <Pressable key={destination.id} onPress={() => add(destination)} style={styles.destinationChoice}><Image source={{ uri: destination.image }} style={styles.choiceImage} contentFit="cover" /><Text numberOfLines={1} style={styles.choiceText}>+ {destination.title}</Text></Pressable>)}</ScrollView> : null}{!valid ? <Text style={styles.validation}>{t("tripDetail.routeInvalid")}</Text> : null}<FormActions pending={mutation.isPending} valid={valid} onCancel={onDone} onSave={() => mutation.mutate({ id: trip.id, stops: stops.map(({ destinationId }) => ({ destinationId })) }, { onSuccess: onDone, onError: showMutationError })} /></View>;
 }
 
 function BookingForm({ trip, onDone }: { trip: TripDetailDTO; onDone: () => void }) {
@@ -181,7 +271,7 @@ function BookingForm({ trip, onDone }: { trip: TripDetailDTO; onDone: () => void
   const [packageOptionId, setPackage] = useState<(typeof packages)[number]>("standard");
   const [startDate, setStartDate] = useState(trip.startDate.slice(0, 10));
   const [endDate, setEndDate] = useState(trip.endDate.slice(0, 10));
-  const [travellerCount, setTravellerCount] = useState(String(trip.companions.length + 1));
+  const [travellerCount, setTravellerCount] = useState(String(trip.crewNumber ?? trip.companions.length + 1));
   const destinations = useMemo(() => suggestions.data ?? [], [suggestions.data]);
   const count = Number(travellerCount);
   const valid = Boolean(destination?.apiBacked && isDateOnly(startDate) && isDateOnly(endDate) && endDate >= startDate && Number.isInteger(count) && count >= 1 && count <= 50);
@@ -191,7 +281,7 @@ function BookingForm({ trip, onDone }: { trip: TripDetailDTO; onDone: () => void
 function BookingRow({ booking, cancelling, onCancel }: { booking: BookingDTO; cancelling: boolean; onCancel: () => void }) {
   const { t } = useTranslation();
   const cancellable = booking.status === "upcoming" || booking.status === "confirmed";
-  return <View style={styles.bookingRow}><Image source={{ uri: booking.destination.coverImageUrl }} style={styles.stopImage} contentFit="cover" /><View style={styles.flexText}><Text selectable style={styles.itemTitle}>{booking.destination.title}</Text><Text selectable style={styles.itemMeta}>{formatDateRange(booking.startDate, booking.endDate)} · {t(`tripDetail.packages.${booking.packageOptionId}`, { defaultValue: booking.packageOptionId })}</Text><Text selectable style={styles.price}>{formatMoney(booking.total.amountMinor, booking.total.currency)}</Text></View>{cancellable ? <Pressable disabled={cancelling} onPress={() => Alert.alert(t("tripDetail.cancelBookingTitle"), t("tripDetail.cancelBookingDescription"), [{ text: t("common.cancel"), style: "cancel" }, { text: t("tripDetail.cancelBooking"), style: "destructive", onPress: onCancel }])}><Text style={styles.dangerText}>{t("tripDetail.cancelBooking")}</Text></Pressable> : <Text style={styles.itemMeta}>{booking.status}</Text>}</View>;
+  return <View style={styles.bookingRow}><Image source={{ uri: booking.destination.coverImageUrl }} style={styles.stopImage} contentFit="cover" /><View style={styles.flexText}><Text selectable style={styles.itemTitle}>{booking.destination.title}</Text><Text selectable style={styles.itemMeta}>{formatDateRange(booking.startDate, booking.endDate)} · {t(`tripDetail.packages.${booking.packageOptionId}`, { defaultValue: booking.packageOptionId })}</Text><Text selectable style={styles.price}>{formatMoneyMinor(booking.total.amountMinor, booking.total.currency)}</Text></View>{cancellable ? <Pressable disabled={cancelling} onPress={() => Alert.alert(t("tripDetail.cancelBookingTitle"), t("tripDetail.cancelBookingDescription"), [{ text: t("common.cancel"), style: "cancel" }, { text: t("tripDetail.cancelBooking"), style: "destructive", onPress: onCancel }])}><Text style={styles.dangerText}>{t("tripDetail.cancelBooking")}</Text></Pressable> : <Text style={styles.itemMeta}>{booking.status}</Text>}</View>;
 }
 
 function Section({ title, description, action, onAction, children }: { title: string; description: string; action?: string; onAction?: () => void; children: React.ReactNode }) {
@@ -210,7 +300,6 @@ function showMutationError(error: Error) { Alert.alert("Error", getErrorMessage(
 function getErrorMessage(error: unknown) { return error instanceof ApiError || error instanceof Error ? error.message : "Request failed"; }
 function durationDays(start: string, end: string) { return Math.max(1, Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1); }
 function formatDateRange(start: string, end: string) { const formatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }); return `${formatter.format(new Date(start))} – ${formatter.format(new Date(end))}`; }
-function formatMoney(amountMinor: number, currency: string) { return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amountMinor / 100); }
 function isDateOnly(value: string) { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false; const parsed = new Date(`${value}T00:00:00Z`); return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; }
 
 const styles = StyleSheet.create({
@@ -221,6 +310,7 @@ const styles = StyleSheet.create({
   statusText: { color: theme.colors.light.success, fontSize: 10, lineHeight: 14, fontWeight: "900" },
   heroTitle: { color: theme.colors.light.gray[900], fontSize: 28, lineHeight: 35, fontWeight: "900" },
   heroMeta: { color: theme.colors.light.accent, fontSize: 12, lineHeight: 18, fontWeight: "800" },
+  heroContext: { color: theme.colors.light.gray[700], fontSize: 12, lineHeight: 18, fontWeight: "800" },
   heroDescription: { color: theme.colors.light.gray[600], fontSize: 13, lineHeight: 20, fontWeight: "600" },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
   actionButton: { minHeight: 42, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[300], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing[1], backgroundColor: theme.colors.light.surface },
@@ -268,6 +358,7 @@ const styles = StyleSheet.create({
   selectedChoiceText: { color: theme.colors.light.accent },
   editor: { paddingTop: theme.spacing[3], borderTopWidth: 1, borderTopColor: theme.colors.light.gray[200], gap: theme.spacing[3] },
   stopEditor: { padding: theme.spacing[3], borderRadius: theme.radius.md, gap: theme.spacing[2], backgroundColor: theme.colors.light.gray[50] },
+  stopText: { gap: 2 },
   horizontal: { gap: theme.spacing[2], paddingRight: theme.spacing[3] },
   destinationChoice: { width: 128, padding: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, gap: theme.spacing[1], backgroundColor: theme.colors.light.surface },
   choiceImage: { width: "100%", height: 64, borderRadius: theme.radius.sm, backgroundColor: theme.colors.light.gray[100] },
