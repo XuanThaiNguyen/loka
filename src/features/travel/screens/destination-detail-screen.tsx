@@ -1,466 +1,109 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { Button } from "heroui-native/button";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "heroui-native";
 
+import { AddDestinationToTrip } from "@/features/travel/components/add-destination-to-trip";
+import { CityExpandableText } from "@/features/travel/components/city-editorial-sections";
+import { guideWash } from "@/features/travel/city-guide";
+import { DestinationListItem } from "@/features/travel/components/destination-list-item";
+import { DetailAction, DetailSection, DetailState, GuideRows, PhotoGallery, detailStyles as s, openPlaceMap } from "@/features/travel/components/detail-ui";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
-import { galleryImages } from "@/features/travel/travel.data";
-import {
-  useDestination,
-  useFavoriteMutation,
-} from "@/features/travel/services/travel-api-service";
+import { VisitProfileCard } from "@/features/travel/components/visit-profile-card";
+import { useCity, useDestination, useFavoriteMutation } from "@/features/travel/services/travel-api-service";
 import { theme } from "@/theme/theme";
-
-const visitorColors = [
-  theme.colors.light.primary[300],
-  theme.colors.light.orange[300],
-  theme.colors.light.blue[300],
-  theme.colors.light.green[300],
-  theme.colors.light.gray[300],
-] as const;
 
 export function DestinationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const { destination } = useDestination(id);
-  const favoriteMutation = useFavoriteMutation();
-  const [favoriteOverride, setFavoriteOverride] = useState<{
-    id: string;
-    value: boolean;
-  } | null>(null);
-  const isFavorite = favoriteOverride?.id === destination.id
-    ? favoriteOverride.value
-    : (destination.isFavorite ?? false);
-  const title = destination.title ?? t(`travel.destinations.${destination.id}.title`);
-  const destinationGallery = destination.gallery?.length
-    ? destination.gallery
-    : galleryImages;
-
-  const toggleFavorite = () => {
-    const previous = isFavorite;
-    const favorite = !previous;
-    setFavoriteOverride({ id: destination.id, value: favorite });
-    favoriteMutation.mutate(
-      { destinationId: destination.id, favorite },
-      { onError: () => setFavoriteOverride({ id: destination.id, value: previous }) },
-    );
-  };
-
-  return (
-    <View style={styles.screen}>
-      <TravelScreenHeader title={t("travel.detail.title")} showBack />
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Image
-          source={{ uri: destination.image }}
-          style={styles.heroImage}
-          contentFit="cover"
-        />
-
-        <View style={styles.pagination}>
-          {[0, 1, 2, 3].map((dot) => (
-            <View
-              key={dot}
-              style={[styles.dot, dot === 1 ? styles.activeDot : null]}
-            />
-          ))}
-        </View>
-
-        <View style={styles.summary}>
-          <View style={styles.summaryText}>
-            <Text style={styles.destinationTitle}>{title}</Text>
-            <View style={styles.metadataRow}>
-              <Ionicons
-                name="location"
-                size={18}
-                color={theme.colors.light.accent}
-              />
-              <Text numberOfLines={1} style={styles.metadataText}>
-                {destination.location ?? t(`travel.destinations.${destination.id}.location`)}
-              </Text>
-              <Ionicons
-                name="star"
-                size={16}
-                color={theme.colors.light.warning}
-              />
-              <Text style={styles.metadataText}>{destination.rating}</Text>
-            </View>
-          </View>
-
-          <Button
-            isIconOnly
-            variant="secondary"
-            accessibilityLabel={t("travel.toggleFavorite", { title })}
-            onPress={toggleFavorite}
-          >
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={26}
-              color={
-                isFavorite
-                  ? theme.colors.light.error[500]
-                  : theme.colors.light.gray[900]
-              }
-            />
-          </Button>
-        </View>
-
-        <View style={styles.visitors}>
-          <View style={styles.avatarStack}>
-            {visitorColors.map((color, index) => (
-              <View
-                key={`${color}-${index}`}
-                style={[
-                  styles.avatar,
-                  {
-                    backgroundColor: color,
-                    marginLeft: index === 0 ? 0 : -8,
-                  },
-                ]}
-              >
-                <Text style={styles.avatarText}>{index + 1}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.visitorText}>
-            <Text style={styles.visitorCount}>{destination.visitors} </Text>
-            {t("travel.detail.peopleVisited")}
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("travel.detail.details")}</Text>
-          {destination.tags?.length ? (
-            <View style={styles.tagList}>
-              {destination.tags.map((tag) => (
-                <View key={tag} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          <Text style={styles.description}>
-            {destination.description ?? t(`travel.destinations.${destination.id}.description`)}
-          </Text>
-          {destination.openingHours ? (
-            <View style={styles.detailRow}>
-              <Ionicons name="time-outline" size={18} color={theme.colors.light.accent} />
-              <View style={styles.detailRowText}>
-                <Text style={styles.detailLabel}>{t("travel.detail.openingHours")}</Text>
-                <Text selectable style={styles.detailValue}>{destination.openingHours}</Text>
-              </View>
-            </View>
-          ) : null}
-          {destination.tips ? (
-            <View style={styles.tipCard}>
-              <Text style={styles.tipLabel}>{t("travel.detail.visitorTip")}</Text>
-              <Text selectable style={styles.tipText}>{destination.tips}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("travel.detail.galleries")}</Text>
-            <Text style={styles.seeAll}>{t("common.viewAll")}</Text>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.gallery}
-          >
-            {destinationGallery.map((image, index) => (
-              <View key={image}>
-                <Image
-                  source={{ uri: image }}
-                  style={styles.galleryImage}
-                  contentFit="cover"
-                />
-                {index === destinationGallery.length - 1 ? (
-                  <View style={styles.galleryCount}>
-                    <Text style={styles.galleryCountText}>{destinationGallery.length}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </ScrollView>
-
-      <View
-        style={[
-          styles.checkoutBar,
-          { paddingBottom: Math.max(insets.bottom, theme.spacing[3]) },
-        ]}
-      >
-        <View>
-          <Text style={styles.priceEyebrow}>{t("travel.detail.startFrom")}</Text>
-          <Text style={styles.checkoutPrice}>
-            {new Intl.NumberFormat(undefined, {
-              style: "currency",
-              currency: destination.currency ?? "USD",
-            }).format(destination.price)}
-            <Text style={styles.perPerson}>/{t("travel.detail.person")}</Text>
-          </Text>
-        </View>
-        <Button
-          variant="primary"
-          style={styles.checkoutButton}
-          onPress={() => router.push({ pathname: "/booking/new", params: { destinationId: destination.id } })}
-        >
-          <Button.Label>{t("travel.detail.checkout")}</Button.Label>
-        </Button>
-      </View>
-    </View>
-  );
+  return <DestinationContent key={id} id={id} />;
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.light.background,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing[5],
-    paddingBottom: theme.spacing[8],
-  },
-  heroImage: {
-    width: "100%",
-    aspectRatio: 1.4,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.light.gray[100],
-  },
-  pagination: {
-    height: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: theme.spacing[2],
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.light.gray[200],
-  },
-  activeDot: {
-    backgroundColor: theme.colors.light.accent,
-  },
-  summary: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[4],
-  },
-  summaryText: {
-    flex: 1,
-    gap: theme.spacing[2],
-  },
-  destinationTitle: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize["2xl"],
-    lineHeight: theme.typography.lineHeight["2xl"],
-    fontWeight: "900",
-  },
-  metadataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[2],
-  },
-  metadataText: {
-    flexShrink: 1,
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-  },
-  visitors: {
-    marginTop: theme.spacing[5],
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-  },
-  avatarStack: {
-    flexDirection: "row",
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: theme.radius.full,
-    borderWidth: 2,
-    borderColor: theme.colors.light.base.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    color: theme.colors.light.gray[800],
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: "800",
-  },
-  visitorText: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-  },
-  visitorCount: {
-    color: theme.colors.light.accent,
-    fontWeight: "800",
-  },
-  divider: {
-    height: 8,
-    marginHorizontal: -theme.spacing[5],
-    marginTop: theme.spacing[5],
-    backgroundColor: theme.colors.light.gray[50],
-  },
-  section: {
-    gap: theme.spacing[3],
-    paddingTop: theme.spacing[5],
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.lg,
-    lineHeight: theme.typography.lineHeight.lg,
-    fontWeight: "800",
-  },
-  description: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.md,
-    lineHeight: theme.typography.lineHeight.md,
-  },
-  tagList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing[2],
-  },
-  tag: {
-    paddingHorizontal: theme.spacing[3],
-    paddingVertical: theme.spacing[1],
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.light.orange[50],
-  },
-  tagText: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-    fontWeight: "700",
-  },
-  detailRow: {
-    padding: theme.spacing[3],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.gray[50],
-  },
-  detailRowText: {
-    flex: 1,
-    gap: 2,
-  },
-  detailLabel: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-    fontWeight: "700",
-  },
-  detailValue: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-    fontWeight: "700",
-  },
-  tipCard: {
-    padding: theme.spacing[4],
-    borderRadius: theme.radius.md,
-    gap: theme.spacing[1],
-    backgroundColor: theme.colors.light.orange[50],
-  },
-  tipLabel: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-    fontWeight: "900",
-    textTransform: "uppercase",
-  },
-  tipText: {
-    color: theme.colors.light.gray[700],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-  },
-  seeAll: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-    fontWeight: "700",
-  },
-  gallery: {
-    gap: theme.spacing[3],
-    paddingRight: theme.spacing[5],
-  },
-  galleryImage: {
-    width: 112,
-    height: 86,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.light.gray[100],
-  },
-  galleryCount: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(16, 24, 40, 0.46)",
-  },
-  galleryCountText: {
-    color: theme.colors.light.base.white,
-    fontSize: theme.typography.fontSize.xl,
-    lineHeight: theme.typography.lineHeight.xl,
-    fontWeight: "800",
-  },
-  checkoutBar: {
-    paddingTop: theme.spacing[3],
-    paddingHorizontal: theme.spacing[5],
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.light.gray[200],
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: theme.spacing[4],
-    backgroundColor: theme.colors.light.background,
-  },
-  priceEyebrow: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-  },
-  checkoutPrice: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize["2xl"],
-    lineHeight: theme.typography.lineHeight["2xl"],
-    fontWeight: "900",
-  },
-  perPerson: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: "500",
-  },
-  checkoutButton: {
-    minWidth: 148,
-  },
-});
+function DestinationContent({ id }: { id: string }) {
+  const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const query = useDestination(id);
+  const { destination: place } = query;
+  const cityQuery = useCity(place.id === id ? place.cityId : undefined);
+  const favorite = useFavoriteMutation();
+  const [adding, setAdding] = useState(false);
+  const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null);
+  const saved = favoriteOverride ?? place.isFavorite ?? false;
+  const unavailable = !query.data && place.id !== id;
+  const title = place.title ?? t(`travel.destinations.${place.id}.title`);
+  const location = place.location ?? t(`travel.destinations.${place.id}.location`);
+  const gallery = [place.image, ...(place.gallery ?? [])];
+  const nearby = cityQuery.data?.id === place.cityId ? (cityQuery.city.relatedDestinations ?? []).filter((item) => item.id !== place.id).slice(0, 4) : [];
+  const money = (amount: number, currency = place.currency ?? "USD") => new Intl.NumberFormat(i18n.language, { style: "currency", currency }).format(amount);
+  const curated = place.lastCuratedAt ? new Date(place.lastCuratedAt) : null;
+  const toggleFavorite = () => {
+    if (favorite.isPending) return;
+    const previous = saved;
+    setFavoriteOverride(!saved);
+    favorite.mutate({ destinationId: place.id, favorite: !saved }, {
+      onError: () => { setFavoriteOverride(previous); Alert.alert(t("detailGuide.saveError")); },
+    });
+  };
+
+  return <View style={{ flex: 1, backgroundColor: theme.colors.light.background }}>
+    <TravelScreenHeader title={t("travel.detail.title")} showBack />
+    {unavailable ? <DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /> : <>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} />}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 32 }}>
+        <View style={{ gap: 16, padding: 18, borderRadius: 28, backgroundColor: "#ffe6d5", experimental_backgroundImage: "linear-gradient(135deg, #ffe6d5 0%, #ffd7e8 58%, #e6d8ff 100%)" }}>
+          <Image source={{ uri: place.image }} style={{ width: "100%", aspectRatio: 1.35, borderRadius: 24 }} contentFit="cover" />
+          <Text selectable style={s.title}>{title}</Text>
+          <Text selectable style={s.body}>{location}</Text>
+          {place.cityId ? <Button size="sm" variant="secondary" onPress={() => router.push({ pathname: "/city/[id]", params: { id: place.cityId! } })}><Button.Label>{t("detailGuide.exploreAll")}</Button.Label></Button> : null}
+          {place.isFeatured ? <Text style={s.actionText}>{t("visitKnowledge.featured")}</Text> : null}
+          {place.visitorCount != null && place.visitorCount > 0 ? <Text selectable style={s.body}>{t("visitKnowledge.visitors", { count: place.visitorCount })}</Text> : null}
+          {place.popularityRank != null ? <Text selectable style={s.body}>{t("visitKnowledge.rank", { rank: place.popularityRank })}</Text> : null}
+          <View style={s.wrap}><Ionicons name="star" color={theme.colors.light.warning} size={18} /><Text selectable style={s.label}>{place.ratingCount !== 0 && Number(place.rating) > 0 ? place.rating : t("detailGuide.unrated")}</Text>{place.ratingCount != null && <Text selectable style={s.body}>{t("detailGuide.ratings", { count: place.ratingCount })}</Text>}</View>
+          <View style={s.wrap}>{[...new Set([t(`detailGuide.categories.${place.category}`), ...(place.tags ?? []), ...(place.guide?.bestFor ?? [])])].map((tag) => <View key={tag} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: theme.colors.light.accentSoft }}><Text style={s.actionText}>{tag}</Text></View>)}</View>
+          <View style={s.wrap}>
+            <DetailAction label={saved ? t("detailGuide.saved") : t("detailGuide.save")} icon={saved ? "heart" : "heart-outline"} disabled={!place.apiBacked || favorite.isPending} onPress={toggleFavorite} />
+            <DetailAction label={t("detailGuide.openMap")} icon="navigate-outline" onPress={() => openPlaceMap(`${title}, ${place.guide?.address ?? location}`, t("detailGuide.mapError"), place)} />
+          </View>
+        </View>
+
+        <DetailSection title={t("travel.detail.details")}>
+          <View style={{ padding: 22, borderRadius: 24, ...guideWash("coral") }}><CityExpandableText text={place.description || t("detailGuide.noDescription")} /></View>
+          {curated && !Number.isNaN(curated.getTime()) ? <Text style={s.body}>{t("detailGuide.updated", { date: new Intl.DateTimeFormat(i18n.language).format(curated) })}</Text> : null}
+        </DetailSection>
+
+        <DetailSection title={t("detailGuide.beforeYouGo")}>
+          <View style={[s.card, guideWash("mint")]}><Text style={s.label}>{t("detailGuide.location")}</Text><Text selectable style={s.body}>{place.guide?.address ?? location}</Text>
+            {!place.guide?.address && <Text style={s.body}>{t("detailGuide.addressHint")}</Text>}
+          </View>
+          {place.openingHours ? <View style={[s.card, guideWash("sky")]}><Text style={s.label}>{t("travel.detail.openingHours")}</Text><Text selectable style={s.body}>{place.openingHours}</Text></View> : null}
+          <GuideRows guide={place.guide} />
+          {place.apiBacked ? <VisitProfileCard key={place.id} id={place.id} /> : null}
+          {place.tips ? <View style={[s.card, guideWash("lilac")]}><Text style={s.label}>{t("travel.detail.visitorTip")}</Text><CityExpandableText text={place.tips} /></View> : null}
+        </DetailSection>
+
+        <DetailSection title={t("detailGuide.tickets")}>
+          <View style={s.card}>
+            <Text selectable style={s.label}>{place.pricingTiers ? t("detailGuide.adult") : t("travel.detail.startFrom")}: {money(place.pricingTiers?.adult ?? place.price, place.pricingTiers?.currency)}</Text>
+            {place.pricingTiers?.childSenior != null && <Text selectable style={s.body}>{t("detailGuide.childSenior")}: {money(place.pricingTiers.childSenior, place.pricingTiers.currency)}</Text>}
+            {place.pricingTiers?.approxUsdAdult != null && <Text selectable style={s.body}>{t("visitKnowledge.approxUsd")}: {money(place.pricingTiers.approxUsdAdult, "USD")} ({t("detailGuide.adult")})</Text>}
+            {place.pricingTiers?.approxUsdChildSenior != null && <Text selectable style={s.body}>{t("visitKnowledge.approxUsd")}: {money(place.pricingTiers.approxUsdChildSenior, "USD")} ({t("detailGuide.childSenior")})</Text>}
+            {place.pricingTiers?.notes ? <Text selectable style={s.body}>{place.pricingTiers.notes}</Text> : null}
+            <Text style={s.body}>{t("detailGuide.ticketHint")}</Text>
+          </View>
+        </DetailSection>
+
+        <PhotoGallery images={gallery} title={t("travel.detail.galleries")} />
+        {nearby.length ? <DetailSection title={t("detailGuide.sameCity")}><Text style={s.body}>{t("detailGuide.sameCityHint")}</Text>{nearby.map((destination) => <DestinationListItem key={destination.id} destination={destination} onPress={() => router.push({ pathname: "/destination/[id]", params: { id: destination.id } })} />)}<DetailAction label={t("detailGuide.exploreAll")} icon="arrow-forward" onPress={() => router.push({ pathname: "/city/[id]", params: { id: place.cityId! } })} /></DetailSection> : null}
+      </ScrollView>
+      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 12), borderTopWidth: 1, borderTopColor: theme.colors.light.gray[200], gap: 8 }}>
+        <Button isDisabled={!place.apiBacked} onPress={() => setAdding(true)}><Button.Label>{t("detailGuide.addToTrip")}</Button.Label></Button>
+        <Button variant="secondary" isDisabled={!place.apiBacked} onPress={() => router.push({ pathname: "/booking/new", params: { destinationId: place.id } })}><Button.Label>{t("travel.detail.checkout")}</Button.Label></Button>
+      </View>
+      {adding && <AddDestinationToTrip destinationId={place.id} onClose={() => setAdding(false)} />}
+    </>}
+  </View>;
+}

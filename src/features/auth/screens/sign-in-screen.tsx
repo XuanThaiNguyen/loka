@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     width: 310,
     height: 310,
     borderRadius: 155,
-    backgroundColor: theme.colors.light.orange[100],
+    backgroundColor: theme.colors.light.accentSoft,
   },
   backgroundOrbBottom: {
     position: "absolute",

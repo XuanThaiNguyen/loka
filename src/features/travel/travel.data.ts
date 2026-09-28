@@ -28,12 +28,15 @@ export type Destination = {
   title?: string;
   location?: string;
   description?: string;
+  guide?: import("./detail-guide").DetailGuide;
+  pricingTiers?: { currency: string; adult: number; childSenior?: number; notes?: string; approxUsdAdult?: number; approxUsdChildSenior?: number };
   image: string;
   gallery?: readonly string[];
   rating: string;
   price: number;
   currency?: string;
   visitors: string;
+  visitorCount?: number;
   category: "adventure" | "beach" | "culture" | "city" | "food";
   tags?: readonly string[];
   openingHours?: string;

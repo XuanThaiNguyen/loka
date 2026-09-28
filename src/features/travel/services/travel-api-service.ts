@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { travelCities, type TravelCity } from "@/features/travel/city.data";
 import {
@@ -81,7 +81,7 @@ export type CityListQuery = {
   limit?: number;
 };
 
-type CityDetailDTO = CityDTO & { destinations: DestinationDTO[] };
+type CityDetailDTO = CityDTO & { destinations: DestinationDTO[]; guide?: import("../city-guide").CityGuide | null };
 
 export type CollectionDTO = {
   id: string;
@@ -217,6 +217,16 @@ export function useCity(id: string | undefined) {
   return { ...query, city: { ...city, relatedDestinations } };
 }
 
+export function useCityDestinations(id: string | undefined) {
+  return useInfiniteQuery({
+    queryKey: ["catalog", "city", id, "destinations"],
+    enabled: Boolean(id && isUuid(id)),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ signal, pageParam }) => catalogApi.listDestinations({ cityId: id, limit: 50, cursor: pageParam }, signal),
+    getNextPageParam: (page) => page.meta.hasMore ? page.meta.nextCursor ?? undefined : undefined,
+  });
+}
+
 export function useCollection(slug: string | undefined) {
   const fallbackCollection = getCollection(slug) ?? travelCollections[0];
   const query = useQuery({
@@ -301,6 +311,7 @@ export function mapDestination(dto: DestinationDTO): Destination {
     price: minorToMajor(dto.fromPrice.amountMinor, dto.fromPrice.currency),
     currency: dto.fromPrice.currency,
     visitors: formatCount(dto.visitorCount),
+    visitorCount: dto.visitorCount,
     category: dto.category,
     tags: dto.tags ?? [],
     openingHours: dto.openingHours ?? undefined,
@@ -310,6 +321,14 @@ export function mapDestination(dto: DestinationDTO): Destination {
     latitude: dto.location.latitude ?? undefined,
     longitude: dto.location.longitude ?? undefined,
     lastCuratedAt: dto.lastCuratedAt ?? undefined,
+    pricingTiers: dto.pricingTiers ? {
+      currency: dto.pricingTiers.local.currency,
+      adult: minorToMajor(dto.pricingTiers.local.adultMinor, dto.pricingTiers.local.currency),
+      childSenior: dto.pricingTiers.local.childSeniorMinor == null ? undefined : minorToMajor(dto.pricingTiers.local.childSeniorMinor, dto.pricingTiers.local.currency),
+      notes: dto.pricingTiers.local.notes ?? undefined,
+      approxUsdAdult: dto.pricingTiers.approxUsd == null ? undefined : minorToMajor(dto.pricingTiers.approxUsd.adultMinor, "USD"),
+      approxUsdChildSenior: dto.pricingTiers.approxUsd?.childSeniorMinor == null ? undefined : minorToMajor(dto.pricingTiers.approxUsd.childSeniorMinor, "USD"),
+    } : undefined,
     isFavorite: dto.isFavorite,
     isFeatured: dto.isFeatured,
     apiBacked: true,
@@ -324,7 +343,10 @@ function mapCity(dto: CityDTO | CityDetailDTO): TravelCity {
   return {
     id: dto.id,
     name: dto.name,
+    contentGuide: "guide" in dto ? dto.guide ?? null : null,
     country: dto.country,
+    description: dto.description ?? undefined,
+    isFeatured: dto.isFeatured,
     image: dto.coverImageUrl,
     featuredImage: featured?.image ?? dto.coverImageUrl,
     featuredTitle: featured?.title ?? dto.name,

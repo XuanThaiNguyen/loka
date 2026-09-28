@@ -4,48 +4,77 @@
 
 @theme {
   --spacing-screen: 1.25rem;
+  /* Web HeroUI uses a 70/30 mix for secondary button labels. */
+  --color-accent-soft-foreground: color-mix(in oklab, var(--accent) 70%, var(--foreground) 30%);
 }
 
+/* Match pland/ui/src/index.css; sRGB values also live in theme/theme.ts. */
 @layer theme {
   @variant light {
-    --background: #ffffff;
-    --foreground: #101828;
+    --background: #f8f7f5;
+    --foreground: #161b20;
     --surface: #ffffff;
-    --surface-secondary: #f9fafb;
-    --surface-tertiary: #f2f4f7;
-    --muted: #667085;
-    --accent: #ff4405;
-    --accent-foreground: #ffffff;
-    --danger: #f04438;
-    --danger-foreground: #ffffff;
-    --warning: #f79009;
-    --warning-foreground: #101828;
-    --success: #17b26a;
-    --success-foreground: #101828;
-    --border: #eaecf0;
-    --separator: #eaecf0;
-    --focus: #ff4405;
-    --link: #1570ef;
+    --surface-secondary: #f4f2ef;
+    --surface-tertiary: #eeede9;
+    --overlay: #ffffff;
+    --muted: #636a71;
+    --default: #eeedea;
+    --accent: #2045e8;
+    --accent-foreground: #fcfcfc;
+    --success: #33ac5a;
+    --warning: #ed9e2f;
+    --danger: #de3b3d;
+    --border: #e1dfdb;
+    --separator: #e8e6e2;
+    --segment: #ffffff;
+    --default-foreground: #161b20;
+    --success-foreground: #18181b;
+    --warning-foreground: #18181b;
+    --danger-foreground: #fcfcfc;
+    --focus: #2045e8;
+    --link: #161b20;
+    --surface-foreground: var(--foreground);
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary-foreground: var(--foreground);
+    --overlay-foreground: var(--foreground);
+    --segment-foreground: var(--foreground);
+    --field-background: var(--surface);
+    --field-foreground: var(--foreground);
+    --field-placeholder: var(--muted);
+    --field-border: var(--border);
   }
 
   @variant dark {
-    --background: #000000;
-    --foreground: #ffffff;
-    --surface: #101828;
-    --surface-secondary: #1d2939;
-    --surface-tertiary: #344054;
-    --muted: #98a2b3;
-    --accent: #ff4405;
-    --accent-foreground: #ffffff;
-    --danger: #f97066;
-    --danger-foreground: #ffffff;
-    --warning: #fdb022;
-    --warning-foreground: #0c111d;
-    --success: #47cd89;
-    --success-foreground: #0c111d;
-    --border: #344054;
-    --separator: #344054;
-    --focus: #ff4405;
-    --link: #84caff;
+    --background: #0a0d10;
+    --foreground: #f3f2ef;
+    --surface: #14181b;
+    --surface-secondary: #1d2125;
+    --surface-tertiary: #26292d;
+    --overlay: #191c20;
+    --muted: #999fa6;
+    --default: #24272a;
+    --accent: #4570ff;
+    --accent-foreground: #fcfcfc;
+    --success: #33ac5a;
+    --warning: #f7b750;
+    --danger: #db3b3e;
+    --border: #2d3134;
+    --separator: #26292d;
+    --segment: #3a3e42;
+    --default-foreground: #f3f2ef;
+    --success-foreground: #18181b;
+    --warning-foreground: #18181b;
+    --danger-foreground: #fcfcfc;
+    --focus: #4570ff;
+    --link: #f3f2ef;
+    --surface-foreground: var(--foreground);
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary-foreground: var(--foreground);
+    --overlay-foreground: var(--foreground);
+    --segment-foreground: var(--foreground);
+    --field-background: var(--surface);
+    --field-foreground: var(--foreground);
+    --field-placeholder: var(--muted);
+    --field-border: var(--border);
   }
 }

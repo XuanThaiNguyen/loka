@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.light.orange[50],
+    backgroundColor: theme.colors.light.accentSoft,
   },
   tripTitle: {
     color: theme.colors.light.gray[900],
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.orange[50],
+    backgroundColor: theme.colors.light.accentSoft,
   },
   plannerIcon: {
     width: 40,

@@ -44,7 +44,6 @@ type ApiDay = { day: number; title?: string | null; activities: ApiActivity[] };
 
 export type TravelPlanSummaryDTO = {
   id: string;
-  generationId: string | null;
   name: string;
   status: TravelPlanStatus;
   origin: string;
@@ -207,7 +206,8 @@ function mapTravelPlanSummary(plan: TravelPlanSummaryDTO): UserTravelPlan {
     hotels: [],
     days: [],
     createdAt: plan.createdAt,
-    isAiGenerated: Boolean(plan.generationId),
+    // Current BE no longer exposes generation provenance.
+    isAiGenerated: false,
   };
 }
 

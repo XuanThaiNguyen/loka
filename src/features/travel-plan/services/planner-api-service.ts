@@ -7,7 +7,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type PlannerSessionStatus = "collecting" | "generating" | "completed";
-export type PlannerGenerationStatus = "queued" | "generating" | "completed";
 
 export type PlannerSessionDTO = {
   id: string;
@@ -35,19 +34,6 @@ export type PlannerSessionDTO = {
   isDurable: boolean;
   createdAt: string;
   updatedAt: string;
-};
-
-export type PlannerGenerationDTO = {
-  id: string;
-  sessionId: string;
-  status: PlannerGenerationStatus;
-  travelPlanId: string | null;
-  result: Record<string, unknown> | null;
-  errorMessage: string | null;
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-  session?: PlannerSessionDTO;
 };
 
 export type PlannerSessionInput = {
@@ -86,20 +72,7 @@ export const plannerApi = {
     }),
   removeSession: (id: string) =>
     apiRequest<null>(`/api/travel-planner/sessions/${id}`, { method: "DELETE" }),
-  startGeneration: (sessionId: string) =>
-    apiRequest<DataEnvelope<PlannerGenerationDTO>>(
-      `/api/travel-planner/sessions/${sessionId}/generations`,
-      { method: "POST" },
-    ),
-  listGenerations: (
-    query: { sessionId?: string; status?: PlannerGenerationStatus; cursor?: string; limit?: number } = {},
-    signal?: AbortSignal,
-  ) => apiRequest<PageEnvelope<PlannerGenerationDTO>>(
-    apiPath("/api/travel-planner/generations", query),
-    { signal },
-  ),
-  getGeneration: (id: string, signal?: AbortSignal) =>
-    apiRequest<DataEnvelope<PlannerGenerationDTO>>(`/api/travel-planner/generations/${id}`, { signal }),
+
 };
 
 export const plannerQueryKeys = {

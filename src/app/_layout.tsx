@@ -30,6 +30,7 @@ function RootNavigator() {
       >
         <Stack.Protected guard={Boolean(session)}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" options={{ animation: "slide_from_right", gestureEnabled: true }} />
           <Stack.Screen name="city/[id]" />
           <Stack.Screen name="collection/[slug]" />
           <Stack.Screen name="destination/[id]" />

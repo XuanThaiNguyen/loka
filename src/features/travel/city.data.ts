@@ -6,6 +6,11 @@ export type TravelCity = {
   id: CityId;
   name?: string;
   country?: string;
+  description?: string;
+  isFeatured?: boolean;
+  guide?: import("./detail-guide").DetailGuide;
+  editorial?: import("./city-editorial").CityEditorial;
+  contentGuide?: import("./city-guide").CityGuide | null;
   image: string;
   featuredImage: string;
   featuredTitle?: string;
