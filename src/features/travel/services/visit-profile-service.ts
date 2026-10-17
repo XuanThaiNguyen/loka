@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, type DataEnvelope } from "@/lib/api/client";
 
@@ -24,8 +25,9 @@ export type VisitProfile = {
 };
 
 export function useVisitProfile(id: string, enabled: boolean) {
+  const { i18n } = useTranslation();
   return useQuery({
-    queryKey: ["catalog", "destination", id, "visit-profile"],
+    queryKey: ["catalog", "destination", id, "visit-profile", i18n.language],
     enabled,
     queryFn: ({ signal }) => apiRequest<DataEnvelope<VisitProfile | null>>(`/api/destinations/${id}/visit-profile`, { signal }),
     select: (response) => response.data,

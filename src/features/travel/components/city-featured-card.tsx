@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -62,16 +62,7 @@ export function CityFeaturedCard({ city }: CityFeaturedCardProps) {
           {city.featuredTitle ?? t(`travel.cities.${city.id}.featuredTitle`)}
         </Text>
         <View style={styles.details}>
-          <Text style={styles.price}>
-            {new Intl.NumberFormat(undefined, {
-              style: "currency",
-              currency: city.featuredCurrency ?? "USD",
-              maximumFractionDigits: 0,
-            }).format(city.featuredPrice)}
-            <Text style={styles.perPerson}>
-              /{t("travel.cityScreen.person")}
-            </Text>
-          </Text>
+
           <View style={styles.location}>
             <Ionicons
               name="location"

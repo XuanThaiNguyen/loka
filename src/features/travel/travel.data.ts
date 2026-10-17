@@ -23,6 +23,10 @@ export type KnownCollectionSlug =
 export type CollectionSlug = string;
 
 export type Destination = {
+  sources?: { label: string; url: string; checkedOn: string }[];
+  contentLocale?: "en" | "vi";
+  editorialSections?: import("./city-guide").CityGuideSection[];
+  contentUpdatedAt?: string;
   id: DestinationId;
   cityId?: string;
   title?: string;
@@ -33,7 +37,7 @@ export type Destination = {
   image: string;
   gallery?: readonly string[];
   rating: string;
-  price: number;
+  price?: number;
   currency?: string;
   visitors: string;
   visitorCount?: number;

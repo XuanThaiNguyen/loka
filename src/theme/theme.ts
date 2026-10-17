@@ -478,6 +478,19 @@ export const colorStyles = {
   dark: darkColors,
 } as const;
 
+// Mobile knowledge surfaces; keep foundation colors and the web/admin theme independent.
+export const travelSurfaces = {
+  header: "#EAF4F7",
+  foreground: "#18232D",
+  secondary: "#566573",
+  info: "#EDF2FF",
+  featured: "#183D56",
+  featuredInset: "#244B65",
+  featuredSecondary: "#DCE8EF",
+  positiveForeground: "#217A42",
+  positiveBackground: "#EDFCF2",
+} as const;
+
 export const theme = {
   colors: colorStyles,
   spacing: {

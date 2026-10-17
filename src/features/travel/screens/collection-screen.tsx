@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DetailState } from "@/features/travel/components/detail-ui";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import {
@@ -14,7 +15,9 @@ export function CollectionScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { collection, items } = useCollection(slug);
+  const query = useCollection(slug);
+  const { collection, items } = query;
+  if (!collection) return <View style={styles.screen}><TravelScreenHeader title={t("travel.detail.title")} showBack /><DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /></View>;
 
   return (
     <View style={styles.screen}>

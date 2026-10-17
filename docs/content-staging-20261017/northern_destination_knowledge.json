@@ -1,0 +1,993 @@
+{
+  "pack_title": "Loka destination knowledge: Ha Noi and Ninh Binh",
+  "language": "en",
+  "version": "research-draft-1",
+  "checked_on": "2026-10-17",
+  "publication_status": "Unpublished editorial content; needs schema mapping, copy review, current operational recheck and image clearance.",
+  "source_policy": "Official tourism, UNESCO and attraction-operator sources. Checked means page reviewed on this date, not independent confirmation of live operations. Editorial advice, suggested routes and duration estimates are labelled.",
+  "destinations": [
+    {
+      "id": "ha-noi",
+      "name": "Ha Noi",
+      "alternate_names": [
+        "Hanoi",
+        "Hà Nội"
+      ],
+      "scope": "Central Hanoi and a separate western museum excursion; no district-boundary claims.",
+      "modules": [
+        {
+          "title": "Overview",
+          "body": "Vietnam’s capital rewards a mix of street-level wandering and focused museum visits. The Old Quarter, Hoan Kiem Lake and the city’s coffee culture introduce everyday Hanoi; the Temple of Literature and Imperial Citadel add context to its long political and educational history. Plan fewer stops and leave room for breaks.",
+          "source_ids": [
+            "H1",
+            "H3",
+            "H5"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based",
+          "volatility": "low"
+        },
+        {
+          "title": "Areas and orientation",
+          "body": "Use Hoan Kiem Lake as an orientation point. The Old Quarter lies to its north. South of the lake, broader streets and museums form an easy second cluster. The Temple of Literature and Imperial Citadel are a separate heritage outing. The Museum of Ethnology deserves a dedicated journey west rather than being added to a lake walk.",
+          "source_ids": [
+            "H2",
+            "H10"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_grouping",
+          "volatility": "low"
+        },
+        {
+          "title": "Getting around",
+          "body": "Walk within a compact sightseeing cluster; use a taxi, ride-hailing journey or public bus between farther stops. Noi Bai is the main international airport, outside the central sightseeing area. Hanoi also has intercity rail connections. Leave a flexible arrival-day buffer rather than booking an immediate museum slot.",
+          "source_ids": [
+            "H1"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Seasons and packing",
+          "body": "Expect hot, humid summers and cool, sometimes drizzly winters. Spring and autumn are shorter transition seasons; September to November is a useful starting window for planning. Bring rain protection and clothing layers appropriate to the forecast. In warm weather, keep longer walks early and use museums for a midday pause.",
+          "source_ids": [
+            "H1"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Food to recognize",
+          "body": "Phở is a noodle-soup starting point. Bún chả brings grilled pork together with rice noodles, herbs and dipping sauce. Chả cá combines seasoned fish with dill and spring onions. Cà phê trứng is coffee topped with sweet egg foam. Bún đậu often comes with fermented shrimp paste, so do not assume a tofu dish is vegetarian. Recipes vary: ask about ingredients and preparation rather than relying on a dish name.",
+          "source_ids": [
+            "H9"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Culture and etiquette",
+          "body": "Ask before photographing people. Dress modestly at temples and follow posted shoe-removal rules. Keep voices low around worshippers and avoid touching sacred objects. A calm, polite response usually works better than a public argument. Learning a simple greeting and thank-you can make everyday exchanges warmer.",
+          "source_ids": [
+            "G1"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based",
+          "volatility": "low"
+        },
+        {
+          "title": "Practical habits",
+          "body": "Save attraction names and your destination address offline. Confirm the pickup point before requesting transport. Check opening days before travelling across town, and keep a rain-plan museum in reserve. Carry a small amount of local cash alongside your usual payment option; confirm accepted payment before ordering.",
+          "source_ids": [],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Common mistakes",
+          "body": "Trying to see the whole city on foot; treating every temple or museum schedule as identical; allocating only a few minutes to the Temple of Literature; assuming a tofu-based meal has no seafood ingredients; and treating historic streets as a traffic-free pedestrian zone. Build a plan around two nearby anchors, then add optional stops.",
+          "source_ids": [
+            "H9"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Day route: lake and living city",
+          "body": "Morning: walk Hoan Kiem Lake, then visit Ngoc Son Temple if open. Continue into the Old Quarter and pause for lunch. Afternoon: choose the Vietnamese Women’s Museum or Hoa Lo Prison, rather than rushing both. Return toward the lake for an unhurried evening. Editorial route; allow a full day with breaks and check entry schedules.",
+          "source_ids": [
+            "H2",
+            "H7",
+            "H6"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_route",
+          "volatility": "low"
+        },
+        {
+          "title": "Day route: learning and power",
+          "body": "Begin at the Temple of Literature, allowing time for its courtyards and scholarly monuments. After lunch, transfer to the Imperial Citadel and focus on the archaeological story. Keep the evening unscheduled. The Museum of Ethnology works better as a separate half-day excursion. Editorial route; transport and queues are additional.",
+          "source_ids": [
+            "H3",
+            "H5",
+            "H8"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_route",
+          "volatility": "low"
+        }
+      ],
+      "attractions": [
+        {
+          "id": "hn-hoan-kiem",
+          "name": "Hoan Kiem Lake",
+          "short_description": "A central lakeside walk for a first look at Hanoi.",
+          "long_description": "The lake provides a natural pause between city sightseeing stops. Early and late in the day, its waterside paths are part of local exercise and social routines.",
+          "why_visit": "A low-pressure introduction to everyday city life.",
+          "practical_tips": [
+            "Leave space for walkers and exercise groups.",
+            "Pair with nearby Ngoc Son Temple."
+          ],
+          "location_access": "Central Hanoi, beside the Old Quarter.",
+          "typical_visit_time": {
+            "text": "45–75 minutes",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H1",
+            "H2"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vietnam.travel/places-to-go/red-river-delta/ha-noi",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-old-quarter",
+          "name": "Hanoi Old Quarter",
+          "short_description": "Historic trading streets north of Hoan Kiem Lake.",
+          "long_description": "The area’s streets retain associations with traditional crafts and merchandise. Explore the shopfronts and lanes at a relaxed pace rather than treating the quarter as one monument.",
+          "why_visit": "Street life, trading heritage and small details.",
+          "practical_tips": [
+            "Choose a short loop.",
+            "Stay alert to traffic and avoid blocking shop entrances."
+          ],
+          "location_access": "North of Hoan Kiem Lake.",
+          "typical_visit_time": {
+            "text": "2–3 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H2"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vietnam.travel/things-to-do/11-must-see-attractions-ha-noi",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-ngoc-son",
+          "name": "Ngoc Son Temple",
+          "short_description": "An island temple reached by a red bridge.",
+          "long_description": "On the northern side of Hoan Kiem Lake, Ngoc Son is associated with the scholar Van Xuong and general Tran Hung Dao.",
+          "why_visit": "A compact sacred stop within the lake area.",
+          "practical_tips": [
+            "Respect worshippers and posted photography rules."
+          ],
+          "location_access": "Northern Hoan Kiem Lake; approach across The Huc Bridge.",
+          "typical_visit_time": {
+            "text": "30–45 minutes",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H2"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vietnam.travel/things-to-do/11-must-see-attractions-ha-noi",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-van-mieu",
+          "name": "Temple of Literature – Quoc Tu Giam",
+          "short_description": "Courtyards and scholarly heritage in a historic educational complex.",
+          "long_description": "Founded in 1070, Van Mieu honours Confucius and scholars. Quoc Tu Giam followed in 1076. The sequence of courtyards, Khue Van Pavilion and doctoral stelae helps explain the place of learning in Vietnam’s history.",
+          "why_visit": "Architecture with a clear educational story, beyond a photo stop.",
+          "practical_tips": [
+            "Do not touch the stelae or other artefacts.",
+            "Keep quiet in shrines; allow time to read interpretation."
+          ],
+          "location_access": "Visitor entrance: 58 Quoc Tu Giam Street, Hanoi.",
+          "typical_visit_time": {
+            "text": "1–1.5 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H3",
+            "H4"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "official_page_checked",
+            "standard_adult_fee_vnd": 70000,
+            "day_hours": "08:00–17:00 daily",
+            "source_id": "H4",
+            "checked_on": "2026-10-17",
+            "caution": "Operator page takes precedence over inconsistent roundup hours. Night visits and concession eligibility are separate; recheck before travel."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vanmieu.gov.vn/en/inner-temple",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-imperial-citadel",
+          "name": "Imperial Citadel of Thang Long",
+          "short_description": "Archaeological layers from Hanoi’s long history of political power.",
+          "long_description": "The UNESCO-listed central sector preserves evidence of successive periods of rule. The Ly dynasty built its citadel in the 11th century over earlier remains; the associated Hoang Dieu archaeological site deepens the story beneath the surviving buildings.",
+          "why_visit": "Understand the city through archaeology and changing seats of power.",
+          "practical_tips": [
+            "Expect an archaeological site, not a complete intact palace.",
+            "Read interpretation before moving between remains."
+          ],
+          "location_access": "Central Hanoi; confirm the current public entrance with the site operator.",
+          "typical_visit_time": {
+            "text": "2–3 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H5"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://whc.unesco.org/en/list/1328/",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-hoa-lo",
+          "name": "Hoa Lo Prison Relic",
+          "short_description": "A memorial and museum connected to Hanoi’s colonial-era imprisonment history.",
+          "long_description": "The surviving prison site presents the history of incarceration and resistance. Approach it as a serious historical visit and read exhibition interpretation with attention to whose experiences and perspective are presented.",
+          "why_visit": "A deeper encounter with the city’s difficult modern history.",
+          "practical_tips": [
+            "Allow time for reflective viewing.",
+            "Preview the subject matter before visiting with children or anyone sensitive to imprisonment and violence."
+          ],
+          "location_access": "1 Hoa Lo Street, Hanoi.",
+          "typical_visit_time": {
+            "text": "1–1.5 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H6",
+            "H11"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "official_page_checked",
+            "standard_fee_vnd": 50000,
+            "hours": "08:00–17:00 daily, including holidays, according to the operator page",
+            "source_id": "H6",
+            "checked_on": "2026-10-17",
+            "caution": "Concessions and special tours have separate conditions; verify before travel."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://hoalo.vn/EN/Home/Ve",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-womens-museum",
+          "name": "Vietnamese Women’s Museum",
+          "short_description": "Stories of women through family life, history and fashion.",
+          "long_description": "The museum’s permanent themes bring together social roles, historical experiences and dress. Its official visitor page lists audio guides in several languages, making it a useful self-paced cultural visit.",
+          "why_visit": "Broaden a city itinerary beyond rulers and monuments.",
+          "practical_tips": [
+            "Choose time to engage with individual stories.",
+            "Ask about current accessibility arrangements and temporary exhibitions."
+          ],
+          "location_access": "36 Ly Thuong Kiet Street, Hanoi, south of Hoan Kiem Lake.",
+          "typical_visit_time": {
+            "text": "1.5–2 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H7"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "official_page_checked",
+            "hours": "08:00–17:00 Monday–Sunday",
+            "fee": "Not verified; check operator",
+            "source_id": "H7",
+            "checked_on": "2026-10-17",
+            "caution": "Recheck closures and exhibition changes before visiting."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://baotangphunu.org.vn/en/visit-2/",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "hn-ethnology",
+          "name": "Vietnam Museum of Ethnology",
+          "short_description": "Indoor exhibitions and an outdoor architecture garden.",
+          "long_description": "The museum introduces Vietnam’s 54 ethnic groups through objects and cultural interpretation. The architecture garden adds a different scale of experience, showing how buildings relate to daily life and local environments.",
+          "why_visit": "A fuller picture of the country’s cultural diversity.",
+          "practical_tips": [
+            "Allow time outdoors as well as inside.",
+            "Do not assume performances or demonstrations run daily."
+          ],
+          "location_access": "Nguyen Van Huyen Street area, west of the central lake and Old Quarter cluster.",
+          "typical_visit_time": {
+            "text": "2–3 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "H8",
+            "H2"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "historical_operator_leaflet_only",
+            "display_text": "The official leaflet lists 08:30–17:30, closed Mondays and Lunar New Year. The leaflet is not a live 2026 notice; confirm before relying on these hours. Fee omitted.",
+            "source_id": "H8",
+            "checked_on": "2026-10-17"
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://www.vme.org.vn/modules/frontend/themes/vme.org.vn/assets/files/To-roi-ENG.pdf",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        }
+      ]
+    },
+    {
+      "id": "ninh-binh",
+      "name": "Ninh Binh",
+      "alternate_names": [
+        "Ninh Bình"
+      ],
+      "scope": "Destination area around Trang An, Tam Coc and Hoa Lu, with Van Long and Cuc Phuong excursions. Not a claim that all attractions sit in one city or within the UNESCO boundary. Historical district names in sources should not become current administrative fields without a separate gazetteer check.",
+      "modules": [
+        {
+          "title": "Overview",
+          "body": "Ninh Binh is a landscape-focused destination: limestone hills rise above waterways, rice fields and villages, while temples connect the scenery to Vietnam’s history. The Trang An Landscape Complex is a UNESCO mixed cultural and natural World Heritage property, inscribed in 2014. This designation does not cover every place marketed as Ninh Binh.",
+          "source_ids": [
+            "N1",
+            "N2"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based",
+          "volatility": "low"
+        },
+        {
+          "title": "Areas and orientation",
+          "body": "Treat the destination as a set of countryside clusters. Tam Coc is a visitor hub toward the southern side of the main sightseeing area; Trang An’s boat departure area is separate, with Hoa Lu’s historic capital farther north. Van Long and Cuc Phuong are separate excursions. Use exact attraction pins and meeting points rather than simply asking for “Ninh Binh.”",
+          "source_ids": [
+            "N3",
+            "N7",
+            "N8"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Getting there and moving around",
+          "body": "Ninh Binh has a railway station and road connections from Hanoi. The national tourism page suggests about two hours, but actual journey time depends on service, origin and traffic. Build in onward travel to countryside attractions. For a multi-stop day, arrange transport and the return pickup explicitly; short countryside rides and walks should be chosen to match conditions and ability.",
+          "source_ids": [
+            "N1"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Seasonal planning",
+          "body": "Summers are hot and humid; winters can be cool and drizzly. Rice near Tam Coc may turn golden around late May, but harvest timing changes. Treat seasonal photographs as inspiration rather than a guarantee. Check the forecast and local operating advice before a boat trip or exposed climb, and carry rain protection, water and sun protection.",
+          "source_ids": [
+            "N1"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Food and local culture",
+          "body": "Cơm cháy is crisp rice crust, served as a snack or with a sauce or stew. Goat dishes are another local speciality; preparations differ. Bánh cuốn consists of thin rice rolls, often filled with pork and mushrooms. Ask about ingredients, sauces and how meat is cooked before ordering. Temple visits and rural livelihoods are part of this landscape, not just a backdrop for photographs.",
+          "source_ids": [
+            "N4"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Etiquette and care",
+          "body": "Cover shoulders and knees at sacred sites and follow local instructions about shoes. Ask before photographing people at work or worship. Keep to paths through farmland and leave crops untouched. Carry litter out, keep wildlife at a distance and do not feed animals. On boats, wear the supplied life jacket and follow the boat guide’s instructions.",
+          "source_ids": [
+            "G1",
+            "N3"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "source_based_with_editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Practical planning",
+          "body": "Choose one main boat trip for a short visit, then add one nearby land-based stop. Ask what the ticket includes, where boarding takes place and when you need to return. Keep your phone protected from splashes and leave both hands available when boarding. Anyone who needs step-free access should ask about actual boarding and path conditions before purchasing.",
+          "source_ids": [],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_advice",
+          "volatility": "medium"
+        },
+        {
+          "title": "Common mistakes",
+          "body": "Trying to combine two long boat rides and several climbs into one day; assuming the railway station is beside the scenic boat docks; expecting golden rice in every month; overlooking the return drive from a countryside stop; and assuming a mountain viewpoint is suitable for every mobility level. Prioritize the experience you most want.",
+          "source_ids": [],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_advice",
+          "volatility": "low"
+        },
+        {
+          "title": "Day route: waterways and history",
+          "body": "Morning: take a Trang An boat itinerary confirmed on arrival. Break for lunch, then visit Hoa Lu Ancient Capital. Leave spare time for transport and weather. If the boat trip runs long, shorten the second stop instead of rushing. Editorial full-day route; exact boat routes and access must be checked locally.",
+          "source_ids": [
+            "N2",
+            "N3",
+            "N9"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_route",
+          "volatility": "low"
+        },
+        {
+          "title": "Day route: Tam Coc and Bich Dong",
+          "body": "Start with the Tam Coc boat trip, then pause for lunch. Visit Bich Dong later, with time for the steps and worship areas. Hang Mua can replace Bich Dong for travellers seeking a strenuous viewpoint climb, provided conditions are suitable; it is optional, not a compulsory extra. Editorial full-day route.",
+          "source_ids": [
+            "N3",
+            "N5",
+            "N4"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_route",
+          "volatility": "low"
+        },
+        {
+          "title": "Extra day: forest or wetlands",
+          "body": "Choose Cuc Phuong for a dedicated forest day with activities agreed at the visitor centre. Choose Van Long for a slower wetland-focused outing. Neither should be treated as a quick add-on after a fully packed Tam Coc day. Wildlife sightings depend on conditions and can never be promised.",
+          "source_ids": [
+            "N7",
+            "N8"
+          ],
+          "checked_on": "2026-10-17",
+          "content_basis": "editorial_route",
+          "volatility": "low"
+        }
+      ],
+      "attractions": [
+        {
+          "id": "nb-trang-an",
+          "name": "Trang An Landscape and Boat Area",
+          "short_description": "Limestone valleys, waterways and sacred sites in a World Heritage landscape.",
+          "long_description": "Trang An’s navigable waterways pass between karst hills and through caves. The wider UNESCO property also preserves archaeological evidence of human adaptation over more than 30,000 years, along with villages, fields and historic sites. The boat departure area is one way to experience that larger landscape.",
+          "why_visit": "Combine scenery with a sense of the landscape’s human history.",
+          "practical_tips": [
+            "Confirm the current route and duration at the official departure area.",
+            "Wear a life jacket and listen to low-clearance instructions.",
+            "Bring water and protection from sun or rain."
+          ],
+          "location_access": "Trang An countryside sightseeing area; confirm the boat-departure pin rather than using the whole UNESCO property as a navigation target.",
+          "typical_visit_time": {
+            "text": "3–4 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N2",
+            "N3"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://whc.unesco.org/en/list/1438/",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-tam-coc",
+          "name": "Tam Coc Boat Landscape",
+          "short_description": "A river journey among rice fields and limestone hills.",
+          "long_description": "Boats leave from the Van Lam pier area and travel through the landscape associated with three caves. Field colours vary with the agricultural calendar, so the experience is different across the year.",
+          "why_visit": "See a lived-in agricultural landscape from the water.",
+          "practical_tips": [
+            "Confirm ticket inclusions and boat arrangements before boarding.",
+            "Do not plan around a guaranteed rice colour."
+          ],
+          "location_access": "Van Lam boat pier, Tam Coc sightseeing area.",
+          "typical_visit_time": {
+            "text": "2–3 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N3"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vietnam.travel/things-to-do/guide-boat-tours-ninh-binh",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-bich-dong",
+          "name": "Bich Dong Pagoda",
+          "short_description": "A Buddhist pagoda integrated with caves and hillside scenery.",
+          "long_description": "Bich Dong’s architecture fits into the mountain rather than standing apart from it. Visit as a place of worship as well as a scenic stop, with time to notice how the pagoda, trees and rock formations relate to one another.",
+          "why_visit": "A more intimate sacred landscape after a river outing.",
+          "practical_tips": [
+            "Wear modest clothing and shoes with grip.",
+            "Move slowly on steps and do not obstruct worship.",
+            "Ask locally about access if stairs are difficult."
+          ],
+          "location_access": "Bich Dong, in the Tam Coc area; source uses the historical Ninh Hai/Hoa Lu locality names.",
+          "typical_visit_time": {
+            "text": "45–90 minutes",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N5"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://dulichninhbinh.com.vn/en/item/1415",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-hang-mua",
+          "name": "Hang Mua Viewpoint",
+          "short_description": "A steep climb above the Tam Coc landscape.",
+          "long_description": "The principal draw is the high viewpoint over the river, fields and limestone hills. The national tourism description notes roughly 500 steps; this is a physical climb rather than an easy scenic stroll. Visibility can change with mist and weather.",
+          "why_visit": "An elevated view of the landscape explored by boat below.",
+          "practical_tips": [
+            "Use shoes with grip and carry water.",
+            "Avoid the exposed climb during storms or slippery conditions.",
+            "Stay on designated steps; never climb beyond barriers for a photo."
+          ],
+          "location_access": "Hang Mua tourist area near the Tam Coc landscape; verify the entrance pin before setting off.",
+          "typical_visit_time": {
+            "text": "1.5–2 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N4"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://vietnam.travel/things-to-do/10-must-do-activities-ninh-binh",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-hoa-lu",
+          "name": "Hoa Lu Ancient Capital",
+          "short_description": "Historic capital remains within the Trang An cultural landscape.",
+          "long_description": "Hoa Lu was a centre of power in the 10th and 11th centuries. Its karst setting helps explain the relationship between geography and political history. Visit the historic conservation site rather than assuming any attraction with “Hoa Lu” in its name refers to the same place.",
+          "why_visit": "Add historical context to a scenery-focused trip.",
+          "practical_tips": [
+            "Use the conservation centre’s location when navigating.",
+            "Respect shrine areas and leave time for interpretation."
+          ],
+          "location_access": "Historic Hoa Lu site, Truong Yen area; official conservation centre provides the site map.",
+          "typical_visit_time": {
+            "text": "1–1.5 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N2",
+            "N9"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://whc.unesco.org/en/list/1438/",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-bai-dinh",
+          "name": "Bai Dinh Pagoda Complex",
+          "short_description": "A large pilgrimage complex with old and newer temple areas.",
+          "long_description": "Bai Dinh contains an older pagoda and an extensive modern religious complex. Its scale makes it a substantial walking visit, and its pilgrimage role matters as much as the monumental architecture.",
+          "why_visit": "Explore contemporary religious life alongside an older sacred site.",
+          "practical_tips": [
+            "Decide which sections matter most before starting.",
+            "Confirm walking distances and any paid shuttle or tower options separately.",
+            "Dress for worship and allow extra time around religious celebrations."
+          ],
+          "location_access": "Bai Dinh area, traditionally described in sources as Gia Sinh/Gia Vien; use a current site entrance pin.",
+          "typical_visit_time": {
+            "text": "2–3 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N6"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "outdated_tariff_omitted",
+            "display_text": "Official tourism tariff found is dated April 2025. Current shuttle, tower, guide prices and hours are not confirmed; do not display old package prices as current.",
+            "source_id": "N6",
+            "checked_on": "2026-10-17"
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://dulichninhbinh.com.vn/en/index.php/item/1848",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-van-long",
+          "name": "Van Long Wetland Nature Reserve",
+          "short_description": "Wetland scenery beneath limestone mountains.",
+          "long_description": "Van Long combines open water, limestone formations and wildlife habitat. It is a nature-focused outing that rewards quiet observation rather than a checklist of guaranteed animals. Migratory bird presence varies by season.",
+          "why_visit": "A slower way to appreciate the region’s wetland ecology.",
+          "practical_tips": [
+            "Keep voices low and give wildlife space.",
+            "Ask about current boat operations before travelling out.",
+            "Use binoculars if available; sightings are never assured."
+          ],
+          "location_access": "Van Long wetland excursion area, separate from the Tam Coc–Trang An core.",
+          "typical_visit_time": {
+            "text": "1.5–2.5 hours",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N7"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "not_verified",
+            "display_text": "Check current entry arrangements with the site before visiting. No confirmed fee or opening schedule supplied."
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://dulichninhbinh.com.vn/en/item/1842",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        },
+        {
+          "id": "nb-cuc-phuong",
+          "name": "Cuc Phuong National Park",
+          "short_description": "Forest trails and conservation learning in a limestone landscape.",
+          "long_description": "Established in 1962, Cuc Phuong protects a forest landscape with a rich variety of plants and wildlife. The area also has cultural connections to Muong communities. Visitor activities can include forest walking and conservation-focused visits, subject to current arrangements.",
+          "why_visit": "Trade river scenery for a deeper forest experience.",
+          "practical_tips": [
+            "Plan a dedicated outing and confirm routes with park staff.",
+            "Wear closed shoes and carry water and rain protection.",
+            "Arrange conservation-centre visits before assuming entry is available.",
+            "Stay on approved paths and never approach or feed animals."
+          ],
+          "location_access": "Cuc Phuong National Park visitor area; a separate excursion from the main Ninh Binh scenic circuit.",
+          "typical_visit_time": {
+            "text": "Half to full day, depending on the agreed route",
+            "basis": "editorial estimate; excludes travel and queues"
+          },
+          "source_ids": [
+            "N8"
+          ],
+          "checked_on": "2026-10-17",
+          "operational_information": {
+            "status": "outdated_tariff_omitted",
+            "display_text": "The official tourism page is dated April 2025 and lists separate park and conservation-centre charges. Current fees, access and booking conditions are unverified and omitted.",
+            "source_id": "N8",
+            "checked_on": "2026-10-17"
+          },
+          "volatility": {
+            "description": "low; review yearly",
+            "operations": "high; verify before travel and at least monthly in app"
+          },
+          "image_candidate": {
+            "source_url": "https://dulichninhbinh.com.vn/en/index.php/item/1841",
+            "status": "candidate only; rights and asset suitability must be cleared before use"
+          },
+          "editorial_note": "Visit timing, route advice and practical planning tips are editorial recommendations, not operator guarantees."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "H1",
+      "title": "Vietnam National Authority of Tourism: Ha Noi",
+      "url": "https://vietnam.travel/places-to-go/red-river-delta/ha-noi",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H2",
+      "title": "Vietnam National Authority of Tourism: 11 attractions",
+      "url": "https://vietnam.travel/things-to-do/11-must-see-attractions-ha-noi",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H3",
+      "title": "Van Mieu operator: Inner Temple",
+      "url": "https://vanmieu.gov.vn/en/inner-temple",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H4",
+      "title": "Van Mieu operator: visitor information",
+      "url": "https://www.vanmieu.gov.vn/en/introduction/visitor-information",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H5",
+      "title": "UNESCO: Imperial Citadel of Thang Long",
+      "url": "https://whc.unesco.org/en/list/1328/",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H6",
+      "title": "Hoa Lo operator: tickets",
+      "url": "https://hoalo.vn/EN/Home/Ve",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H7",
+      "title": "Vietnamese Women’s Museum: visit",
+      "url": "https://baotangphunu.org.vn/en/visit-2/",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H8",
+      "title": "Vietnam Museum of Ethnology: official English leaflet",
+      "url": "https://www.vme.org.vn/modules/frontend/themes/vme.org.vn/assets/files/To-roi-ENG.pdf",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H9",
+      "title": "Vietnam National Authority of Tourism: Hanoi dishes",
+      "url": "https://beta-v2.vietnam.travel/things-to-do/10-must-try-hanoi-dishes",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H10",
+      "title": "Vietnam National Authority of Tourism: Hanoi walking tours",
+      "url": "https://vietnam.travel/things-to-do/3-walking-tours-hanoi",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "H11",
+      "title": "Vietnam National Authority of Tourism: Hanoi history and food",
+      "url": "https://vietnam.travel/node/1703",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N1",
+      "title": "Vietnam National Authority of Tourism: Ninh Binh",
+      "url": "https://vietnam.travel/places-to-go/red-river-delta/ninh-binh",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N2",
+      "title": "UNESCO: Trang An Landscape Complex",
+      "url": "https://whc.unesco.org/en/list/1438/",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N3",
+      "title": "Vietnam National Authority of Tourism: boat tours",
+      "url": "https://vietnam.travel/things-to-do/guide-boat-tours-ninh-binh",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N4",
+      "title": "Vietnam National Authority of Tourism: Ninh Binh activities",
+      "url": "https://vietnam.travel/things-to-do/10-must-do-activities-ninh-binh",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N5",
+      "title": "Ninh Binh Tourism Promotion Information Center: Bich Dong",
+      "url": "https://dulichninhbinh.com.vn/en/item/1415",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N6",
+      "title": "Ninh Binh Tourism Promotion Information Center: Bai Dinh",
+      "url": "https://dulichninhbinh.com.vn/en/index.php/item/1848",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N7",
+      "title": "Ninh Binh Tourism Promotion Information Center: Van Long",
+      "url": "https://dulichninhbinh.com.vn/en/item/1842",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N8",
+      "title": "Ninh Binh Tourism Promotion Information Center: Cuc Phuong",
+      "url": "https://dulichninhbinh.com.vn/en/index.php/item/1841",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "N9",
+      "title": "Hoa Lu conservation center",
+      "url": "https://codohoalu.ninhbinh.gov.vn/en",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    },
+    {
+      "id": "G1",
+      "title": "Vietnam National Authority of Tourism: etiquette",
+      "url": "https://vietnam.travel/things-to-do/vietnamese-etiquette-travellers",
+      "checked_on": "2026-10-17",
+      "source_type": "official tourism / heritage / attraction operator",
+      "rights": "Reference source only; no image reuse licence inferred."
+    }
+  ],
+  "qa_notes": [
+    "No hotels, restaurants or commercial transport providers selected.",
+    "No imagery downloaded. Image candidates point to official reference pages, not approved production assets. Obtain permission/licence and creator credit for each chosen file; a UNESCO description licence does not automatically license every photo.",
+    "Keep fees/hours/booking fields unpublished unless operator evidence is current and clearly scoped. H4 and H6 contain current displayed tariffs, but still require before-travel checks. H7 contains displayed hours. H8 is an older official leaflet and explicitly not live operational confirmation.",
+    "National tourism roundups contain conflicting or questionable details: the Hanoi article has inconsistent Van Mieu hours and a misattributed Hoan Kiem legend; the Ninh Binh article contains stale Cuc Phuong pricing. These details have not been adopted.",
+    "Bai Dinh scale and UNESCO-boundary descriptions vary across tourism sources. Avoid area figures and superlatives; UNESCO describes the reconstructed complex in the buffer zone, so do not label the entire modern complex a UNESCO-inscribed monument.",
+    "Administrative names have changed. Source historical location labels are retained only as editorial context, not asserted as current wards/districts. Geocoding and precise entrances remain a separate validation step.",
+    "Refresh stable heritage descriptions yearly; food/culture and orientation every six months; transport and practical access quarterly; fees/hours/closures at least monthly and before travel; weather, hazards and boat operation advice on the day.",
+    "No accessibility guarantee is made. Confirm boarding, stairs, toilet and step-free arrangements directly for the traveller’s needs."
+  ]
+}

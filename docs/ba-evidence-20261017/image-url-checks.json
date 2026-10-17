@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-17T15:58:31.910612+00:00",
+  "checks": [
+    {
+      "url": "http://localhost:3000/api/city-photos/bdb55c1b-d71b-43aa-aab0-3c6f82363734.jpg",
+      "status": 200,
+      "contentType": "image/jpeg",
+      "firstBytesHex": "ffd8ffe000104a4649460001"
+    },
+    {
+      "url": "https://culturephamtravel.com/wp-content/uploads/2019/10/Da-Nang-city-Culture-Pham-Travel.png",
+      "status": 200,
+      "contentType": "image/png",
+      "firstBytesHex": "89504e470d0a1a0a0000000d"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkRYbtrYB7dnbcdwmmlBhRuXH-7sehSY54S_ax6coJ_RMFHi554JaZ8z98L-3-CO_TRb6zT4PfeS2NC38nMpoSnD1PeRc63zHLQbs53QvxXxYEKjPa351cQzlHm4N9FM3Gkweo=w408-h306-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkZ4NqIbtta814E6kKQKnc61ZKbpwN8wnZAREkoVVxjRM1c4Wd1vse4czFPG5KzkwWrwgWwz-TO5dF9Zo64IVq3vvrKHKJo6nB_SZ8YFA2PT89g3lWOimSRn5DIfz8gWH-ngi5kqNtzVobX=w426-h240-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkk6Ryqheax7TfBw7SxX33kOlKcX4B_sElXKA1cjmxu1j77Iw8f9lECcpC335XpLmVNM6wzx6y7rKJq8oEKIjklfo0wgOO1SfFazSWoNbTacnK82cpwEvqn-3LjSTYoxVCNRAa9Jw=w408-h306-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl0Efw4oVfLDdcWYd-m2NG1RnunkxpkqDtjiuP7I948pKK9BjsMrXqzmxK7qjgbsxI5lY37ZhjjwsTyF2jQjE9XZbwpwVpyh4t1KMkC1sxE7uptxpSvhMFkdu_rWVAvhGsLXc9aHorYsHyJ=w408-h306-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlZ4cbAAp-CsGh1v2y0rDjwgCbv0yQAQWMcd1pgL6FNQNTF0nEtl6NEaEI3pz22HCuxIV7zgrKNJ0oB0z0kCRE5f5viyadCDr2Prf3ZJpk6wvHDKIlEEVttv868wgo598AV9uc=w408-h272-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldjEcIytE-S-ntvVNWPJpmlCrzz6dp9tgMECsS54b_CM-uQvXIw-tsWwRFU1VTgmxDOowXSAHWOTARWAeCyUHZ_brB-U28emMBYEZRpfqG4o5egLsPbglZdNfGNqFdY3ioyZ2T=w408-h271-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmFSnN0VHW4fa70wHm0gLxaTduTkpJWXpjqpV-xmgHoI_trngasJ7SGAUEboM3mbktVkEwuXupX6XDM74OewmRIz8QJ4qlTrqpkjiBD0COCk3IFqEZOPNOOiIN5ehsoo3qzT9MJCCT681M=w408-h305-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmscmpUsBlzEkFxvgWV0SmJTKQRUoQWgMDL44RA5Vn52a5wHnWcF_aHRZYDHOFiS24wB6KzgSXM5diOZC0x0XkgaZSG9XxDq77Zdb1mI3BxqbxNlayJ8AAu91Q5c52qaOwPUIDTA4OHd-Hl=w408-h306-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnGLGH9n5WqE3Upv2WQcK7Tcfbrzm8eVgAwdLyWA6jPoYesa0FXejfv33GKFztk3nQyF4sY3UNurz6XPiNCNockRSy12Pk89wNEj14A-zjhFludc4STsfCTY3u0gEGzm9R9nyTxb-5wCoA=w409-h240-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnQMXqyAk_lRrrU0jh-Sbzy5xq4hN3da75Ysvcuk1djwRlSjURUT6GLdFlKN4iSqtwHcJIjukdcGQcnzQ2wmw5cCBHcWnAN4op2WAoRduiskp9Pq1-uIyw64wuRRjk1Xqa9MtgmC0TgH9AG=w408-h306-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzLKO4N35B4F1dLkHe2UDmcDshtu8rvD8mfQ6fo8l0RwpPvrRoOnEu-44IkGfLOaRg_PcAPipI2fbwy7rUuwoBMnLhUIUDPr9RdTx3A5_vQaSfHXD7FLTd6ceI_dWM51VHaxD1=w408-h309-k-no",
+      "error": "HTTP Error 403: Forbidden"
+    }
+  ]
+}

@@ -20,7 +20,7 @@ import {
   TOP_OVERLAY_FALLBACK_HEIGHT,
 } from "@/features/home/home.constants";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -29,6 +29,7 @@ export function HomeScreen() {
   const [sceneHeight, setSceneHeight] = useState(
     Math.max(height - TAB_BAR_HEIGHT - insets.bottom, 0),
   );
+  const [headerHeight, setHeaderHeight] = useState(FIXED_HEADER_HEIGHT);
   const [heroHeight, setHeroHeight] = useState(TOP_OVERLAY_FALLBACK_HEIGHT);
   const animatedIndex = useSharedValue(0);
 
@@ -52,14 +53,14 @@ export function HomeScreen() {
   }));
 
   const snapPoints = useMemo(() => {
-    const fixedHeaderBottom = insets.top + FIXED_HEADER_HEIGHT;
+    const fixedHeaderBottom = insets.top + headerHeight;
     const collapsed = Math.round(
       sceneHeight - fixedHeaderBottom - heroHeight + 34,
     );
     const expanded = Math.round(sceneHeight - fixedHeaderBottom);
 
     return [Math.max(collapsed, 360), Math.max(expanded, collapsed + 120)];
-  }, [heroHeight, insets.top, sceneHeight]);
+  }, [headerHeight, heroHeight, insets.top, sceneHeight]);
 
   return (
     <View
@@ -76,10 +77,10 @@ export function HomeScreen() {
         style={[styles.background, backgroundStyle]}
       />
 
-      <HomeHeader tintProgress={backgroundOpacity} topInset={insets.top} />
+      <HomeHeader tintProgress={backgroundOpacity} topInset={insets.top} onHeightChange={(next) => { if (next > 0 && Math.abs(next - headerHeight) > 1) setHeaderHeight(next); }} />
 
       <HomeHero
-        top={insets.top + FIXED_HEADER_HEIGHT}
+        top={insets.top + headerHeight}
         opacity={backgroundOpacity}
         onHeightChange={(nextHeight) => {
           if (nextHeight > 0 && Math.abs(nextHeight - heroHeight) > 1) {
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: theme.colors.light.header,
+    backgroundColor: travelSurfaces.header,
     zIndex: 0,
   },
   sheetHost: {

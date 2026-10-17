@@ -1,27 +1,22 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { travelCities, type TravelCity } from "@/features/travel/city.data";
+import { useTranslation } from "react-i18next";
+import type { TravelCity } from "@/features/travel/city.data";
+import type { Destination, TravelCollection } from "@/features/travel/travel.data";
 import {
-  destinations,
-  getCollection,
-  getCollectionDestinations,
-  getDestination,
-  travelCollections,
-  type Destination,
-  type TravelCollection,
-} from "@/features/travel/travel.data";
-import {
-  ApiError,
   apiPath,
   apiRequest,
   type DataEnvelope,
   type PageEnvelope,
 } from "@/lib/api/client";
-import { minorToMajor } from "@/lib/money";
 
 export type CatalogCategory = "adventure" | "beach" | "culture" | "city" | "food";
 
 export type DestinationDTO = {
+  editorialSections?: import("../city-guide").CityGuideSection[];
+  contentUpdatedAt?: string;
+  sources?: { label: string; url: string; checkedOn: string }[];
+  contentLocale?: "en" | "vi";
   id: string;
   cityId: string | null;
   slug: string;
@@ -43,8 +38,8 @@ export type DestinationDTO = {
   rating: { average: number; count: number };
   visitorCount: number;
   popularityRank: number | null;
-  fromPrice: { amountMinor: number; currency: string; unit: "person" };
-  pricingTiers: {
+  fromPrice?: { amountMinor: number; currency: string; unit: "person" } | null;
+  pricingTiers?: {
     local: {
       currency: string;
       adultMinor: number;
@@ -64,6 +59,8 @@ export type DestinationDTO = {
 };
 
 export type CityDTO = {
+  sources?: { label: string; url: string; checkedOn: string }[];
+  contentLocale?: "en" | "vi";
   id: string;
   name: string;
   slug: string;
@@ -146,9 +143,10 @@ export const travelQueryKeys = {
 };
 
 export function useCitySuggestions(q = "") {
+  const { i18n } = useTranslation();
   const search = q.trim();
   return useQuery({
-    queryKey: travelQueryKeys.citySuggestions(search),
+    queryKey: [...travelQueryKeys.citySuggestions(search), i18n.language],
     queryFn: ({ signal }) => catalogApi.listCities({ q: search || undefined, limit: 12 }, signal),
     select: (response) => response.data,
     staleTime: 5 * 60 * 1000,
@@ -156,35 +154,26 @@ export function useCitySuggestions(q = "") {
 }
 
 export function useDestinationSuggestions() {
+  const { i18n } = useTranslation();
   return useQuery({
-    queryKey: travelQueryKeys.suggestions,
+    queryKey: [...travelQueryKeys.suggestions, i18n.language],
     queryFn: ({ signal }) => catalogApi.listDestinations({ limit: 12 }, signal),
     select: (response) => response.data.map(mapDestination),
   });
 }
 
 export function useHomeCatalog() {
+  const { i18n } = useTranslation();
   const query = useQuery({
-    queryKey: travelQueryKeys.home,
+    queryKey: [...travelQueryKeys.home, i18n.language],
     queryFn: async ({ signal }) => {
       const [cityResponse, collectionResponse] = await Promise.all([
         catalogApi.listCities({ featured: true }, signal),
         catalogApi.listCollections(signal),
       ]);
-      const collections = collectionResponse.data.length
-        ? await Promise.all(
-            collectionResponse.data.map((collection) =>
-              catalogApi.getCollectionDestinations(collection.slug, signal).then(mapCollectionPage),
-            ),
-          )
-        : await Promise.all(
-            travelCollections.map((collection) =>
-              catalogApi.listDestinations(
-                { sort: collectionSort(collection.slug), limit: 3 },
-                signal,
-              ).then((response) => mapFallbackCollection(collection, response.data)),
-            ),
-          );
+      const collections = await Promise.all(collectionResponse.data.map((collection) =>
+        catalogApi.getCollectionDestinations(collection.slug, signal).then(mapCollectionPage),
+      ));
 
       return {
         cities: cityResponse.data.map(mapCity),
@@ -195,31 +184,27 @@ export function useHomeCatalog() {
 
   return {
     ...query,
-    cities: query.data?.cities.length ? query.data.cities : travelCities,
-    collections: query.data?.collections.length ? query.data.collections : travelCollections,
+    cities: query.data?.cities ?? [],
+    collections: query.data?.collections ?? [],
   };
 }
 
 export function useCity(id: string | undefined) {
-  const fallback = getTravelCityFallback(id);
+  const { i18n } = useTranslation();
   const query = useQuery({
-    queryKey: travelQueryKeys.city(id ?? ""),
+    queryKey: [...travelQueryKeys.city(id ?? ""), i18n.language],
     enabled: Boolean(id && isUuid(id)),
     queryFn: ({ signal }) => catalogApi.getCity(id as string, signal),
     select: (response) => mapCity(response.data),
   });
 
-  const city = query.data ?? fallback;
-  const relatedDestinations = city.relatedDestinations ?? city.relatedDestinationIds
-    .map((destinationId) => getDestination(destinationId))
-    .filter((destination): destination is Destination => Boolean(destination));
-
-  return { ...query, city: { ...city, relatedDestinations } };
+  return { ...query, city: query.data ?? null };
 }
 
 export function useCityDestinations(id: string | undefined) {
+  const { i18n } = useTranslation();
   return useInfiniteQuery({
-    queryKey: ["catalog", "city", id, "destinations"],
+    queryKey: ["catalog", "city", id, "destinations", i18n.language],
     enabled: Boolean(id && isUuid(id)),
     initialPageParam: undefined as string | undefined,
     queryFn: ({ signal, pageParam }) => catalogApi.listDestinations({ cityId: id, limit: 50, cursor: pageParam }, signal),
@@ -228,57 +213,35 @@ export function useCityDestinations(id: string | undefined) {
 }
 
 export function useCollection(slug: string | undefined) {
-  const fallbackCollection = getCollection(slug) ?? travelCollections[0];
+  const { i18n } = useTranslation();
   const query = useQuery({
-    queryKey: travelQueryKeys.collection(slug ?? ""),
+    queryKey: [...travelQueryKeys.collection(slug ?? ""), i18n.language],
     enabled: Boolean(slug),
-    queryFn: async ({ signal }) => {
-      try {
-        return mapCollectionPage(
-          await catalogApi.getCollectionDestinations(slug as string, signal),
-        );
-      } catch (error) {
-        if (!(error instanceof ApiError) || error.status !== 404) throw error;
-        const response = await catalogApi.listDestinations(
-          { sort: collectionSort(slug as string), limit: 50 },
-          signal,
-        );
-        return mapFallbackCollection(fallbackCollection, response.data);
-      }
-    },
+    queryFn: async ({ signal }) => mapCollectionPage(await catalogApi.getCollectionDestinations(slug as string, signal)),
   });
-
-  return {
-    ...query,
-    collection: query.data ?? fallbackCollection,
-    items: query.data?.items?.length
-      ? query.data.items
-      : getCollectionDestinations(fallbackCollection),
-  };
+  return { ...query, collection: query.data ?? null, items: query.data?.items ?? [] };
 }
 
 export function useDestination(id: string | undefined) {
-  const fallback = getDestination(id) ?? destinations[0];
+  const { i18n } = useTranslation();
   const query = useQuery({
-    queryKey: travelQueryKeys.destination(id ?? ""),
+    queryKey: [...travelQueryKeys.destination(id ?? ""), i18n.language],
     enabled: Boolean(id && isUuid(id)),
     queryFn: ({ signal }) => catalogApi.getDestination(id as string, signal),
     select: (response) => mapDestination(response.data),
   });
 
-  return { ...query, destination: query.data ?? fallback };
+  return { ...query, destination: query.data ?? null };
 }
 
 export function useFavorites() {
+  const { i18n } = useTranslation();
   const query = useQuery({
-    queryKey: travelQueryKeys.favorites,
+    queryKey: [...travelQueryKeys.favorites, i18n.language],
     queryFn: ({ signal }) => favoritesApi.list(signal),
     select: (response) => response.data.map(mapDestination),
   });
-  const fallbackIds = new Set(["haLongBay", "santorini", "swissAlps", "kyoto", "amalfiCoast"]);
-  const fallback = destinations.filter((destination) => fallbackIds.has(destination.id));
-
-  return { ...query, favorites: query.data?.length ? query.data : fallback };
+  return { ...query, favorites: query.data ?? [] };
 }
 
 export function useFavoriteMutation() {
@@ -286,7 +249,7 @@ export function useFavoriteMutation() {
 
   return useMutation({
     mutationFn: ({ destinationId, favorite }: { destinationId: string; favorite: boolean }) => {
-      if (!isUuid(destinationId)) return Promise.resolve(null);
+      if (!isUuid(destinationId)) return Promise.reject(new Error("Invalid destination"));
       return favorite ? favoritesApi.save(destinationId) : favoritesApi.remove(destinationId);
     },
     onSettled: async () => {
@@ -308,8 +271,10 @@ export function mapDestination(dto: DestinationDTO): Destination {
     image: dto.coverImageUrl,
     gallery: dto.gallery ?? [],
     rating: dto.rating.average.toFixed(1),
-    price: minorToMajor(dto.fromPrice.amountMinor, dto.fromPrice.currency),
-    currency: dto.fromPrice.currency,
+    sources: dto.sources,
+    contentLocale: dto.contentLocale,
+    editorialSections: dto.editorialSections,
+    contentUpdatedAt: dto.contentUpdatedAt,
     visitors: formatCount(dto.visitorCount),
     visitorCount: dto.visitorCount,
     category: dto.category,
@@ -321,14 +286,6 @@ export function mapDestination(dto: DestinationDTO): Destination {
     latitude: dto.location.latitude ?? undefined,
     longitude: dto.location.longitude ?? undefined,
     lastCuratedAt: dto.lastCuratedAt ?? undefined,
-    pricingTiers: dto.pricingTiers ? {
-      currency: dto.pricingTiers.local.currency,
-      adult: minorToMajor(dto.pricingTiers.local.adultMinor, dto.pricingTiers.local.currency),
-      childSenior: dto.pricingTiers.local.childSeniorMinor == null ? undefined : minorToMajor(dto.pricingTiers.local.childSeniorMinor, dto.pricingTiers.local.currency),
-      notes: dto.pricingTiers.local.notes ?? undefined,
-      approxUsdAdult: dto.pricingTiers.approxUsd == null ? undefined : minorToMajor(dto.pricingTiers.approxUsd.adultMinor, "USD"),
-      approxUsdChildSenior: dto.pricingTiers.approxUsd?.childSeniorMinor == null ? undefined : minorToMajor(dto.pricingTiers.approxUsd.childSeniorMinor, "USD"),
-    } : undefined,
     isFavorite: dto.isFavorite,
     isFeatured: dto.isFeatured,
     apiBacked: true,
@@ -343,6 +300,8 @@ function mapCity(dto: CityDTO | CityDetailDTO): TravelCity {
   return {
     id: dto.id,
     name: dto.name,
+    sources: dto.sources,
+    contentLocale: dto.contentLocale,
     contentGuide: "guide" in dto ? dto.guide ?? null : null,
     country: dto.country,
     description: dto.description ?? undefined,
@@ -370,30 +329,6 @@ function mapCollectionPage(page: CollectionPage): TravelCollection {
     items: page.data.map(mapDestination),
     apiBacked: true,
   };
-}
-
-function mapFallbackCollection(
-  collection: TravelCollection,
-  items: DestinationDTO[],
-): TravelCollection {
-  const destinations = items.map(mapDestination);
-  return {
-    ...collection,
-    destinationIds: destinations.map((destination) => destination.id),
-    items: destinations,
-    apiBacked: true,
-  };
-}
-
-function collectionSort(slug: string) {
-  if (slug === "new") return "newest" as const;
-  if (slug === "trending") return "rating" as const;
-  if (slug === "seasonal") return "recommended" as const;
-  return "recommended" as const;
-}
-
-function getTravelCityFallback(id: string | undefined) {
-  return travelCities.find((city) => city.id === id) ?? travelCities[0];
 }
 
 function isUuid(value: string) {

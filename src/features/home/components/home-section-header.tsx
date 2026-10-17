@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { theme } from "@/theme/theme";
 
@@ -16,8 +16,9 @@ export function HomeSectionHeader({
   onActionPress,
   showLocationIcon = false,
 }: HomeSectionHeaderProps) {
+  const { fontScale } = useWindowDimensions();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, fontScale > 1.2 && { flexDirection: "column", alignItems: "flex-start", gap: 0 }]}>
       <View style={styles.titleGroup}>
         {showLocationIcon ? (
           <View style={styles.iconBadge}>
@@ -28,7 +29,7 @@ export function HomeSectionHeader({
             />
           </View>
         ) : null}
-        <Text numberOfLines={1} style={styles.title}>
+        <Text style={styles.title}>
           {title}
         </Text>
       </View>
@@ -42,8 +43,8 @@ export function HomeSectionHeader({
         <Text style={styles.actionLabel}>{actionLabel}</Text>
         <Ionicons
           name="chevron-forward"
-          size={18}
-          color={theme.colors.light.accent}
+          size={14}
+          color={theme.colors.light.muted}
         />
       </Pressable>
     </View>
@@ -74,18 +75,20 @@ const styles = StyleSheet.create({
   title: {
     flexShrink: 1,
     color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.xl,
-    lineHeight: theme.typography.lineHeight.xl,
-    fontWeight: "800",
+    fontSize: 19,
+    lineHeight: 26,
+    fontWeight: "600",
   },
   action: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: 48,
+    gap: 3,
   },
   actionLabel: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.light.muted,
+    fontSize: 12,
     lineHeight: theme.typography.lineHeight.sm,
-    fontWeight: "700",
+    fontWeight: "400",
   },
 });

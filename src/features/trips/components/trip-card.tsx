@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,8 +25,6 @@ export function TripCard({
   destination,
   date,
   countdown,
-  totalPrice,
-  currency = "USD",
   travellerCount = 4,
   reminderEnabled: initialReminderEnabled = true,
   status = "upcoming",
@@ -36,7 +34,6 @@ export function TripCard({
   const [reminderEnabled, setReminderEnabled] = useState(initialReminderEnabled);
   const title = destination.title ?? t(`travel.destinations.${destination.id}.title`);
   const location = destination.location ?? t(`travel.destinations.${destination.id}.location`);
-  const amount = totalPrice ?? destination.price * travellerCount;
 
   const handleReminderChange = (enabled: boolean) => {
     const previous = reminderEnabled;
@@ -121,13 +118,7 @@ export function TripCard({
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.totalPrice}>
-          {new Intl.NumberFormat(undefined, {
-            style: "currency",
-            currency,
-          }).format(amount)}
-          <Text style={styles.peopleText}> {t("trips.forPeople", { count: travellerCount })}</Text>
-        </Text>
+        <Text style={styles.peopleText}>{t("trips.forPeople", { count: travellerCount })}</Text>
         <Pressable
           onPress={() =>
             router.push({

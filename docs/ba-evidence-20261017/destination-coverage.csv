@@ -1,0 +1,43 @@
+city,id,slug,VI title,VI response locale,EN response locale,VI source count,description,tips,editorial sections in DTO,visit profile,cover URL result,raw tags,curated date
+da-nang,a9493d50-8f87-413a-b37c-26b09a0188cc,cho-con,Chợ Cồn,en,en,0,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,food,
+da-nang,10ced80f-a517-4166-bf15-2e024169b211,linh-ung-pagoda-son-tra,Linh Ung Pagoda,en,en,0,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,temple|buddhism|lady-buddha|culture|viewpoint|spiritual,2026-09-07T17:00:00.000Z
+da-nang,bf341273-09bb-4ef0-90e7-5b57f69870ca,my-khe-beach,Biển Mỹ Khê,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,beach|swimming|sunrise|family|photography|watersports,2026-09-07T17:00:00.000Z
+da-nang,613912e8-b12a-416a-b3d0-5d973ab2a6a4,son-tra-peninsula,Bán đảo Sơn Trà và chùa Linh Ứng Bãi Bụt,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,nature|mountain|wildlife|viewpoint|hiking|photography,2026-09-07T17:00:00.000Z
+da-nang,a2af76b7-9653-4305-a8a6-04b30e6679aa,dragon-bridge,Cầu Rồng,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,bridge|architecture|nightlife|fire-show|photography|han-river,2026-09-07T17:00:00.000Z
+da-nang,7b7cf1db-744b-4cc2-b93b-bb303056d8f5,marble-mountains,Ngũ Hành Sơn,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,mountain|cave|temple|history|culture|viewpoint,2026-09-07T17:00:00.000Z
+da-nang,3613b5b0-4f40-4e0b-a680-509009ff1462,sun-world-ba-na-hills,Sun World Ba Na Hills,en,en,0,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,golden-bridge|theme-park|cable-car|mountain|family|photography,2026-09-07T17:00:00.000Z
+da-nang,51e0177b-89dd-5be8-a311-7edb179a03b2,hai-van-pass,Đèo Hải Vân,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+da-nang,84afca2a-7296-4d93-8750-7de657cfd130,non-nuoc-beach,Non Nuoc Beach,en,en,0,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,beach|swimming|relaxation|sunrise|family|photography,2026-09-07T17:00:00.000Z
+da-nang,bba71fea-64ee-4c83-90f6-2770e1dc654b,da-nang-downtown,Da Nang Downtown,en,en,0,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,theme-park|family|rides|entertainment|nightlife|food,2026-09-07T17:00:00.000Z
+da-nang,7f13fefa-2f88-429f-85e6-6ef33949ff46,museum-of-cham-sculpture,Bảo tàng Điêu khắc Chăm,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,museum|history|cham|culture|art|architecture,2026-09-07T17:00:00.000Z
+da-nang,760560d7-befc-429c-aa4d-0220c05e7fb6,han-market,Chợ Hàn,vi,en,1,True,True,0,absent; final API 200 null,HTTP Error 403: Forbidden,market|shopping|food|local|souvenirs|culture,2026-09-07T17:00:00.000Z
+ho-chi-minh-city,f37c1a08-cc61-5318-a8bc-963cc8b9f958,ben-thanh-market,Chợ Bến Thành,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,f0b78a23-0eee-5feb-ab68-2a549dad954c,ho-chi-minh-city-fine-arts-museum,Bảo tàng Mỹ thuật Thành phố Hồ Chí Minh,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,b95ca764-66c4-5264-a7c3-0209716dc018,nguyen-hue-walking-street,Phố đi bộ Nguyễn Huệ,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,b0c4d79c-38b3-5e18-ae12-be63899008dd,cu-chi-tunnels,Địa đạo Củ Chi,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,a951c403-8053-5e0b-a545-bc088395f162,independence-palace,Dinh Độc Lập,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,3ea99fdc-3632-5569-a5ae-920fe6ea8e28,notre-dame-cathedral-saigon,Khu vực Nhà thờ Đức Bà Sài Gòn,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,1318dd77-0494-57b5-a51d-3b4297345784,war-remnants-museum,Bảo tàng Chứng tích Chiến tranh,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ho-chi-minh-city,0ef4af37-8d25-5fec-ad71-f40968599f44,saigon-central-post-office,Bưu điện Trung tâm Sài Gòn,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ha-noi,dd55f889-6fd1-5c8e-a9ca-bae6012d5f88,vietnamese-womens-museum,Bảo tàng Phụ nữ Việt Nam,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ha-noi,ce1c1977-e8c0-5543-a6e8-84cdaeba4d4f,ngoc-son-temple,Đền Ngọc Sơn,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ha-noi,68b11594-185a-547a-a9f3-ccb41c7f78d9,hoa-lo-prison-relic,Di tích Nhà tù Hỏa Lò,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ha-noi,62889839-5b16-5236-a45d-f2c87f3188f1,imperial-citadel-thang-long,Hoàng thành Thăng Long,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ha-noi,3b3d9936-cdb1-5c84-ae24-dc52f9d5cfb7,hanoi-old-quarter,Phố cổ Hà Nội,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ha-noi,189eed11-5209-59d7-a9ae-62197bc8ca04,hoan-kiem-lake,Hồ Hoàn Kiếm,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ha-noi,092ec28f-555f-55ad-a7ae-724a077a68f5,temple-of-literature,Văn Miếu – Quốc Tử Giám,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ha-noi,07fac938-45c2-5ef6-abf8-b85ebe7ad312,vietnam-museum-of-ethnology,Bảo tàng Dân tộc học Việt Nam,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+nha-trang,dc3571cd-31d4-5325-a3bf-33916f2a888c,nha-trang-beach,Biển Nha Trang và đường dạo ven biển,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+nha-trang,6f28fd3c-aaf0-5be9-a7af-8df6d676581a,museum-of-oceanography,Bảo tàng Hải dương học,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+nha-trang,545b8420-3abe-54f4-a5ba-3733dfa40016,po-nagar-cham-towers,Tháp Bà Ponagar,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+nha-trang,496020b5-1b6a-59b2-a366-376fab4a303a,nha-trang-cathedral,Nhà thờ Núi Nha Trang,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+nha-trang,1de23712-e22e-5fbc-a9a5-1ba05312cc9c,dam-market,Chợ Đầm,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+nha-trang,0c27030b-b990-5556-a479-2fccea778ff8,long-son-pagoda,Chùa Long Sơn,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,e06cdb3f-1ba9-5d64-acdf-51cf744b61b8,trang-an-landscape,Danh thắng và khu đi thuyền Tràng An,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,ba38f260-8cc9-5bfb-a873-713db2d5190f,hoa-lu-ancient-capital,Cố đô Hoa Lư,vi,en,2,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,986228fb-c09a-5c3f-ad71-06bc7859d6d1,bich-dong-pagoda,Chùa Bích Động,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,81fc6896-6c54-5cdb-a30a-6b6446a7b100,van-long-wetland,Khu bảo tồn đất ngập nước Vân Long,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,37e5b957-6b29-56f8-aa98-6245e0a13b11,cuc-phuong-national-park,Vườn quốc gia Cúc Phương,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,321fcd5a-3ad3-553d-afe6-a14737330fa7,tam-coc,Cảnh quan sông nước Tam Cốc,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,2bbc1c92-3a9e-544a-a140-67e1947a2a72,bai-dinh-pagoda,Quần thể chùa Bái Đính,vi,en,1,True,True,0,absent; final API 200 null,empty,,
+ninh-binh,1c1b29d5-db3b-5836-af26-6e4161ad3029,hang-mua-viewpoint,Điểm ngắm cảnh Hang Múa,vi,en,1,True,True,0,absent; final API 200 null,empty,,

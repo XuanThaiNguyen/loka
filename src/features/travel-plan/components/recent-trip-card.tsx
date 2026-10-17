@@ -3,17 +3,19 @@ import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 import type { UserTravelPlan } from "../travel-plan.types";
 
 type RecentTripCardProps = {
   trip: UserTravelPlan;
   onPress?: () => void;
+  variant?: "default" | "home";
 };
 
-export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
+export function RecentTripCard({ trip, onPress, variant = "default" }: RecentTripCardProps) {
   const { t } = useTranslation();
+  const home = variant === "home";
   const isDemoTrip = trip.id === "demo-raja-ampat";
   const title = isDemoTrip ? t("travelPlan.demoTrip.name") : trip.name;
   const destination = isDemoTrip
@@ -22,8 +24,8 @@ export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
   const date = isDemoTrip ? t("travelPlan.demoTrip.date") : trip.startDate;
 
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
-      <Image source={{ uri: trip.image }} style={styles.image} contentFit="cover" />
+    <Pressable accessibilityRole="button" onPress={onPress} style={[styles.card, home && styles.homeCard]}>
+      <Image source={{ uri: trip.image }} style={[styles.image, home && styles.homeImage]} contentFit="cover" />
 
       <View style={styles.content}>
         <View style={styles.metaRow}>
@@ -32,12 +34,12 @@ export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
               {t(`travelPlan.status.${trip.status}`)}
             </Text>
           </View>
-          <Text numberOfLines={1} style={styles.date}>
+          <Text numberOfLines={1} style={[styles.date, home && styles.homeMuted]}>
             {date}
           </Text>
         </View>
 
-        <Text numberOfLines={1} style={styles.title}>
+        <Text numberOfLines={1} style={[styles.title, home && styles.homeTitle]}>
           {title}
         </Text>
 
@@ -47,24 +49,18 @@ export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
             size={15}
             color={theme.colors.light.gray[400]}
           />
-          <Text numberOfLines={1} style={styles.location}>
+          <Text numberOfLines={1} style={[styles.location, home && styles.homeMuted]}>
             {destination}
           </Text>
           <Ionicons name="star" size={14} color={theme.colors.light.warning} />
-          <Text style={styles.rating}>{trip.rating}</Text>
+          <Text style={[styles.rating, home && styles.homeMuted]}>{trip.rating}</Text>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.people}>
+          <Text style={[styles.people, home && styles.homeMuted]}>
             {t("travelPlan.generated.peopleCount", { count: trip.totalPeople })}
           </Text>
-          <Text style={styles.price}>
-            {new Intl.NumberFormat(undefined, {
-              style: "currency",
-              currency: trip.currency ?? "USD",
-              maximumFractionDigits: 0,
-            }).format(trip.estimatedCost)}
-          </Text>
+
         </View>
       </View>
     </Pressable>
@@ -72,6 +68,10 @@ export function RecentTripCard({ trip, onPress }: RecentTripCardProps) {
 }
 
 const styles = StyleSheet.create({
+  homeCard: { padding: 18, minHeight: 178, borderRadius: 24, backgroundColor: travelSurfaces.featured, borderColor: travelSurfaces.featured, gap: 16 },
+  homeImage: { width: 88, height: 132, borderRadius: 15 },
+  homeTitle: { color: "#ffffff", fontWeight: "600" },
+  homeMuted: { color: travelSurfaces.featuredSecondary, fontWeight: "400" },
   card: {
     minHeight: 128,
     padding: theme.spacing[3],
@@ -105,10 +105,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing[3],
     paddingVertical: theme.spacing[1],
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.light.green[50],
+    backgroundColor: travelSurfaces.positiveBackground,
   },
   statusText: {
-    color: theme.colors.light.success,
+    color: travelSurfaces.positiveForeground,
     fontSize: theme.typography.fontSize.xs,
     lineHeight: theme.typography.lineHeight.xs,
     fontWeight: "800",

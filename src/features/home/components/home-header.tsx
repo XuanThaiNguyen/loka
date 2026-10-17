@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -13,16 +14,17 @@ import {
   HEADER_TOP_HEIGHT,
   HEADER_VERTICAL_PADDING,
 } from "@/features/home/home.constants";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 type HomeHeaderProps = {
   tintProgress: SharedValue<number>;
   topInset: number;
+  onHeightChange?: (height: number) => void;
 };
 
-export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
+export function HomeHeader({ tintProgress, topInset, onHeightChange }: HomeHeaderProps) {
   const { t } = useTranslation();
   const { session } = useAuth();
   const userName =
@@ -35,7 +37,7 @@ export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
     color: interpolateColor(
       tintProgress.value,
       [0, 1],
-      [theme.colors.light.gray[900], theme.colors.light.base.white],
+      [travelSurfaces.foreground, travelSurfaces.foreground],
     ),
   }));
 
@@ -43,7 +45,7 @@ export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
     color: interpolateColor(
       tintProgress.value,
       [0, 1],
-      [theme.colors.light.gray[500], theme.colors.light.grayBlue[100]],
+      [travelSurfaces.secondary, travelSurfaces.secondary],
     ),
   }));
 
@@ -57,6 +59,7 @@ export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
 
   return (
     <View
+      onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height - topInset)}
       style={[
         styles.container,
         {
@@ -66,23 +69,24 @@ export function HomeHeader({ tintProgress, topInset }: HomeHeaderProps) {
       ]}
     >
       <View style={styles.topBar}>
-        <Pressable style={styles.userCluster}>
+        <View style={styles.userCluster}>
           <Animated.View style={[styles.avatar, avatarStyle]}>
             <Text style={styles.avatarText}>{userInitial}</Text>
           </Animated.View>
-          <View>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Animated.Text style={[styles.userEyebrow, secondaryTintStyle]}>
               {t("home.userEyebrow")}
             </Animated.Text>
-            <Animated.Text style={[styles.userName, primaryTintStyle]}>
+            <Animated.Text numberOfLines={2} style={[styles.userName, primaryTintStyle]}>
               {userName}
             </Animated.Text>
           </View>
-        </Pressable>
+        </View>
 
         <View style={styles.iconCluster}>
           <HeaderIcon
             name="search"
+            onPress={() => router.push("/search")}
             accessibilityLabel={t("home.search")}
             tintProgress={tintProgress}
           />
@@ -103,22 +107,24 @@ function HeaderIcon({
   accessibilityLabel,
   tintProgress,
   hasBadge,
+  onPress,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   accessibilityLabel: string;
   tintProgress: SharedValue<number>;
   hasBadge?: boolean;
+  onPress?: () => void;
 }) {
   const tintStyle = useAnimatedStyle(() => ({
     color: interpolateColor(
       tintProgress.value,
       [0, 1],
-      [theme.colors.light.gray[900], theme.colors.light.base.white],
+      [travelSurfaces.foreground, travelSurfaces.foreground],
     ),
   }));
 
   return (
-    <Pressable accessibilityLabel={accessibilityLabel} style={styles.iconButton}>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.iconButton}>
       <AnimatedIonicons name={name} size={28} style={tintStyle} />
       {hasBadge ? <View style={styles.notificationBadge} /> : null}
     </Pressable>
@@ -162,13 +168,13 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   userEyebrow: {
-    color: theme.colors.light.grayBlue[100],
+    color: travelSurfaces.secondary,
     fontSize: theme.typography.fontSize.xs,
     lineHeight: theme.typography.lineHeight.xs,
     fontWeight: "600",
   },
   userName: {
-    color: theme.colors.light.base.white,
+    color: travelSurfaces.foreground,
     fontSize: theme.typography.fontSize.xl,
     lineHeight: theme.typography.lineHeight.xl,
     fontWeight: "800",
@@ -179,8 +185,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
   },

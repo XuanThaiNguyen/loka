@@ -4,6 +4,16 @@
 
 @theme {
   --spacing-screen: 1.25rem;
+  /* Mobile semantic surfaces; mirror travelSurfaces in theme/theme.ts. */
+  --color-travel-header: #eaf4f7;
+  --color-travel-foreground: #18232d;
+  --color-travel-secondary: #566573;
+  --color-travel-info: #edf2ff;
+  --color-travel-featured: #183d56;
+  --color-travel-featured-inset: #244b65;
+  --color-travel-featured-secondary: #dce8ef;
+  --color-travel-positive-foreground: #217a42;
+  --color-travel-positive-background: #edfcf2;
   /* Web HeroUI uses a 70/30 mix for secondary button labels. */
   --color-accent-soft-foreground: color-mix(in oklab, var(--accent) 70%, var(--foreground) 30%);
 }

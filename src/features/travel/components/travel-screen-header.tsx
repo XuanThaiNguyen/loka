@@ -38,24 +38,11 @@ export function TravelScreenHeader({
         ) : null}
       </View>
 
-      <Text numberOfLines={1} style={styles.title}>
+      <Text style={styles.title}>
         {title}
       </Text>
 
-      <View style={styles.actionSlot}>
-        <Pressable
-          accessibilityLabel={t("common.moreOptions")}
-          accessibilityRole="button"
-          hitSlop={8}
-          style={styles.moreButton}
-        >
-          <Ionicons
-            name="ellipsis-vertical"
-            size={24}
-            color={theme.colors.light.gray[900]}
-          />
-        </Pressable>
-      </View>
+      <View style={styles.actionSlot} />
     </View>
   );
 }
@@ -69,12 +56,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   actionSlot: {
-    width: 44,
+    width: 48,
     alignItems: "center",
   },
   iconButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: theme.radius.full,
     alignItems: "center",
     justifyContent: "center",

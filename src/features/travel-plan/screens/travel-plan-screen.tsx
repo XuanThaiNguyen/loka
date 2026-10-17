@@ -38,6 +38,7 @@ import {
 import {
   type TripDetailDTO,
   type TripDTO,
+  type TripBudgetPreference,
   useCreateTrip,
   useTrip,
   useTrips,
@@ -50,6 +51,7 @@ import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { ApiError } from "@/lib/api/client";
 import { formatMoneyMinor, majorToMinor, minorToMajor } from "@/lib/money";
 import { theme } from "@/theme/theme";
+import { i18n } from "@/i18n";
 
 type WizardForm = {
   origin: string;
@@ -85,8 +87,7 @@ const paceOptions = ["relaxed", "balanced", "packed"] as const;
 const transportSuggestionIds = ["train", "rentalCar", "flights"] as const;
 const accommodationSuggestionIds = ["hotel", "homestay", "apartment"] as const;
 const mustDoSuggestionIds = ["localFood", "sunsetViewpoint", "historicLandmarks"] as const;
-const tripBudgetPresets = [5_000_000, 10_000_000, 20_000_000, 50_000_000] as const;
-const maxTripBudgetVnd = 1_000_000_000_000;
+const budgetPreferences = ["low", "medium", "luxury"] as const;
 const maxTripCrew = 50;
 
 export function TravelPlanScreen() {
@@ -190,6 +191,7 @@ export function TravelPlanScreen() {
 }
 
 export function CreateTripScreen() {
+  const { cityId: requestedCityId } = useLocalSearchParams<{ cityId?: string }>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const topInset = insets.top;
@@ -201,23 +203,22 @@ export function CreateTripScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
-  const [name, setName] = useState("");
+  const [enteredName, setName] = useState<string | null>(null);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(dateOnly(addDays(new Date(), 4)));
   const [description, setDescription] = useState("");
-  const [selectedCity, setSelectedCity] = useState<CityDTO | null>(null);
+  const [cityOverride, setSelectedCity] = useState<CityDTO | null | undefined>();
+  const selectedCity = cityOverride !== undefined ? cityOverride : citiesQuery.data?.find((city) => city.id === requestedCityId) ?? null;
+  const name = enteredName ?? (selectedCity ? t("travelPlan.workspace.defaultTripName", { destination: selectedCity.name }) : "");
   const [crewNumber, setCrewNumber] = useState(2);
-  const [budgetVnd, setBudgetVnd] = useState("");
-  const [budgetScope, setBudgetScope] = useState<"person" | "group">("person");
+  const [budgetPreference, setBudgetPreference] = useState<TripBudgetPreference | null>(null);
   const onCancel = () => router.back();
-  const budgetValue = budgetVnd ? Number(budgetVnd) : null;
   const dateError = !isDateOnly(startDate) || !isDateOnly(endDate)
     ? t("travelPlan.workspace.invalidDate")
     : endDate < startDate ? t("travelPlan.workspace.dateOrderError") : null;
   const tripContextValid = Number.isInteger(crewNumber)
     && crewNumber >= 1
-    && crewNumber <= maxTripCrew
-    && (budgetValue === null || (Number.isInteger(budgetValue) && budgetValue >= 0 && budgetValue <= maxTripBudgetVnd));
+    && crewNumber <= maxTripCrew;
   const canContinue = stepIndex === 0 ? Boolean(name.trim()) : stepIndex === 1 ? !dateError : tripContextValid;
 
   const selectCity = (city: CityDTO) => {
@@ -251,8 +252,7 @@ export function CreateTripScreen() {
         endDate,
         cityId: selectedCity?.id ?? null,
         crewNumber,
-        budgetVnd: budgetValue,
-        budgetScope: budgetValue === null ? null : budgetScope,
+        budgetPreference,
         invitationEmails: [],
       });
       router.replace({ pathname: "/explore", params: { tripId: String(response.data.id) } });
@@ -333,31 +333,9 @@ export function CreateTripScreen() {
                 <FormField label={t("travelPlan.workspace.crewSize")} description={t("travelPlan.workspace.crewSizeHint", { max: maxTripCrew })} required>
                   <NumberStepper value={crewNumber} min={1} max={maxTripCrew} onChange={setCrewNumber} />
                 </FormField>
-                <FormField label={t("travelPlan.workspace.tripBudget")} description={t("travelPlan.workspace.tripBudgetHint")}>
-                  <TextInput
-                    keyboardType="number-pad"
-                    maxLength={13}
-                    value={budgetVnd}
-                    onChangeText={(value) => setBudgetVnd(value.replace(/\D/g, "").slice(0, 13))}
-                    placeholder={t("travelPlan.workspace.tripBudgetPlaceholder")}
-                    placeholderTextColor={theme.colors.light.gray[400]}
-                    style={styles.input}
-                  />
-                  <View style={styles.wrapRow}>
-                    {tripBudgetPresets.map((amount) => (
-                      <Pressable key={amount} onPress={() => setBudgetVnd(String(amount))} style={[styles.suggestionChip, budgetValue === amount && styles.selectedSuggestion]}>
-                        <Text style={[styles.suggestionText, budgetValue === amount && styles.selectedChipText]}>{formatMoneyMinor(amount, "VND")}</Text>
-                      </Pressable>
-                    ))}
-                    {budgetValue !== null ? (
-                      <Pressable onPress={() => setBudgetVnd("")} style={styles.suggestionChip}>
-                        <Text style={styles.suggestionText}>{t("common.clear")}</Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                  {budgetValue !== null ? (
-                    <OptionRow values={["person", "group"]} selected={budgetScope} label={(value) => t(`travelPlan.workspace.budgetScopes.${value}`)} onSelect={(value) => setBudgetScope(value as "person" | "group")} />
-                  ) : null}
+                <FormField label={t("travelPlan.workspace.budgetPreference")} description={t("travelPlan.workspace.budgetPreferenceHint")}>
+                  <OptionRow values={[...budgetPreferences]} selected={budgetPreference ?? ""} label={(value) => t(`travelPlan.workspace.budgetPreferences.${value}`)} onSelect={(value) => setBudgetPreference(value as TripBudgetPreference)} />
+                  {budgetPreference ? <Pressable accessibilityRole="button" onPress={() => setBudgetPreference(null)}><Text style={styles.clearSelectionText}>{t("common.clear")}</Text></Pressable> : null}
                 </FormField>
                 <FormField label={t("travelPlan.workspace.tripNotes")}>
                   <TextInput multiline maxLength={5000} value={description} onChangeText={setDescription} placeholder={t("travelPlan.workspace.tripNotesPlaceholder")} placeholderTextColor={theme.colors.light.gray[400]} textAlignVertical="top" style={[styles.input, styles.textArea]} />
@@ -943,7 +921,7 @@ function StepIntro({ icon, eyebrow, title, hint }: { icon: keyof typeof Ionicons
 function MobileFooter({ bottomPadding, backLabel, nextLabel, nextIcon, pending, onBack, onNext }: { bottomPadding: number; backLabel: string; nextLabel: string; nextIcon: keyof typeof Ionicons.glyphMap; pending?: boolean; onBack: () => void; onNext: () => void }) {
   return (
     <View style={[styles.mobileFooter, { paddingBottom: Math.max(bottomPadding, theme.spacing[3]) }]}>
-      <Pressable disabled={pending} onPress={onBack} style={({ pressed }) => [styles.mobileBackButton, pending && styles.disabled, pressed && styles.pressed]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={backLabel} disabled={pending} onPress={onBack} style={({ pressed }) => [styles.mobileBackButton, pending && styles.disabled, pressed && styles.pressed]}>
         <Ionicons name="arrow-back" size={19} color={theme.colors.light.gray[700]} />
         <Text style={styles.secondaryButtonText}>{backLabel}</Text>
       </Pressable>
@@ -956,7 +934,7 @@ function PlannerHeader({ topInset, onBack }: { topInset: number; onBack?: () => 
   const { t } = useTranslation();
   return (
     <View style={[styles.header, { paddingTop: topInset + theme.spacing[2] }]}>
-      {onBack ? <Pressable accessibilityRole="button" hitSlop={8} onPress={onBack} style={styles.headerButton}><Ionicons name="arrow-back" size={22} color={theme.colors.light.gray[900]} /></Pressable> : <View style={styles.headerButton} />}
+      {onBack ? <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} hitSlop={8} onPress={onBack} style={styles.headerButton}><Ionicons name="arrow-back" size={22} color={theme.colors.light.gray[900]} /></Pressable> : <View style={styles.headerButton} />}
       <View style={styles.headerBrand}><View style={styles.brandMark}><Ionicons name="sparkles" size={18} color={theme.colors.light.base.white} /></View><View><Text style={styles.headerTitle}>{t("travelPlan.workspace.headerTitle")}</Text><Text style={styles.headerSubtitle}>{t("travelPlan.workspace.headerSubtitle")}</Text></View></View>
       <View style={styles.headerButton} />
     </View>
@@ -977,7 +955,7 @@ function SuggestionChips({ values, selected, onSelect }: { values: readonly stri
 }
 
 function OptionRow({ values, selected, label, onSelect }: { values: readonly string[]; selected: string; label: (value: string) => string; onSelect: (value: string) => void }) {
-  return <View style={styles.optionRow}>{values.map((value) => { const active = selected === value; return <Pressable key={value} onPress={() => onSelect(value)} style={[styles.optionButton, active && styles.selectedOption]}><Text style={[styles.optionButtonText, active && styles.selectedOptionText]}>{label(value)}</Text></Pressable>; })}</View>;
+  return <View style={styles.optionRow}>{values.map((value) => { const active = selected === value; return <Pressable accessibilityRole="radio" accessibilityState={{ checked: active }} key={value} onPress={() => onSelect(value)} style={[styles.optionButton, active && styles.selectedOption]}><Text style={[styles.optionButtonText, active && styles.selectedOptionText]}>{label(value)}</Text></Pressable>; })}</View>;
 }
 
 function NumberStepper({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (value: number) => void }) {
@@ -995,11 +973,11 @@ function NumberStepper({ value, min, max, onChange }: { value: number; min: numb
 }
 
 function PrimaryButton({ label, icon, onPress, pending, disabled }: { label: string; icon?: keyof typeof Ionicons.glyphMap; onPress: () => void; pending?: boolean; disabled?: boolean }) {
-  return <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.primaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}>{pending ? <ActivityIndicator size="small" color={theme.colors.light.base.white} /> : icon ? <Ionicons name={icon} size={19} color={theme.colors.light.base.white} /> : null}<Text style={styles.primaryButtonText}>{label}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.primaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}>{pending ? <ActivityIndicator size="small" color={theme.colors.light.base.white} /> : icon ? <Ionicons name={icon} size={19} color={theme.colors.light.base.white} /> : null}<Text style={styles.primaryButtonText}>{label}</Text></Pressable>;
 }
 
 function SecondaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
-  return <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.secondaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}><Text style={styles.secondaryButtonText}>{label}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.secondaryButton, styles.flexButton, disabled && styles.disabled, pressed && styles.pressed]}><Text style={styles.secondaryButtonText}>{label}</Text></Pressable>;
 }
 
 function SummaryRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
@@ -1022,7 +1000,7 @@ function ErrorScreen({ topInset, message, onBack }: { topInset: number; message:
 function emptyToNull(value: string) { return value.trim() || null; }
 function splitList(value: string) { return value.split(/[\n,]/).map((item) => item.trim().slice(0, 120)).filter(Boolean); }
 function appendLine(current: string, value: string) { const items = splitList(current); return items.includes(value) ? current : [...items, value].join("\n"); }
-function formatDateRange(startDate: string, endDate: string) { const formatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }); return `${formatter.format(new Date(startDate))} – ${formatter.format(new Date(endDate))}`; }
+function formatDateRange(startDate: string, endDate: string) { const formatter = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short", year: "numeric" }); return `${formatter.format(new Date(startDate))} – ${formatter.format(new Date(endDate))}`; }
 function formatFriendlyDate(value: string, locale: string) { return new Intl.DateTimeFormat(locale, { weekday: "short", day: "2-digit", month: "short", year: "numeric" }).format(parseDateOnly(value)); }
 function parseDateOnly(value: string) { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day, 12); }
 function dateOnly(date: Date) { const year = date.getFullYear(); const month = String(date.getMonth() + 1).padStart(2, "0"); const day = String(date.getDate()).padStart(2, "0"); return `${year}-${month}-${day}`; }
@@ -1141,8 +1119,8 @@ const styles = StyleSheet.create({
   suggestionChip: { minHeight: 34, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.accentBorder, borderRadius: 999, flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: theme.colors.light.accentSoft },
   suggestionText: { color: theme.colors.light.accent, fontSize: 11, lineHeight: 15, fontWeight: "800" },
   selectedSuggestion: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accent },
-  optionRow: { flexDirection: "row", gap: theme.spacing[2] },
-  optionButton: { flex: 1, minHeight: 44, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.background },
+  optionRow: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing[2] },
+  optionButton: { flexGrow: 1, flexBasis: 90, minHeight: 48, paddingVertical: 12, paddingHorizontal: theme.spacing[2], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.background },
   optionButtonText: { color: theme.colors.light.gray[600], fontSize: 12, lineHeight: 17, fontWeight: "800", textAlign: "center" },
   selectedOption: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accentSoft },
   selectedOptionText: { color: theme.colors.light.accent },

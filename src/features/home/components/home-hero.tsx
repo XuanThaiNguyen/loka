@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -7,7 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { HEADER_HORIZONTAL_PADDING } from "@/features/home/home.constants";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type HomeHeroProps = {
   onHeightChange: (height: number) => void;
@@ -25,15 +26,14 @@ export function HomeHero({ onHeightChange, opacity, top }: HomeHeroProps) {
       pointerEvents="box-none"
       style={[styles.container, { top }, visibilityStyle]}
     >
-      <Pressable style={styles.searchPill}>
-        <Text style={styles.searchNumber}>6</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("home.search")} onPress={() => router.push("/search")} style={styles.searchPill}>
         <Text numberOfLines={1} style={styles.searchText}>
           {t("home.searchPlaceholder")}
         </Text>
         <Ionicons
           name="search"
           size={28}
-          color={theme.colors.light.gray[300]}
+          color={travelSurfaces.secondary}
         />
       </Pressable>
 
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   checkInHelper: {
     flex: 1,
-    color: theme.colors.light.grayBlue[50],
+    color: travelSurfaces.secondary,
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
     fontWeight: "600",

@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,14 +18,18 @@ type DestinationCardProps = {
   destination: Destination;
   onPress: () => void;
   initiallyFavorite?: boolean;
+  variant?: "default" | "editorial" | "compact";
 };
 
 export function DestinationCard({
   destination,
   onPress,
   initiallyFavorite = false,
+  variant = "default",
 }: DestinationCardProps) {
   const { t } = useTranslation();
+  const editorial = variant !== "default";
+  const compact = variant === "compact";
   const favoriteMutation = useFavoriteMutation();
   const sourceFavorite = destination.isFavorite ?? initiallyFavorite;
   const [favoriteOverride, setFavoriteOverride] = useState<{
@@ -49,19 +53,21 @@ export function DestinationCard({
   };
 
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
-      <View style={styles.imageContainer}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={[styles.card, editorial && styles.editorialCard, compact && styles.compactCard]}>
+      <View style={[styles.imageContainer, editorial && styles.editorialImageContainer, compact && styles.compactImageContainer]}>
         <Image
           source={{ uri: destination.image }}
-          style={styles.image}
+          style={[styles.image, editorial && styles.editorialImage]}
           contentFit="cover"
         />
         <Pressable
-          accessibilityLabel={t("travel.toggleFavorite", { title })}
+          accessibilityLabel={t(isFavorite ? "searchScreen.unsave" : "travel.toggleFavorite", { title })}
+          accessibilityState={{ selected: isFavorite, disabled: favoriteMutation.isPending }}
+          disabled={favoriteMutation.isPending}
           accessibilityRole="button"
           hitSlop={8}
           onPress={handleFavoritePress}
-          style={styles.favoriteButton}
+          style={[styles.favoriteButton, editorial && styles.editorialFavoriteButton]}
         >
           <Ionicons
             name={isFavorite ? "heart" : "heart-outline"}
@@ -71,12 +77,12 @@ export function DestinationCard({
         </Pressable>
       </View>
 
-      <View style={styles.details}>
-        <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={styles.title}>
+      <View style={[styles.details, editorial && styles.editorialDetails]}>
+        <View style={[styles.titleRow, editorial && styles.editorialTitleRow]}>
+          <Text numberOfLines={1} style={[styles.title, editorial && styles.editorialTitle, compact && styles.compactTitle]}>
             {title}
           </Text>
-          <View style={styles.rating}>
+          <View style={[styles.rating, compact && styles.compactMetadata]}>
             <Ionicons
               name="star"
               size={14}
@@ -85,13 +91,13 @@ export function DestinationCard({
             <Text style={styles.ratingText}>{destination.rating}</Text>
           </View>
         </View>
-        <View style={styles.locationRow}>
+        <View style={[styles.locationRow, compact && styles.compactMetadata]}>
           <Ionicons
             name="location"
             size={15}
             color={theme.colors.light.accent}
           />
-          <Text numberOfLines={1} style={styles.locationText}>
+          <Text numberOfLines={1} style={[styles.locationText, editorial && styles.editorialLocation]}>
             {destination.location ?? t(`travel.destinations.${destination.id}.location`)}
           </Text>
         </View>
@@ -101,6 +107,18 @@ export function DestinationCard({
 }
 
 const styles = StyleSheet.create({
+  editorialCard: { width: 202, padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
+  compactCard: { width: 132 },
+  editorialImageContainer: { height: 206 },
+  compactImageContainer: { height: 132 },
+  editorialImage: { borderRadius: 16 },
+  editorialFavoriteButton: { top: 10, right: 10, width: 32, height: 32, backgroundColor: "#fffffff0" },
+  editorialDetails: { paddingHorizontal: 2, paddingTop: 10, paddingBottom: 0, gap: 6 },
+  editorialTitleRow: { flexWrap: "wrap", rowGap: 5 },
+  editorialTitle: { fontSize: 15, lineHeight: 21, fontWeight: "600" },
+  compactTitle: { fontSize: 13, lineHeight: 18, fontWeight: "500" },
+  editorialLocation: { fontSize: 12, lineHeight: 18 },
+  compactMetadata: { display: "none" },
   card: {
     width: 248,
     padding: theme.spacing[2],

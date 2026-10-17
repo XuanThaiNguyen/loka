@@ -15,7 +15,10 @@ export function VisitProfileCard({ id }: { id: string }) {
   if (query.isPending) return <DetailState loading />;
   if (query.isError) return <DetailState onRetry={() => void query.refetch()} />;
   const profile = query.data;
-  if (!profile) return null;
+  if (!profile) return <View style={s.card}>
+    <Text accessibilityRole="header" style={s.label}>{t("visitKnowledge.title")}</Text>
+    <Text selectable style={s.body}>{t("visitKnowledge.notAdded")}</Text>
+  </View>;
   const date = (value: string | null) => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(i18n.language).format(new Date(value)) : null;
   const expired = profile.validUntil !== null && Date.parse(profile.validUntil) <= now;
   const duration = profile.minimumVisitMinutes != null && profile.maximumVisitMinutes != null

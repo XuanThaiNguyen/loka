@@ -1,0 +1,330 @@
+{
+  "checkedAt": "2026-10-17T13:25:51.177Z",
+  "mode": "read-only",
+  "localMigrations": [
+    {
+      "name": "20260905082112_existing_schema_baseline",
+      "baselineOnly": true
+    },
+    {
+      "name": "20260905083244_destination_knowledge",
+      "sha256": "da27d47606198ce7ecd0a8ea6897aa67b054e77c0444244058a029dda5f89113"
+    },
+    {
+      "name": "20260906000000_instagram_gallery",
+      "sha256": "ee434d01d35bb21f13c473b61ac38d793a059140b7ed01a3a59d96a47dc18f90"
+    },
+    {
+      "name": "20260906090000_gallery_photos_outlive_trips",
+      "sha256": "5fed5e4e4362657bb81f1f70553d137ead7d087761d32ff92908d2452566bfb3"
+    },
+    {
+      "name": "20260906100000_remove_trip_stop_dates",
+      "sha256": "ba566eaa88a4871061797e161d6c7f1d0e07beb3bba2a7817277c0eab2e574f9"
+    },
+    {
+      "name": "20260906190000_remove_failed_generation_status",
+      "sha256": "cb4fb8a17ebb20b9c93e2f570f04051084f64cc17a237dc27c346efc88a2cf01"
+    },
+    {
+      "name": "20260908040000_account_roles",
+      "sha256": "434a9c89e6c5da069893cba80e963b81ea12a6c9a56f5376cc52dd5fcd12b1b5"
+    },
+    {
+      "name": "20260908120000_trip_city_budget_crew",
+      "sha256": "334d2995907a4b0fa40afe429bd17ca8092588ffa7a5284c932e250c1c8c500e"
+    },
+    {
+      "name": "20260926000000_city_guides",
+      "sha256": "984b58fa8ce2a7bcf57c47d65b9bca2114e7eb7e2737cb216560dbddd8de304a"
+    },
+    {
+      "name": "20260928000000_city_guide_editor",
+      "sha256": "d6c7fb6ec2d72430bff7629c44e119a2066c8a7944d516f5e9433d12d3e760b9"
+    },
+    {
+      "name": "20260928000000_trip_locations",
+      "sha256": "13e23a1fca69379b3e226c73096812bbdda23ed5e5488cb6989689f0dba64bfb"
+    }
+  ],
+  "tables": [
+    {
+      "table_schema": "public",
+      "table_name": "cities"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "city_guide_items"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "city_guide_sections"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "city_guides"
+    },
+    {
+      "table_schema": "public",
+      "table_name": "destinations"
+    }
+  ],
+  "cities": [
+    {
+      "id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "danang",
+      "name": "Danang",
+      "country": "Vietnam",
+      "cover_image_url": "https://culturephamtravel.com/wp-content/uploads/2019/10/Da-Nang-city-Culture-Pham-Travel.png",
+      "is_featured": true,
+      "updated_at": "2026-09-08T13:08:23.109Z",
+      "destination_count": "11",
+      "section_count": "11"
+    },
+    {
+      "id": "8e78f3e1-912d-4a82-9390-d33d819943f7",
+      "slug": "hoian",
+      "name": "Hoian",
+      "country": "Vietnam",
+      "cover_image_url": "https://image.vietnam.travel/sites/default/files/styles/top_banner/public/2022-05/shutterstock_1303493764_0.jpg?itok=RN5EB0-C",
+      "is_featured": true,
+      "updated_at": "2026-09-08T13:35:07.412Z",
+      "destination_count": "0",
+      "section_count": "0"
+    },
+    {
+      "id": "f2df9c75-d7c7-4684-a7be-699919d8be8b",
+      "slug": "nha-trang",
+      "name": "Nha Trang",
+      "country": "Vietnam",
+      "cover_image_url": "http://localhost:3000/api/city-photos/bdb55c1b-d71b-43aa-aab0-3c6f82363734.jpg",
+      "is_featured": false,
+      "updated_at": "2026-09-28T13:41:50.467Z",
+      "destination_count": "0",
+      "section_count": "0"
+    }
+  ],
+  "destinations": [
+    {
+      "id": "a9493d50-8f87-413a-b37c-26b09a0188cc",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "cho-con",
+      "title": "Chợ Cồn",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16,
+        "longitude": 108
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWl0Efw4oVfLDdcWYd-m2NG1RnunkxpkqDtjiuP7I948pKK9BjsMrXqzmxK7qjgbsxI5lY37ZhjjwsTyF2jQjE9XZbwpwVpyh4t1KMkC1sxE7uptxpSvhMFkdu_rWVAvhGsLXc9aHorYsHyJ=w408-h306-k-no",
+      "gallery": [],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:05:23.554Z"
+    },
+    {
+      "id": "bba71fea-64ee-4c83-90f6-2770e1dc654b",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "da-nang-downtown",
+      "title": "Da Nang Downtown",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.038,
+        "longitude": 108.226
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkZ4NqIbtta814E6kKQKnc61ZKbpwN8wnZAREkoVVxjRM1c4Wd1vse4czFPG5KzkwWrwgWwz-TO5dF9Zo64IVq3vvrKHKJo6nB_SZ8YFA2PT89g3lWOimSRn5DIfz8gWH-ngi5kqNtzVobX=w426-h240-k-no",
+      "gallery": [
+        "https://images.example.com/danang/da-nang-downtown/01.jpg",
+        "https://images.example.com/danang/da-nang-downtown/02.jpg"
+      ],
+      "is_featured": false,
+      "updated_at": "2026-09-08T14:05:43.580Z"
+    },
+    {
+      "id": "7f13fefa-2f88-429f-85e6-6ef33949ff46",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "museum-of-cham-sculpture",
+      "title": "Da Nang Museum of Cham Sculpture",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.0605,
+        "longitude": 108.223
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnzLKO4N35B4F1dLkHe2UDmcDshtu8rvD8mfQ6fo8l0RwpPvrRoOnEu-44IkGfLOaRg_PcAPipI2fbwy7rUuwoBMnLhUIUDPr9RdTx3A5_vQaSfHXD7FLTd6ceI_dWM51VHaxD1=w408-h309-k-no",
+      "gallery": [
+        "https://images.example.com/danang/cham-museum/01.jpg",
+        "https://images.example.com/danang/cham-museum/02.jpg"
+      ],
+      "is_featured": false,
+      "updated_at": "2026-09-08T14:04:13.890Z"
+    },
+    {
+      "id": "a2af76b7-9653-4305-a8a6-04b30e6679aa",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "dragon-bridge",
+      "title": "Dragon Bridge",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.0611,
+        "longitude": 108.2275
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkRYbtrYB7dnbcdwmmlBhRuXH-7sehSY54S_ax6coJ_RMFHi554JaZ8z98L-3-CO_TRb6zT4PfeS2NC38nMpoSnD1PeRc63zHLQbs53QvxXxYEKjPa351cQzlHm4N9FM3Gkweo=w408-h306-k-no",
+      "gallery": [
+        "https://images.example.com/danang/dragon-bridge/01.jpg",
+        "https://images.example.com/danang/dragon-bridge/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:04:57.467Z"
+    },
+    {
+      "id": "760560d7-befc-429c-aa4d-0220c05e7fb6",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "han-market",
+      "title": "Han Market",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.068,
+        "longitude": 108.2244
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmscmpUsBlzEkFxvgWV0SmJTKQRUoQWgMDL44RA5Vn52a5wHnWcF_aHRZYDHOFiS24wB6KzgSXM5diOZC0x0XkgaZSG9XxDq77Zdb1mI3BxqbxNlayJ8AAu91Q5c52qaOwPUIDTA4OHd-Hl=w408-h306-k-no",
+      "gallery": [
+        "https://images.example.com/danang/han-market/01.jpg",
+        "https://images.example.com/danang/han-market/02.jpg"
+      ],
+      "is_featured": false,
+      "updated_at": "2026-09-08T14:03:44.915Z"
+    },
+    {
+      "id": "10ced80f-a517-4166-bf15-2e024169b211",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "linh-ung-pagoda-son-tra",
+      "title": "Linh Ung Pagoda",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.1003,
+        "longitude": 108.2779
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnQMXqyAk_lRrrU0jh-Sbzy5xq4hN3da75Ysvcuk1djwRlSjURUT6GLdFlKN4iSqtwHcJIjukdcGQcnzQ2wmw5cCBHcWnAN4op2WAoRduiskp9Pq1-uIyw64wuRRjk1Xqa9MtgmC0TgH9AG=w408-h306-k-no",
+      "gallery": [
+        "https://images.example.com/danang/linh-ung/01.jpg",
+        "https://images.example.com/danang/linh-ung/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:02:35.115Z"
+    },
+    {
+      "id": "7b7cf1db-744b-4cc2-b93b-bb303056d8f5",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "marble-mountains",
+      "title": "Marble Mountains",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.0034,
+        "longitude": 108.263
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWkk6Ryqheax7TfBw7SxX33kOlKcX4B_sElXKA1cjmxu1j77Iw8f9lECcpC335XpLmVNM6wzx6y7rKJq8oEKIjklfo0wgOO1SfFazSWoNbTacnK82cpwEvqn-3LjSTYoxVCNRAa9Jw=w408-h306-k-no",
+      "gallery": [
+        "https://images.example.com/danang/marble-mountains/01.jpg",
+        "https://images.example.com/danang/marble-mountains/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:03:58.467Z"
+    },
+    {
+      "id": "bf341273-09bb-4ef0-90e7-5b57f69870ca",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "my-khe-beach",
+      "title": "My Khe Beach",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.0544,
+        "longitude": 108.2461
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWmFSnN0VHW4fa70wHm0gLxaTduTkpJWXpjqpV-xmgHoI_trngasJ7SGAUEboM3mbktVkEwuXupX6XDM74OewmRIz8QJ4qlTrqpkjiBD0COCk3IFqEZOPNOOiIN5ehsoo3qzT9MJCCT681M=w408-h305-k-no",
+      "gallery": [
+        "https://images.example.com/danang/my-khe-beach/01.jpg",
+        "https://images.example.com/danang/my-khe-beach/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:05:56.953Z"
+    },
+    {
+      "id": "84afca2a-7296-4d93-8750-7de657cfd130",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "non-nuoc-beach",
+      "title": "Non Nuoc Beach",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.003,
+        "longitude": 108.274
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWnGLGH9n5WqE3Upv2WQcK7Tcfbrzm8eVgAwdLyWA6jPoYesa0FXejfv33GKFztk3nQyF4sY3UNurz6XPiNCNockRSy12Pk89wNEj14A-zjhFludc4STsfCTY3u0gEGzm9R9nyTxb-5wCoA=w409-h240-k-no",
+      "gallery": [
+        "https://images.example.com/danang/non-nuoc-beach/01.jpg",
+        "https://images.example.com/danang/non-nuoc-beach/02.jpg"
+      ],
+      "is_featured": false,
+      "updated_at": "2026-09-08T14:04:30.973Z"
+    },
+    {
+      "id": "613912e8-b12a-416a-b3d0-5d973ab2a6a4",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "son-tra-peninsula",
+      "title": "Son Tra Peninsula",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 16.119,
+        "longitude": 108.278
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWlZ4cbAAp-CsGh1v2y0rDjwgCbv0yQAQWMcd1pgL6FNQNTF0nEtl6NEaEI3pz22HCuxIV7zgrKNJ0oB0z0kCRE5f5viyadCDr2Prf3ZJpk6wvHDKIlEEVttv868wgo598AV9uc=w408-h272-k-no",
+      "gallery": [
+        "https://images.example.com/danang/son-tra/01.jpg",
+        "https://images.example.com/danang/son-tra/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:03:27.740Z"
+    },
+    {
+      "id": "3613b5b0-4f40-4e0b-a680-509009ff1462",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "slug": "sun-world-ba-na-hills",
+      "title": "Sun World Ba Na Hills",
+      "location": {
+        "city": "Danang",
+        "country": "Vietnam",
+        "latitude": 15.9963,
+        "longitude": 107.9889
+      },
+      "cover_image_url": "https://lh3.googleusercontent.com/gps-cs-s/AHRPTWldjEcIytE-S-ntvVNWPJpmlCrzz6dp9tgMECsS54b_CM-uQvXIw-tsWwRFU1VTgmxDOowXSAHWOTARWAeCyUHZ_brB-U28emMBYEZRpfqG4o5egLsPbglZdNfGNqFdY3ioyZ2T=w408-h271-k-no",
+      "gallery": [
+        "https://images.example.com/danang/ba-na-hills/01.jpg",
+        "https://images.example.com/danang/ba-na-hills/02.jpg"
+      ],
+      "is_featured": true,
+      "updated_at": "2026-09-08T14:02:52.289Z"
+    }
+  ],
+  "guideImages": [
+    {
+      "id": "9fbb5402-ec44-4940-83b5-3b152296db04",
+      "city_id": "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f",
+      "title": "Hellooooooooo",
+      "image_url": "http://localhost:3000/api/city-photos/832782d1-6f88-4645-a339-e7218aab704e.jpg"
+    }
+  ],
+  "journalRelations": [
+    {
+      "drizzle": null,
+      "public": null
+    }
+  ],
+  "migrationHold": "Existing schema without migration journal. Do not replay the migration chain or invent historical entries."
+}

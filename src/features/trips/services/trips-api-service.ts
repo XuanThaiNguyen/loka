@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/client";
 
 export type TripStatus = "planning" | "confirmed" | "completed" | "cancelled";
+export type TripBudgetPreference = "low" | "medium" | "luxury";
 export type TripBudgetScope = "person" | "group";
 export type BookingStatus = "upcoming" | "confirmed" | "completed" | "cancelled" | "no_show";
 
@@ -31,6 +32,7 @@ export type TripDTO = {
   endDate: string;
   cityId: string | null;
   city: TripCityDTO | null;
+  budgetPreference: TripBudgetPreference | null;
   budgetVnd: number | null;
   budgetScope: TripBudgetScope | null;
   crewNumber: number;
@@ -106,6 +108,7 @@ export type TripWrite = {
   endDate: string;
   status?: TripStatus;
   cityId?: string | null;
+  budgetPreference?: TripBudgetPreference | null;
   budgetVnd?: number | null;
   budgetScope?: TripBudgetScope | null;
   crewNumber?: number;

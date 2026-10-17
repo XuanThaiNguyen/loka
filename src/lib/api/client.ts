@@ -1,6 +1,7 @@
 import { fetch } from "expo/fetch";
 import { Platform } from "react-native";
 
+import { i18n } from "@/i18n";
 import { env } from "@/config/env";
 import { authClient } from "@/lib/auth/auth-client";
 
@@ -57,6 +58,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
+  headers.set("X-Catalog-Locale", i18n.language.startsWith("vi") ? "vi" : "en");
 
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");

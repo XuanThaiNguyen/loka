@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,7 @@ import {
   PhotoGallery,
   detailStyles as s,
 } from "@/features/travel/components/detail-ui";
+import { ContentSources } from "@/features/travel/components/content-sources";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import {
   mapDestination,
@@ -59,13 +60,13 @@ function CityContent({ id }: { id: string }) {
   const query = useCity(id);
   const { city } = query;
   const destinationsQuery = useCityDestinations(
-    city.apiBacked ? city.id : undefined,
+    city?.id,
   );
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<Category>("all");
-  const [freeOnly, setFreeOnly] = useState(false);
   const [topRated, setTopRated] = useState(false);
   const [showAllPlaces, setShowAllPlaces] = useState(false);
+  if (!city) return <View style={{ flex: 1 }}><TravelScreenHeader title={t("detailGuide.city")} showBack /><DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /></View>;
   const name = city.name ?? t(`travel.cities.${city.id}.name`);
   const places = [
     ...new Map(
@@ -81,7 +82,6 @@ function CityContent({ id }: { id: string }) {
     const title = place.title ?? t(`travel.destinations.${place.id}.title`);
     return (
       (category === "all" || place.category === category) &&
-      (!freeOnly || place.price === 0) &&
       (!topRated || Number(place.rating) >= 4) &&
       normalize(
         [title, place.location, ...(place.tags ?? [])].join(" "),
@@ -90,7 +90,7 @@ function CityContent({ id }: { id: string }) {
   });
   if (topRated) shown.sort((a, b) => Number(b.rating) - Number(a.rating));
   const isFiltering =
-    Boolean(search.trim()) || category !== "all" || freeOnly || topRated;
+    Boolean(search.trim()) || category !== "all" || topRated;
   const visiblePlaces =
     showAllPlaces || isFiltering ? shown : shown.slice(0, 4);
   const unavailable = !query.data && city.id !== id;
@@ -127,27 +127,9 @@ function CityContent({ id }: { id: string }) {
           }}
         >
           <View style={{ gap: 18 }}>
-            <View style={{ borderRadius: 32, borderCurve: "continuous", overflow: "hidden", backgroundColor: theme.colors.light.surfaceSecondary }}>
-            <Image
-              source={{ uri: city.image }}
-              style={{ width: "100%", aspectRatio: 0.95, maxHeight: 520 }}
-              contentFit="cover"
-            />
-            <View pointerEvents="none" style={{ position: "absolute", inset: 0, experimental_backgroundImage: "linear-gradient(to bottom, rgba(10, 23, 46, 0.05) 25%, rgba(10, 23, 46, 0.9) 100%)" }} />
-            <View style={{ position: "absolute", left: 24, right: 24, bottom: 26, gap: 10 }}>
-            <Text style={{ color: "white", fontSize: 11, letterSpacing: 2, fontWeight: "700" }}>{t("cityEditorial.heroEyebrow")}</Text>
-            <Text selectable numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.65} style={{ color: "white", fontSize: 44, lineHeight: 50, fontWeight: "800", letterSpacing: -1.5 }}>
-              {name}
-            </Text>
-            {city.isFeatured ? (
-              <Text style={{ color: "white", fontSize: 12, fontWeight: "600" }}>{t("visitKnowledge.featured")}</Text>
-            ) : null}
-            <Text selectable style={{ color: "white", fontSize: 14, lineHeight: 21 }}>
-              {city.country ?? t(`travel.cities.${city.id}.country`)} ·{" "}
-              {t("detailGuide.placeCount", { count: places.length })}
-            </Text>
-            </View>
-            </View>
+            <Image source={{ uri: city.image }} fallbackHeight={80} style={{ width: "100%", aspectRatio: 1.78, borderRadius: 20 }} contentFit="cover" />
+            <Text selectable accessibilityRole="header" style={s.title}>{name}</Text>
+            <Text selectable style={s.body}>{city.country ?? t(`travel.cities.${city.id}.country`)} · {t("detailGuide.placeCount", { count: places.length })}</Text>
             {(city.contentGuide?.hook || city.description) ? (
               <CityExpandableText
                 key={city.contentGuide?.hook ?? city.description}
@@ -168,11 +150,11 @@ function CityContent({ id }: { id: string }) {
               <DetailAction
                 label={t("trips.createTrip")}
                 icon="add-circle-outline"
-                onPress={() => router.push("/trip/new")}
+                onPress={() => router.push({ pathname: "/trip/new", params: { cityId: city.id } })}
               />
             </View>
           </View>
-          {city.contentGuide ? <CityGuideSections guide={city.contentGuide} /> : null}
+          {city.contentGuide ? <CityGuideSections guide={city.contentGuide} cityId={city.id} /> : null}
           {city.guide ? (
             <DetailSection title={t("detailGuide.beforeYouGo")}>
               <GuideRows guide={city.guide} />
@@ -232,17 +214,7 @@ function CityContent({ id }: { id: string }) {
                 ))}
             </ScrollView>
             <View style={s.wrap}>
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: freeOnly }}
-                onPress={() => setFreeOnly(!freeOnly)}
-                style={s.action}
-              >
-                <Text style={s.actionText}>
-                  {freeOnly ? "✓ " : ""}
-                  {t("detailGuide.free")}
-                </Text>
-              </Pressable>
+
               <Pressable
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: topRated }}
@@ -308,7 +280,6 @@ function CityContent({ id }: { id: string }) {
                     onPress={() => {
                       setSearch("");
                       setCategory("all");
-                      setFreeOnly(false);
                       setTopRated(false);
                     }}
                   />
@@ -320,6 +291,7 @@ function CityContent({ id }: { id: string }) {
             images={[city.image, ...city.gallery]}
             title={t("travel.detail.galleries")}
           />
+          <ContentSources sources={city.sources} contentLocale={city.contentLocale} />
         </ScrollView>
       )}
     </View>

@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -47,15 +47,7 @@ export function DestinationListItem({
             {destination.rating}
           </Text>
         </View>
-        <Text style={styles.price}>
-          {t("travel.priceFrom", {
-            price: new Intl.NumberFormat(undefined, {
-              style: "currency",
-              currency: destination.currency ?? "USD",
-              maximumFractionDigits: 0,
-            }).format(destination.price),
-          })}
-        </Text>
+
       </View>
 
       <View style={styles.arrowButton}>

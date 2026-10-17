@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,6 +33,8 @@ const categories: readonly {
   { key: "adventure", icon: "bicycle-outline" },
   { key: "beach", icon: "water-outline" },
   { key: "culture", icon: "business-outline" },
+  { key: "food", icon: "restaurant-outline" },
+  { key: "city", icon: "map-outline" },
 ] as const;
 
 export function FavoritesScreen() {
@@ -38,7 +42,10 @@ export function FavoritesScreen() {
   const bottomPadding = useTabBottomPadding();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
-  const { favorites } = useFavorites();
+  const favoritesQuery = useFavorites();
+  const { favorites } = favoritesQuery;
+  const [showAll, setShowAll] = useState(false);
+  const scroll = useRef<ScrollView>(null);
   const recentItems = favorites.slice(0, 3);
 
   const favoriteItems = useMemo(() => {
@@ -68,6 +75,9 @@ export function FavoritesScreen() {
       <TravelScreenHeader title={t("favorites.title")} />
 
       <ScrollView
+        ref={scroll}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={favoritesQuery.isRefetching} onRefresh={() => void favoritesQuery.refetch()} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
@@ -87,11 +97,7 @@ export function FavoritesScreen() {
             placeholderTextColor={theme.colors.light.gray[400]}
             style={styles.searchInput}
           />
-          <Ionicons
-            name="options-outline"
-            size={22}
-            color={theme.colors.light.gray[600]}
-          />
+
         </View>
 
         <ScrollView
@@ -122,23 +128,19 @@ export function FavoritesScreen() {
                     selected ? styles.selectedChipLabel : null,
                   ]}
                 >
-                  {t(`favorites.categories.${item.key}`)}
+                  {t(`detailGuide.categories.${item.key}`)}
                 </Text>
               </Pressable>
             );
           })}
         </ScrollView>
 
-        <View style={styles.section}>
+        {!showAll && recentItems.length > 0 ? <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("favorites.recentAdded")}</Text>
             <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/collection/[slug]",
-                  params: { slug: "new" },
-                })
-              }
+              accessibilityRole="button"
+              onPress={() => { setShowAll(true); setQuery(""); setCategory("all"); scroll.current?.scrollTo({ y: 0, animated: true }); }}
             >
               <Text style={styles.viewAll}>{t("common.viewAll")}</Text>
             </Pressable>
@@ -157,7 +159,7 @@ export function FavoritesScreen() {
               />
             ))}
           </ScrollView>
-        </View>
+        </View> : null}
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, styles.paddedTitle]}>
@@ -171,7 +173,8 @@ export function FavoritesScreen() {
                 onPress={() => openDestination(destination)}
               />
             ))}
-            {favoriteItems.length === 0 ? (
+            {favoritesQuery.isPending ? <ActivityIndicator /> : favoritesQuery.isError ? <View style={styles.verticalList}><Text style={styles.emptyText}>{t("detailGuide.loadError")}</Text><Pressable accessibilityRole="button" onPress={() => void favoritesQuery.refetch()}><Text style={styles.viewAll}>{t("common.retry")}</Text></Pressable></View> : null}
+            {!favoritesQuery.isPending && !favoritesQuery.isError && favoriteItems.length === 0 ? (
               <Text style={styles.emptyText}>{t("favorites.empty")}</Text>
             ) : null}
           </View>
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing[5],
   },
   searchBox: {
-    height: 52,
+    minHeight: 52,
     marginHorizontal: theme.spacing[5],
     paddingHorizontal: theme.spacing[4],
     borderRadius: theme.radius.md,
@@ -210,7 +213,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing[5],
   },
   chip: {
-    height: 42,
+    minHeight: 48,
+    paddingVertical: 10,
     paddingHorizontal: theme.spacing[4],
     borderWidth: 1,
     borderColor: theme.colors.light.gray[200],

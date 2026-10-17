@@ -1,11 +1,12 @@
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { WhosAround } from "@/features/home/components/whos-around";
 import { HomeSectionHeader } from "@/features/home/components/home-section-header";
 import { RecentTripCard } from "@/features/travel-plan/components/recent-trip-card";
 import { usePlannerSessions } from "@/features/travel-plan/services/planner-api-service";
@@ -17,7 +18,7 @@ import {
 } from "@/features/travel/travel.data";
 import { useHomeCatalog } from "@/features/travel/services/travel-api-service";
 import { type TripDTO, useTrips } from "@/features/trips/services/trips-api-service";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type HomeSheetContentProps = {
   bottomPadding: number;
@@ -27,7 +28,8 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
   const { t } = useTranslation();
   const { plans } = useAvailableTravelPlans();
   const [recentTrip] = plans;
-  const { cities, collections } = useHomeCatalog();
+  const catalog = useHomeCatalog();
+  const { cities, collections } = catalog;
   const tripsQuery = useTrips();
   const plannerQuery = usePlannerSessions();
   const [now] = useState(() => Date.now());
@@ -53,7 +55,7 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
             actionLabel={t("common.seeAll")}
             onActionPress={() => router.push("/trips")}
           />
-          <RecentTripCard trip={recentTrip} onPress={() => router.push("/trips")} />
+          <RecentTripCard variant="home" trip={recentTrip} onPress={() => router.push("/trips")} />
         </View>
       ) : null}
 
@@ -65,12 +67,13 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
         </Pressable>
       ) : null}
 
+      {catalog.isPending ? <ActivityIndicator /> : catalog.isError ? <Pressable accessibilityRole="button" onPress={() => void catalog.refetch()}><Text>{t("searchScreen.error")}</Text></Pressable> : !cities.length ? <Text>{t("catalogContent.empty")}</Text> : null}
+
       <View style={styles.section}>
         <HomeSectionHeader
           title={t("home.exploreCity")}
           actionLabel={t("common.viewAll")}
-          onActionPress={() => router.push("/explore")}
-          showLocationIcon
+          onActionPress={() => router.push({ pathname: "/search", params: { scope: "cities" } })}
         />
         <ScrollView
           horizontal
@@ -104,6 +107,7 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
       {collections.map((collection) => (
         <DestinationSection key={collection.slug} collection={collection} />
       ))}
+      <WhosAround />
     </BottomSheetScrollView>
   );
 }
@@ -111,10 +115,25 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
 function HomeTripCard({ trip }: { trip: TripDTO }) {
   const { t } = useTranslation();
   return (
-    <Pressable onPress={() => router.push({ pathname: "/trip/[id]", params: { id: String(trip.id) } })} style={styles.tripCard}>
-      <View style={styles.tripIcon}><Ionicons name="airplane" size={22} color={theme.colors.light.accent} /></View>
-      <View style={styles.plannerText}><Text selectable numberOfLines={1} style={styles.tripTitle}>{trip.name}</Text><Text selectable numberOfLines={1} style={styles.tripDate}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)}</Text><Text style={styles.tripRole}>{trip.accessRole === "owner" ? t("home.tripOwner") : t("home.tripShared")}</Text></View>
-      <Ionicons name="chevron-forward" size={19} color={theme.colors.light.gray[400]} />
+    <Pressable accessibilityRole="button" accessibilityLabel={trip.name} onPress={() => router.push({ pathname: "/trip/[id]", params: { id: String(trip.id) } })} style={styles.tripCard}>
+      <View style={styles.tripTop}>
+        <View style={styles.tripIcon}>
+          <Ionicons name="airplane-outline" size={28} color={theme.colors.light.base.white} />
+          <Text style={styles.tripMonth}>{new Intl.DateTimeFormat(undefined, { month: "short" }).format(new Date(trip.startDate))}</Text>
+        </View>
+        <View style={styles.plannerText}>
+          <Text numberOfLines={2} style={styles.tripTitle}>{trip.name}</Text>
+          <Text numberOfLines={2} style={styles.tripDate}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)}</Text>
+          <View style={styles.tripRoleRow}><View style={styles.tripStatusDot} /><Text style={styles.tripRole}>{trip.accessRole === "owner" ? t("home.tripOwner") : t("home.tripShared")}</Text></View>
+        </View>
+      </View>
+      <View style={styles.tripBottom}>
+        <View style={styles.plannerText}>
+          <Text style={styles.tripCaption}>{t("home.yourItinerary")}</Text>
+          <View style={styles.itineraryButton}><Text style={styles.itineraryLabel}>{t("home.browseItinerary")}</Text><Ionicons name="arrow-up-right-box-outline" size={16} color={theme.colors.light.base.white} /></View>
+        </View>
+        {trip.city?.coverImageUrl ? <View style={styles.postcardBack}><Image source={{ uri: trip.city.coverImageUrl }} style={styles.postcard} contentFit="cover" /></View> : <View style={styles.routeIllustration}><Ionicons name="map-outline" size={36} color="#b9cdd4" /></View>}
+      </View>
     </Pressable>
   );
 }
@@ -150,6 +169,7 @@ function DestinationSection({ collection }: { collection: TravelCollection }) {
             key={item.id}
             destination={item}
             initiallyFavorite={item.isFavorite}
+            variant={collection.slug === "trending" ? "compact" : "editorial"}
             onPress={() =>
               router.push({
                 pathname: "/destination/[id]",
@@ -164,95 +184,32 @@ function DestinationSection({ collection }: { collection: TravelCollection }) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: theme.spacing[8],
-  },
-  section: {
-    gap: theme.spacing[4],
-    paddingHorizontal: theme.spacing[5],
-  },
-  cityList: {
-    gap: theme.spacing[4],
-    paddingRight: theme.spacing[5],
-  },
-  cityItem: {
-    width: 68,
-    alignItems: "center",
-    gap: theme.spacing[2],
-  },
-  cityImage: {
-    width: 68,
-    height: 68,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.light.gray[100],
-  },
-  cityLabel: {
-    width: "100%",
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  destinationList: {
-    gap: theme.spacing[3],
-    paddingRight: theme.spacing[5],
-  },
-  tripCard: {
-    minHeight: 100,
-    padding: theme.spacing[4],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.surface,
-  },
-  tripIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.accentSoft,
-  },
-  tripTitle: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.md,
-    lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "900",
-  },
-  tripDate: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-    fontWeight: "700",
-  },
-  tripRole: {
-    color: theme.colors.light.accent,
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: "800",
-  },
-  plannerActivity: {
-    marginHorizontal: theme.spacing[5],
-    padding: theme.spacing[3],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.accentSoft,
-  },
-  plannerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.base.white,
-  },
+  content: { paddingTop: 12, gap: 28 },
+  section: { gap: 14, paddingHorizontal: 20 },
+  cityList: { gap: 12, paddingRight: 4 },
+  cityItem: { width: 126, alignItems: "center", gap: 10 },
+  cityImage: { width: "100%", height: 166, borderRadius: 15, backgroundColor: theme.colors.light.surfaceSecondary },
+  cityLabel: { width: "100%", color: theme.colors.light.foreground, fontSize: 14, lineHeight: 20, fontWeight: "500", textAlign: "center" },
+  destinationList: { gap: 16, paddingRight: 4 },
+  tripCard: { padding: 16, gap: 18, borderRadius: 24, backgroundColor: travelSurfaces.featured, borderWidth: 1, borderColor: travelSurfaces.featured },
+  tripTop: { flexDirection: "row", alignItems: "center", gap: 14 },
+  tripIcon: { width: 62, minHeight: 76, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: "#64717b", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: travelSurfaces.featured },
+  tripMonth: { color: travelSurfaces.featuredSecondary, fontSize: 12, lineHeight: 16, fontWeight: "600", textTransform: "uppercase" },
+  tripTitle: { color: "#ffffff", fontSize: 20, lineHeight: 26, fontWeight: "600" },
+  tripDate: { color: travelSurfaces.featuredSecondary, fontSize: 12, lineHeight: 18, marginTop: 4 },
+  tripRoleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 5 },
+  tripStatusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#76dfc1" },
+  tripRole: { color: "#91e3cc", fontSize: 11, lineHeight: 16, flexShrink: 1 },
+  tripBottom: { padding: 14, minHeight: 100, borderRadius: 17, borderWidth: 1, borderColor: "#424c54", backgroundColor: travelSurfaces.featuredInset, flexDirection: "row", alignItems: "center", gap: 12 },
+  tripCaption: { color: "#e9eef2", fontSize: 15, lineHeight: 21, fontWeight: "500" },
+  itineraryButton: { alignSelf: "flex-start", marginTop: 8, flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 20, backgroundColor: travelSurfaces.featured },
+  itineraryLabel: { color: "#ffffff", fontSize: 11, lineHeight: 16, flexShrink: 1 },
+  postcardBack: { width: 64, height: 68, padding: 3, borderRadius: 9, backgroundColor: "#eff7f6", transform: [{ rotate: "9deg" }] },
+  postcard: { width: "100%", height: "100%", borderRadius: 6 },
+  routeIllustration: { width: 56, alignItems: "center" },
+  plannerActivity: { marginHorizontal: 20, padding: 14, borderRadius: 20, borderWidth: 1, borderColor: theme.colors.light.separator, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: travelSurfaces.info },
+  plannerIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surface },
   plannerText: { flex: 1, minWidth: 0, gap: 3 },
-  plannerTitle: { color: theme.colors.light.gray[900], fontSize: 13, lineHeight: 18, fontWeight: "900" },
-  plannerDescription: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "700" },
+  plannerTitle: { color: theme.colors.light.foreground, fontSize: 14, lineHeight: 20, fontWeight: "600" },
+  plannerDescription: { color: theme.colors.light.muted, fontSize: 12, lineHeight: 18 },
 });

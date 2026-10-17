@@ -31,6 +31,8 @@ function RootNavigator() {
         <Stack.Protected guard={Boolean(session)}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" options={{ animation: "slide_from_right", gestureEnabled: true }} />
+          <Stack.Screen name="search" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="traveler/[id]" />
           <Stack.Screen name="city/[id]" />
           <Stack.Screen name="collection/[slug]" />
           <Stack.Screen name="destination/[id]" />
@@ -44,7 +46,7 @@ function RootNavigator() {
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </>
   );
 }

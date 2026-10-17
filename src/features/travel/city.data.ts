@@ -3,6 +3,8 @@ import type { DestinationId } from "@/features/travel/travel.data";
 export type CityId = string;
 
 export type TravelCity = {
+  sources?: { label: string; url: string; checkedOn: string }[];
+  contentLocale?: "en" | "vi";
   id: CityId;
   name?: string;
   country?: string;

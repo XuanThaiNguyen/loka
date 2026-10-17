@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { useTranslation } from "react-i18next";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 
@@ -24,15 +24,9 @@ export function CityDestinationBoard({ places, onSelect }: { places: readonly De
           <View style={{ paddingHorizontal: 4, gap: 5 }}>
             <Text numberOfLines={2} style={{ color: c.foreground, fontSize: 16, lineHeight: 22, fontWeight: "700" }}>{title}</Text>
             <Text style={{ color: c.muted, fontSize: 12, lineHeight: 18 }}>{t(`detailGuide.categories.${place.category}`)}</Text>
-            {Number.isFinite(place.price) && place.price >= 0 ? <Text style={{ color: c.accent, fontSize: 12, lineHeight: 18, fontWeight: "600" }}>{place.price === 0 ? t("detailGuide.free") : t("travel.priceFrom", { price: formatPrice(place.price, place.currency) })}</Text> : null}
           </View>
         </Pressable>;
       })}
     </View>)}
   </View>;
-}
-
-function formatPrice(price: number, currency = "USD") {
-  try { return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(price); }
-  catch { return `${price.toLocaleString()} ${currency}`; }
 }
