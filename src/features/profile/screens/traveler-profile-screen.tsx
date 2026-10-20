@@ -1,61 +1,77 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
+import { useTravelerProfile } from "@/features/discovery/services/discovery-api-service";
 import { ProfileTabs } from "@/features/profile/components/profile-tabs";
-import { getDemoTraveler } from "@/features/profile/demo-travelers";
+import { ApiError } from "@/lib/api/client";
 import { theme } from "@/theme/theme";
 
 export function TravelerProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const traveler = getDemoTraveler(id);
-  const { t } = useTranslation();
+  const { id = "" } = useLocalSearchParams<{ id: string }>();
+  const query = useTravelerProfile(id);
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoId, setPhotoId] = useState<string | null>(null);
   const goBack = () => router.canGoBack() ? router.back() : router.replace("/");
+  const profile = query.data?.pages[0]?.data;
+  const unavailable = query.error instanceof ApiError && query.error.status === 404;
+  const back = <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={goBack} style={styles.backButton}><Ionicons name="arrow-back" size={22} color={c.foreground} /><Text>{t("common.back")}</Text></Pressable>;
 
-  if (!traveler) return <View style={[styles.empty, { paddingTop: insets.top, flex: 1 }]}>
-    <Text style={styles.bio}>{t("travelerProfile.notFound")}</Text>
-    <Pressable accessibilityRole="button" onPress={goBack} style={styles.backButton}><Ionicons name="arrow-back" size={22} color={c.foreground} /><Text>{t("common.back")}</Text></Pressable>
+  // Never keep a cached public wall visible after an authorization/visibility failure.
+  if (!id || unavailable || query.isError || !profile) return <View style={[styles.empty, { paddingTop: insets.top + 20, flex: 1 }]}>
+    {back}
+    {!id || unavailable ? <Text style={styles.bio}>{t("discovery.unavailable")}</Text> : <QueryFeedback query={query} layout="detail" />}
   </View>;
+
+  const photos = query.data!.pages.flatMap((page) => page.data.photos).filter((photo, index, all) => all.findIndex((item) => item.id === photo.id) === index);
+  const selected = photos.find((photo) => photo.id === photoId);
+  const selectedUrl = selected?.image.kind === "public-photo" ? selected.image.url : undefined;
+  const cover = photos.find((photo) => photo.image.kind === "public-photo")?.image;
+  const trips = profile.recentTrips;
+  const date = (value: string) => new Date(value).toLocaleDateString(i18n.language);
 
   return <View style={styles.screen}>
     <ScrollView showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="never" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
-      <View style={{ height: insets.top + 190, backgroundColor: traveler.color }}>
-        <Image source={{ uri: traveler.cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <View style={{ height: insets.top + 190, backgroundColor: c.surfaceSecondary }}>
+        <Image source={{ uri: cover?.kind === "public-photo" ? cover.url : profile.traveler.avatarUrl ?? undefined }} style={StyleSheet.absoluteFill} contentFit="cover" />
         <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={goBack} style={[styles.backButton, styles.coverBack, { top: insets.top + 10 }]}><Ionicons name="arrow-back" size={22} color={c.foreground} /></Pressable>
       </View>
       <View style={styles.identity}>
-        <View style={styles.avatarRing}><Image source={{ uri: traveler.cover }} style={styles.avatar} contentFit="cover" /></View>
-        <View style={styles.nameRow}><Text style={styles.name}>{traveler.name}</Text><View style={styles.demoBadge}><Text style={styles.demoText}>{t("home.demo")}</Text></View></View>
-        <Text style={styles.country}>{traveler.flag} {traveler.country}</Text>
-        <Text style={styles.bio}>{t(`travelerProfile.bios.${traveler.id}`)}</Text>
-        <Text style={styles.demoNote}>{t("travelerProfile.demoNotice")}</Text>
-        <View style={styles.stats}>
-          {(["trips", "followers", "following"] as const).map((key, index) => <View key={key} style={[styles.stat, index > 0 && styles.statBorder]}><Text style={styles.statValue}>{key === "trips" ? traveler.destinations.length : "—"}</Text><Text style={styles.statLabel}>{t(`profileLayout.${key}`)}</Text></View>)}
-        </View>
+        <View style={styles.avatarRing}><Image source={{ uri: profile.traveler.avatarUrl ?? undefined }} style={styles.avatar} contentFit="cover" /></View>
+        <View style={styles.nameRow}><Text style={styles.name}>{profile.traveler.displayName}</Text></View>
+        <Text style={styles.bio}>{t("discovery.publicMoments")}</Text>
+        <QueryFeedback query={query} hasData />
       </View>
       <ProfileTabs>
         <View style={styles.grid}>
-          {traveler.destinations.map((destination) => <Pressable key={destination.id} accessibilityRole="button" accessibilityLabel={t(`travel.destinations.${destination.id}.title`)} style={styles.tile} onPress={() => router.push({ pathname: "/destination/[id]", params: { id: destination.id } })}>
-            <Image source={{ uri: destination.image }} style={styles.tileImage} contentFit="cover" />
-            <Text numberOfLines={2} style={styles.tileLabel}>{t(`travel.destinations.${destination.id}.title`)}</Text>
-          </Pressable>)}
+          {trips.length ? trips.map((trip) => <View key={trip.id} style={{ width: "100%", gap: 8 }}>
+            {trip.city ? <Text style={styles.tileLabel}>{trip.city.name}, {trip.city.country}</Text> : null}
+            <Text style={styles.tileLabel}>{t("discovery.completed", { date: date(trip.completedAt) })}</Text>
+          </View>) : <Text style={styles.emptyText}>{t("discovery.noTrips")}</Text>}
         </View>
-        <View style={styles.grid}>
-          {traveler.destinations.map((destination) => <Pressable key={destination.id} accessibilityRole="button" accessibilityLabel={t("profileGallery.viewPhoto")} style={styles.tile} onPress={() => setPhoto(destination.image)}><Image source={{ uri: destination.image }} style={styles.tileImage} contentFit="cover" /></Pressable>)}
+        <View>
+          <View style={styles.grid}>
+            {photos.length ? photos.map((photo) => <Pressable key={photo.id} accessibilityRole="button" accessibilityLabel={t("profileGallery.viewPhoto")} disabled={photo.image.kind !== "public-photo"} style={styles.tile} onPress={() => setPhotoId(photo.id)}>
+              <Image source={{ uri: photo.image.kind === "public-photo" ? photo.image.url : undefined }} style={styles.tileImage} contentFit="cover" />
+            </Pressable>) : <Text style={styles.emptyText}>{t("discovery.noPhotos")}</Text>}
+          </View>
+          {query.hasNextPage ? <Pressable accessibilityRole="button" accessibilityState={{ disabled: query.isFetchingNextPage }} disabled={query.isFetchingNextPage} onPress={() => void query.fetchNextPage()} style={styles.backButton}>
+            <Text style={styles.tileLabel}>{t(query.isFetchingNextPage ? "loadingUi.content" : "profileGallery.loadMore")}</Text>
+          </Pressable> : null}
         </View>
         <View style={styles.empty}><Ionicons name="lock-closed-outline" size={30} color={c.muted} /><Text style={styles.emptyText}>{t("travelerProfile.savedPrivate")}</Text></View>
       </ProfileTabs>
     </ScrollView>
-    <Modal visible={photo !== null} animationType="fade" onRequestClose={() => setPhoto(null)}>
+    <Modal visible={Boolean(selectedUrl)} animationType="fade" onRequestClose={() => setPhotoId(null)}>
       <View style={[styles.photoPreview, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("detailGuide.close")} onPress={() => setPhoto(null)} style={styles.closeButton}><Ionicons name="close" size={26} color="#ffffff" /></Pressable>
-        {photo ? <Image source={{ uri: photo }} style={{ flex: 1, width: "100%" }} contentFit="contain" /> : null}
+        <Pressable accessibilityRole="button" accessibilityLabel={t("detailGuide.close")} onPress={() => setPhotoId(null)} style={styles.closeButton}><Ionicons name="close" size={26} color="#ffffff" /></Pressable>
+        {selectedUrl ? <Image source={{ uri: selectedUrl }} style={{ flex: 1, width: "100%" }} contentFit="contain" /> : null}
       </View>
     </Modal>
   </View>;

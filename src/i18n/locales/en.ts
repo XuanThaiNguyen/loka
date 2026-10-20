@@ -1,4 +1,9 @@
 const en = {
+  discovery: {"description": "Travelers who shared a trip completed in the last 10 days.", "empty": "No recently shared trips yet.", "recentTrip": "Recently completed trip", "peopleHint": "Search within up to six recent travelers, not all accounts.", "publicMoments": "Public travel moments", "noTrips": "No recently shared trips.", "noPhotos": "No public photos yet.", "completed": "Completed {{date}}", "unavailable": "This profile is no longer discoverable."},
+  loadingUi: { content: "Loading content", refreshing: "Refreshing…", offline: "Unable to connect. Check your connection and try again.", timeout: "This is taking too long. Please try again." },
+  homeSections: { trips: "Your trips", collections: "Collections", noTrips: "Your trips will appear here when you create one.", noWorkspaces: "No saved planning workspaces yet.", noCollections: "No featured collections are available yet.", loadError: "Could not refresh {{title}}. Please try again.", retry: "Retry {{title}}", loading: "Loading {{title}}…" },
+  taskFlow: { fewerPeople: "Fewer travellers", morePeople: "More travellers", ownerOnly: "Only the trip owner can edit this trip.", invalidTrip: "Check the name, dates and group size (1–50).", close: "Close", discardTitle: "Discard changes?", discardDescription: "Your unsaved changes will be lost. Stay here to keep editing.", keepEditing: "Keep editing", discard: "Discard", saving: "Saving…" },
+  settingsSections: { preferences: "Travel preferences", support: "Help & information", account: "Account" },
   catalogContent: {"title": "Sources and language", "sources": "Sources", "checked": "Source reviewed {{date}}. Confirm current access before visiting.", "fallback": "This content is currently available in English.", "bookingPaused": "Booking is not available in this version. You can still create a trip and save places to your itinerary.", "empty": "No content is available yet."},
   searchScreen: {
     title: "Search", placeholder: "Search places, cities, people…",
@@ -11,13 +16,7 @@ const en = {
   },
   travelerProfile: {
     notFound: "This profile is not available.",
-    demoNotice: "Demo profile · sample trips and photos.",
     savedPrivate: "Saved places are private to this traveler.",
-    bios: {
-      yungs: "Chasing quiet beaches, good food and a new story in every city.",
-      suben: "Mountain mornings, slow journeys and a camera always close by.",
-      max: "Exploring coastlines and collecting little moments along the way.",
-    },
   },
   profileLayout: {
     trips: "Trips", photos: "Photos", saved: "Saved", followers: "Followers", following: "Following",
@@ -337,9 +336,9 @@ const en = {
       booking: "Booking",
       planning: "Plans",
     },
-    workspaceEyebrow: "Workspace",
+    workspaceEyebrow: "Your journeys",
     workspaceTitle: "All Trips",
-    workspaceDescription: "Trips you organise or share, synchronized directly from the database.",
+    workspaceDescription: "Keep the trips you plan and share together in one place.",
     createTrip: "Create Trip",
     createPlan: "Create plan",
     emptyTripsTitle: "No Trips yet",
@@ -496,7 +495,7 @@ const en = {
       step: "Step {{current}} of 4",
       steps: [
         { title: "Route", hint: "Confirm the shared journey and departure point." },
-        { title: "Budget & logistics", hint: "Money, transport, and stays." },
+        { title: "Transport & stays", hint: "Choose how you want to travel and where to stay." },
         { title: "Experience", hint: "Pace, interests, and priorities." },
         { title: "Constraints & notes", hint: "Important context for the whole group." },
       ],
@@ -533,9 +532,9 @@ const en = {
       notesPlaceholder: "Anything else the group or future AI planner should remember.",
       aiSoonTitle: "AI Planner coming soon",
       aiSoonDescription: "These answers are saved to the Trip now. No AI itinerary prompt is sent in this version.",
-      persistenceNote: "Completing step 4 stores the planning context in the Trip database.",
+      persistenceNote: "Complete step 4 to save your preferences for this trip.",
       saveWorkspace: "Save workspace",
-      savedEyebrow: "Saved to database",
+      savedEyebrow: "Plan saved",
       savedDescription: "This context is attached to the Trip and can be reopened on web or mobile.",
       savedDestination: "Planning destination",
       savedAiDescription: "The data is ready for use when backend itinerary generation is enabled.",

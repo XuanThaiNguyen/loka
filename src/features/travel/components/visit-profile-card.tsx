@@ -1,8 +1,9 @@
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { Alert, Linking, Text, View } from "react-native";
 import { useVisitProfile } from "@/features/travel/services/visit-profile-service";
-import { DetailAction, DetailState, detailStyles as s } from "./detail-ui";
+import { DetailAction, detailStyles as s } from "./detail-ui";
 
 export function VisitProfileCard({ id }: { id: string }) {
   const { t, i18n } = useTranslation();
@@ -12,12 +13,12 @@ export function VisitProfileCard({ id }: { id: string }) {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
-  if (query.isPending) return <DetailState loading />;
-  if (query.isError) return <DetailState onRetry={() => void query.refetch()} />;
+  if (query.data === undefined) return <QueryFeedback query={query} layout="card" />;
   const profile = query.data;
   if (!profile) return <View style={s.card}>
+    <QueryFeedback query={query} hasData />
     <Text accessibilityRole="header" style={s.label}>{t("visitKnowledge.title")}</Text>
-    <Text selectable style={s.body}>{t("visitKnowledge.notAdded")}</Text>
+    {!query.isError && query.fetchStatus !== "paused" ? <Text selectable style={s.body}>{t("visitKnowledge.notAdded")}</Text> : null}
   </View>;
   const date = (value: string | null) => value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(i18n.language).format(new Date(value)) : null;
   const expired = profile.validUntil !== null && Date.parse(profile.validUntil) <= now;
@@ -39,6 +40,7 @@ export function VisitProfileCard({ id }: { id: string }) {
     if (url.protocol === "https:" || url.protocol === "http:") sourceUrl = url.href;
   } catch { /* Invalid evidence links are not actionable. */ }
   return <View style={s.card}>
+    <QueryFeedback query={query} hasData />
     <Text style={s.heading}>{t("visitKnowledge.title")}</Text>
     <Text style={s.label}>{t(expired ? "visitKnowledge.expired" : profile.verificationStatus === "verified" ? "visitKnowledge.verified" : "visitKnowledge.unverified")}</Text>
     {facts.map(([label, value]) => <View key={label} style={{ gap: 2 }}><Text style={s.label}>{label}</Text><Text selectable style={s.body}>{value}</Text></View>)}

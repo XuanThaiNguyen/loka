@@ -1,8 +1,9 @@
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { DetailGuide } from "@/features/travel/detail-guide";
@@ -18,7 +19,7 @@ export function DetailAction({ label, icon, onPress, disabled = false }: { label
 
 export function DetailState({ loading, onRetry }: { loading?: boolean; onRetry?: () => void }) {
   const { t } = useTranslation();
-  return <View style={detailStyles.card}>{loading ? <ActivityIndicator color={theme.colors.light.accent} /> : <><Text selectable style={detailStyles.body}>{t("detailGuide.loadError")}</Text>{onRetry && <DetailAction label={t("common.retry")} icon="refresh" onPress={onRetry} />}</>}</View>;
+  return <View style={detailStyles.card}>{loading ? <LoadingSkeleton layout="card" /> : <><Text selectable style={detailStyles.body}>{t("detailGuide.loadError")}</Text>{onRetry && <DetailAction label={t("common.retry")} icon="refresh" onPress={onRetry} />}</>}</View>;
 }
 
 export function GuideRows({ guide }: { guide?: DetailGuide }) {

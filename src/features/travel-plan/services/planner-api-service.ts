@@ -116,6 +116,7 @@ export function useUpdatePlannerSession() {
     onSuccess: (response) => {
       queryClient.setQueryData(plannerQueryKeys.session(response.data.id), response);
       void queryClient.invalidateQueries({ queryKey: plannerQueryKeys.sessions });
+      void queryClient.invalidateQueries({ queryKey: ["trips"] });
     },
   });
 }

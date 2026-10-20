@@ -1,0 +1,45 @@
+UI REVIEW — 19 OCTOBER 2026
+
+Environment
+iPhone 17 simulator, Expo Go 57.0.9, 402x874 logical pixels.
+Additional Expo browser preview at 320x700 (not a native Android test).
+Both used a local read-only fixture API on 127.0.0.1:8765 and Metro on 8084.
+Fixture data included sample trips, a saved plan, favorites and a test account.
+No production account writes, bookings, deletions or uploads were performed.
+
+Checks
+- Native Home/Profile and shared navigation colors.
+- My Trips tabs, status filtering presentation and trip-detail layout.
+- Planner route input, keyboard dismissal and four-step navigation.
+- Create-trip dates and review; stopped before submitting.
+- Saved itinerary summary, stats, hotel and activity cards.
+- Favorites search/filter/list presentation.
+- Settings groups, profile card, language expansion and switching EN/VI.
+- Narrow Trips, Settings and create-trip review. Fixed the cramped Settings
+  identity card at widths below 360px; email now fits the 320px sample.
+- TypeScript and Expo lint passed during review; lint has two pre-existing
+  unused-variable warnings in profile-screen.tsx (picking and choosePhoto).
+- git diff --check passed.
+
+Evidence and scope
+Screenshots are in verification/. Expo's floating blue gear is development
+chrome, not part of Loka. Some local catalog images are unavailable; their
+neutral fallback is visible. Other remote images loaded successfully.
+
+Concurrent navigation/task-flow work appeared in the shared checkout during
+this review (around 20:20). It was preserved, including new planner routes,
+task headers/footers and changes to existing planner forms. Earlier-flow/
+contains screenshots from before those changes and is historical evidence.
+planner-current.png and create-trip-review-320-web.png show the newer flow
+using the shared colors. Do not treat earlier-flow screenshots as current
+navigation specifications. Recheck the working tree before further edits.
+
+Limits
+This is layout/interaction QA with fixtures, not production API or persistence
+verification. Android, large dynamic-type settings and dark mode were not
+visually tested. The app currently forces light mode. Expo native-module errors
+after live reload were cleared by closing and reopening Expo Go.
+
+The palette/layout work did not alter web source. The separate web developer
+prompt was refreshed to reference the saved images and palette, and still
+requires existing WEB behavior to take precedence over mobile behavior.

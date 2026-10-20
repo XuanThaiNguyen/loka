@@ -1,9 +1,9 @@
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { DetailState } from "@/features/travel/components/detail-ui";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import {
@@ -17,7 +17,7 @@ export function CollectionScreen() {
   const insets = useSafeAreaInsets();
   const query = useCollection(slug);
   const { collection, items } = query;
-  if (!collection) return <View style={styles.screen}><TravelScreenHeader title={t("travel.detail.title")} showBack /><DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /></View>;
+  if (!collection) return <View style={styles.screen}><TravelScreenHeader title={t("travel.detail.title")} showBack /><View style={{ padding: 20 }}><QueryFeedback query={query} layout="list" /></View></View>;
 
   return (
     <View style={styles.screen}>
@@ -33,6 +33,7 @@ export function CollectionScreen() {
           { paddingBottom: insets.bottom + theme.spacing[6] },
         ]}
       >
+        <QueryFeedback query={query} hasData />
         <Text style={styles.resultCount}>
           {t("travel.collectionResultCount", { count: items.length })}
         </Text>

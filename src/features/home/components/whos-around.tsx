@@ -1,32 +1,34 @@
-import { Image } from "expo-image";
+import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
-import { demoTravelers } from "@/features/profile/demo-travelers";
-import { getDestination } from "@/features/travel/travel.data";
+import { useRecentTravelers } from "@/features/discovery/services/discovery-api-service";
+import { DiscoveryState } from "@/features/discovery/components/discovery-state";
 import { theme } from "@/theme/theme";
 
 export function WhosAround() {
   const { t } = useTranslation();
   const { fontScale } = useWindowDimensions();
+  const query = useRecentTravelers();
   return <View style={styles.section}>
     <View style={styles.heading}>
       <Text style={styles.title}>{t("home.whosAround")}</Text>
-      <View style={styles.demoBadge}><Text style={styles.demoLabel}>{t("home.demo")}</Text></View>
     </View>
+    <Text style={[styles.country, { paddingHorizontal: 20 }]}>{t("discovery.description")}</Text>
+    <DiscoveryState query={query} empty={!query.cards.length} />
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.list}>
-      {demoTravelers.map((person) => <Pressable
-        key={person.id}
+      {query.cards.map((card) => <Pressable
+        key={card.traveler.accountId}
         accessibilityRole="button"
-        accessibilityLabel={t("home.viewTraveler", { name: person.name })}
-        onPress={() => router.push({ pathname: "/traveler/[id]", params: { id: person.id } })}
+        accessibilityLabel={t("home.viewTraveler", { name: card.traveler.displayName })}
+        onPress={() => router.push({ pathname: "/traveler/[id]", params: { id: card.traveler.accountId } })}
         style={[styles.card, fontScale > 1.2 && { width: 170 }]}
       >
-        <View style={[styles.person, { backgroundColor: person.color }]}>
-          <Image source={{ uri: getDestination(person.coverId)?.image }} style={styles.avatar} contentFit="cover" />
-          <Text numberOfLines={2} style={styles.name}>{person.name}</Text>
-          <View style={styles.countryPill}><Text numberOfLines={1} style={styles.country}>{person.country}</Text><Text style={styles.flag}>{person.flag}</Text></View>
+        <View style={[styles.person, { backgroundColor: c.surfaceSecondary }]}>
+          <Image source={{ uri: card.traveler.avatarUrl ?? undefined }} style={styles.avatar} contentFit="cover" />
+          <Text numberOfLines={2} style={styles.name}>{card.traveler.displayName}</Text>
+          <View style={styles.countryPill}><Text numberOfLines={2} style={styles.country}>{card.recentTrip.city?.name ?? t("discovery.recentTrip")}</Text></View>
         </View>
         <View style={styles.profileButton}><Text style={styles.profileLabel}>{t("home.viewProfile")}</Text></View>
       </Pressable>)}
@@ -39,8 +41,6 @@ const styles = StyleSheet.create({
   section: { gap: 14 },
   heading: { paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   title: { flex: 1, color: c.foreground, fontSize: 19, lineHeight: 26, fontWeight: "600" },
-  demoBadge: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 20, backgroundColor: c.surfaceTertiary },
-  demoLabel: { color: c.muted, fontSize: 11, fontWeight: "500" },
   list: { paddingHorizontal: 20, gap: 12 },
   card: { width: 116, gap: 7 },
   person: { padding: 12, borderRadius: 15, gap: 12 },

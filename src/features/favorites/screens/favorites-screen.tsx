@@ -1,9 +1,9 @@
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,13 +15,13 @@ import {
 
 import { DestinationCard } from "@/features/travel/components/destination-card";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
-import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
+import { JourneyHeader } from "@/components/ui/journey-header";
 import {
   type Destination,
 } from "@/features/travel/travel.data";
 import { useFavorites } from "@/features/travel/services/travel-api-service";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type CategoryFilter = "all" | Destination["category"];
 
@@ -72,7 +72,7 @@ export function FavoritesScreen() {
 
   return (
     <View style={styles.screen}>
-      <TravelScreenHeader title={t("favorites.title")} />
+      <JourneyHeader title={t("favorites.title")} />
 
       <ScrollView
         ref={scroll}
@@ -91,6 +91,7 @@ export function FavoritesScreen() {
             color={theme.colors.light.gray[400]}
           />
           <TextInput
+            accessibilityLabel={t("favorites.searchPlaceholder")}
             value={query}
             onChangeText={setQuery}
             placeholder={t("favorites.searchPlaceholder")}
@@ -110,6 +111,8 @@ export function FavoritesScreen() {
             return (
               <Pressable
                 key={item.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 onPress={() => setCategory(item.key)}
                 style={[styles.chip, selected ? styles.selectedChip : null]}
               >
@@ -152,6 +155,7 @@ export function FavoritesScreen() {
           >
             {recentItems.map((destination) => (
               <DestinationCard
+                variant="editorial"
                 key={destination.id}
                 destination={destination}
                 initiallyFavorite={destination.isFavorite ?? true}
@@ -173,8 +177,8 @@ export function FavoritesScreen() {
                 onPress={() => openDestination(destination)}
               />
             ))}
-            {favoritesQuery.isPending ? <ActivityIndicator /> : favoritesQuery.isError ? <View style={styles.verticalList}><Text style={styles.emptyText}>{t("detailGuide.loadError")}</Text><Pressable accessibilityRole="button" onPress={() => void favoritesQuery.refetch()}><Text style={styles.viewAll}>{t("common.retry")}</Text></Pressable></View> : null}
-            {!favoritesQuery.isPending && !favoritesQuery.isError && favoriteItems.length === 0 ? (
+            <QueryFeedback query={favoritesQuery} hasData={favoritesQuery.data !== undefined} layout="list" />
+            {!favoritesQuery.isPending && !favoritesQuery.isError && favoritesQuery.fetchStatus !== "paused" && favoriteItems.length === 0 ? (
               <Text style={styles.emptyText}>{t("favorites.empty")}</Text>
             ) : null}
           </View>
@@ -185,49 +189,17 @@ export function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
+
   screen: {
     flex: 1,
     backgroundColor: theme.colors.light.background,
   },
-  content: {
-    gap: theme.spacing[5],
-  },
-  searchBox: {
-    minHeight: 52,
-    marginHorizontal: theme.spacing[5],
-    paddingHorizontal: theme.spacing[4],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.gray[50],
-  },
-  searchInput: {
-    flex: 1,
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.md,
-    lineHeight: theme.typography.lineHeight.md,
-  },
-  categoryList: {
-    gap: theme.spacing[3],
-    paddingHorizontal: theme.spacing[5],
-  },
-  chip: {
-    minHeight: 48,
-    paddingVertical: 10,
-    paddingHorizontal: theme.spacing[4],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.full,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[2],
-    backgroundColor: theme.colors.light.background,
-  },
-  selectedChip: {
-    borderColor: theme.colors.light.accent,
-    backgroundColor: theme.colors.light.accent,
-  },
+  content: { paddingTop: 20, gap: 24 },
+  searchBox: { minHeight: 56, marginHorizontal: 20, paddingHorizontal: 18, borderWidth: 1, borderColor: theme.colors.light.separator, borderRadius: 28, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.light.surface },
+  searchInput: { flex: 1, minWidth: 0, paddingVertical: 14, color: travelSurfaces.foreground, fontSize: 16, lineHeight: 24 },
+  categoryList: { gap: 8, paddingHorizontal: 20 },
+  chip: { minHeight: 48, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 24, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: theme.colors.light.surfaceSecondary },
+  selectedChip: { backgroundColor: travelSurfaces.featured },
   chipLabel: {
     color: theme.colors.light.gray[700],
     fontSize: theme.typography.fontSize.sm,
@@ -240,40 +212,16 @@ const styles = StyleSheet.create({
   section: {
     gap: theme.spacing[4],
   },
-  sectionHeader: {
-    paddingHorizontal: theme.spacing[5],
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.xl,
-    lineHeight: theme.typography.lineHeight.xl,
-    fontWeight: "800",
-  },
+  sectionHeader: { paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  sectionTitle: { flexShrink: 1, color: travelSurfaces.foreground, fontSize: 19, lineHeight: 26, fontWeight: "600" },
   paddedTitle: {
     paddingHorizontal: theme.spacing[5],
   },
-  viewAll: {
-    color: theme.colors.light.accent,
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-    fontWeight: "700",
-  },
+  viewAll: { color: theme.colors.light.muted, fontSize: 12, lineHeight: 18, fontWeight: "500" },
   horizontalList: {
     gap: theme.spacing[3],
     paddingHorizontal: theme.spacing[5],
   },
-  verticalList: {
-    paddingHorizontal: theme.spacing[5],
-    gap: theme.spacing[3],
-  },
-  emptyText: {
-    paddingVertical: theme.spacing[8],
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-    textAlign: "center",
-  },
+  verticalList: { paddingHorizontal: 20, gap: 14 },
+  emptyText: { padding: 24, borderRadius: 24, backgroundColor: travelSurfaces.info, color: travelSurfaces.secondary, fontSize: 14, lineHeight: 22, textAlign: "center" },
 });

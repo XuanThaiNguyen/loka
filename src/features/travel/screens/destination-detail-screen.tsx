@@ -1,3 +1,4 @@
+import { LoadingScope, QueryFeedback } from "@/components/ui/loading-skeleton";
 import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -11,7 +12,7 @@ import { CityGuideSections } from "@/features/travel/components/city-guide-secti
 import { CityExpandableText } from "@/features/travel/components/city-editorial-sections";
 import { guideWash } from "@/features/travel/city-guide";
 import { DestinationListItem } from "@/features/travel/components/destination-list-item";
-import { DetailAction, DetailSection, DetailState, GuideRows, PhotoGallery, detailStyles as s, openPlaceMap } from "@/features/travel/components/detail-ui";
+import { DetailAction, DetailSection, GuideRows, PhotoGallery, detailStyles as s, openPlaceMap } from "@/features/travel/components/detail-ui";
 import { ContentSources } from "@/features/travel/components/content-sources";
 import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
 import { VisitProfileCard } from "@/features/travel/components/visit-profile-card";
@@ -20,7 +21,7 @@ import { theme, travelSurfaces } from "@/theme/theme";
 
 export function DestinationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <DestinationContent key={id} id={id} />;
+  return <LoadingScope><DestinationContent key={id} id={id} /></LoadingScope>;
 }
 
 function DestinationContent({ id }: { id: string }) {
@@ -32,7 +33,7 @@ function DestinationContent({ id }: { id: string }) {
   const favorite = useFavoriteMutation();
   const [adding, setAdding] = useState(false);
   const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null);
-  if (!place) return <View style={{ flex: 1 }}><TravelScreenHeader title={t("travel.detail.title")} showBack /><DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /></View>;
+  if (!place) return <View style={{ flex: 1 }}><TravelScreenHeader title={t("travel.detail.title")} showBack /><View style={{ padding: 20 }}><QueryFeedback query={query} layout="detail" /></View></View>;
   const saved = favoriteOverride ?? place.isFavorite ?? false;
   const unavailable = !query.data && place.id !== id;
   const title = place.title ?? t(`travel.destinations.${place.id}.title`);
@@ -51,10 +52,11 @@ function DestinationContent({ id }: { id: string }) {
 
   return <View style={{ flex: 1, backgroundColor: theme.colors.light.background }}>
     <TravelScreenHeader title={t("travel.detail.title")} showBack />
-    {unavailable ? <DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /> : <>
+    {unavailable ? <View style={{ padding: 20 }}><QueryFeedback query={query} layout="detail" /></View> : <>
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} />}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 32 }}>
+        <QueryFeedback query={query} hasData />
         <View style={{ gap: 16 }}>
           <Image source={{ uri: place.image }} fallbackHeight={80} style={{ width: "100%", aspectRatio: 1.78, borderRadius: 20 }} contentFit="cover" />
           <Text selectable style={s.title}>{title}</Text>
@@ -86,6 +88,7 @@ function DestinationContent({ id }: { id: string }) {
 
         <ContentSources sources={place.sources} contentLocale={place.contentLocale} />
         <PhotoGallery images={gallery} title={t("travel.detail.galleries")} />
+        {place.cityId ? <QueryFeedback query={cityQuery} hasData={cityQuery.data !== undefined} layout="list" /> : null}
         {nearby.length ? <DetailSection title={t("detailGuide.sameCity")}><Text style={s.body}>{t("detailGuide.sameCityHint")}</Text>{nearby.map((destination) => <DestinationListItem key={destination.id} destination={destination} onPress={() => router.push({ pathname: "/destination/[id]", params: { id: destination.id } })} />)}<DetailAction label={t("detailGuide.exploreAll")} icon="arrow-forward" onPress={() => router.push({ pathname: "/city/[id]", params: { id: place.cityId! } })} /></DetailSection> : null}
       </ScrollView>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 12), borderTopWidth: 1, borderTopColor: theme.colors.light.gray[200], gap: 8 }}>

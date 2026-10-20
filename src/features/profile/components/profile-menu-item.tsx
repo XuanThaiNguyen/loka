@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type ProfileMenuItemProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -28,9 +28,10 @@ export function ProfileMenuItem({
   return (
     <Pressable
       accessibilityRole={onPress ? "button" : undefined}
+      accessibilityState={{ disabled: !onPress }}
       disabled={!onPress}
       onPress={onPress}
-      style={[styles.row, isLast ? styles.lastRow : null]}
+      style={({ pressed }) => [styles.row, isLast && styles.lastRow, pressed && { opacity: 0.7 }]}
     >
       <View style={styles.iconBox}>
         <Ionicons name={icon} size={21} color={foreground} />
@@ -38,23 +39,24 @@ export function ProfileMenuItem({
 
       <View style={styles.content}>
         <Text style={[styles.title, { color: foreground }]}>{title}</Text>
-        <Text numberOfLines={1} style={styles.subtitle}>
+        <Text style={styles.subtitle}>
           {subtitle}
         </Text>
       </View>
 
-      <Ionicons
+      {onPress ? <Ionicons
         name="chevron-forward"
         size={20}
         color={theme.colors.light.gray[400]}
-      />
+      /> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 72,
+    minHeight: 80,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.light.gray[100],
     flexDirection: "row",
@@ -67,10 +69,10 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 42,
     height: 42,
-    borderRadius: theme.radius.md,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.light.gray[50],
+    backgroundColor: travelSurfaces.info,
   },
   content: {
     flex: 1,
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   subtitle: {
     color: theme.colors.light.gray[500],

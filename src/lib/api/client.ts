@@ -69,33 +69,54 @@ export async function apiRequest<T>(
     if (cookie) headers.set("Cookie", cookie);
   }
 
-  let response: Response;
+  const controller = new AbortController();
+  const callerSignal = options.signal;
+  let timedOut = false;
+  const abort = () => controller.abort();
+  if (callerSignal?.aborted) abort();
+  else callerSignal?.addEventListener("abort", abort, { once: true });
+  const timeout = (options.method ?? "GET").toUpperCase() === "GET"
+    ? setTimeout(() => { timedOut = true; controller.abort(); }, 20_000)
+    : undefined;
   try {
-    response = await fetch(`${env.apiBaseURL}${path}`, {
+    const response = await fetch(`${env.apiBaseURL}${path}`, {
       ...options,
+      signal: controller.signal,
       credentials: Platform.OS === "web" ? "include" : "omit",
       headers,
     });
+
+    // Headers may arrive long before the body. Keep cancellation and the deadline
+    // active until the response has been fully consumed.
+    const payload = response.status === 204
+      ? null
+      : ((await response.json().catch((error: unknown) => {
+          if (controller.signal.aborted || !(error instanceof SyntaxError)) throw error;
+          return null;
+        })) as ApiErrorPayload | T | null);
+
+    if (!response.ok) {
+      const apiError = payload as ApiErrorPayload | null;
+      throw new ApiError(
+        apiError?.error?.message ?? `Request failed (${response.status})`,
+        response.status,
+        apiError?.error?.code,
+      );
+    }
+
+    return payload as T;
   } catch (error) {
+    if (callerSignal?.aborted) throw error;
+    if (timedOut) throw new ApiError("Request timed out", 0, "REQUEST_TIMEOUT");
+    if (error instanceof ApiError) throw error;
     throw new ApiError(
       error instanceof Error ? error.message : "Network error",
       0,
       "NETWORK_ERROR",
     );
+  } finally {
+    clearTimeout(timeout);
+    callerSignal?.removeEventListener("abort", abort);
   }
 
-  const payload = response.status === 204
-    ? null
-    : ((await response.json().catch(() => null)) as ApiErrorPayload | T | null);
-
-  if (!response.ok) {
-    const apiError = payload as ApiErrorPayload | null;
-    throw new ApiError(
-      apiError?.error?.message ?? `Request failed (${response.status})`,
-      response.status,
-      apiError?.error?.code,
-    );
-  }
-
-  return payload as T;
 }

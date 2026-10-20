@@ -1,3 +1,4 @@
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
 import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -18,7 +19,6 @@ import { CityDestinationBoard } from "@/features/travel/components/city-destinat
 import {
   DetailAction,
   DetailSection,
-  DetailState,
   GuideRows,
   openPlaceMap,
   PhotoGallery,
@@ -66,7 +66,7 @@ function CityContent({ id }: { id: string }) {
   const [category, setCategory] = useState<Category>("all");
   const [topRated, setTopRated] = useState(false);
   const [showAllPlaces, setShowAllPlaces] = useState(false);
-  if (!city) return <View style={{ flex: 1 }}><TravelScreenHeader title={t("detailGuide.city")} showBack /><DetailState loading={query.isFetching} onRetry={() => void query.refetch()} /></View>;
+  if (!city) return <View style={{ flex: 1 }}><TravelScreenHeader title={t("detailGuide.city")} showBack /><View style={{ padding: 20 }}><QueryFeedback query={query} layout="detail" /></View></View>;
   const name = city.name ?? t(`travel.cities.${city.id}.name`);
   const places = [
     ...new Map(
@@ -102,10 +102,7 @@ function CityContent({ id }: { id: string }) {
         showBack
       />
       {unavailable ? (
-        <DetailState
-          loading={query.isFetching}
-          onRetry={() => void query.refetch()}
-        />
+        <View style={{ padding: 20 }}><QueryFeedback query={query} layout="detail" /></View>
       ) : (
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -126,6 +123,7 @@ function CityContent({ id }: { id: string }) {
             gap: 32,
           }}
         >
+          <QueryFeedback query={query} hasData />
           <View style={{ gap: 18 }}>
             <Image source={{ uri: city.image }} fallbackHeight={80} style={{ width: "100%", aspectRatio: 1.78, borderRadius: 20 }} contentFit="cover" />
             <Text selectable accessibilityRole="header" style={s.title}>{name}</Text>
@@ -233,6 +231,7 @@ function CityContent({ id }: { id: string }) {
                 total: places.length,
               })}
             </Text>
+              <QueryFeedback query={destinationsQuery} hasData={destinationsQuery.data !== undefined || places.length > 0} layout="grid" />
               <CityDestinationBoard
                 places={visiblePlaces}
                 onSelect={(destination) =>
@@ -253,9 +252,6 @@ function CityContent({ id }: { id: string }) {
                 onPress={() => setShowAllPlaces(!showAllPlaces)}
               />
             ) : null}
-            {destinationsQuery.isError ? (
-              <DetailState onRetry={() => void destinationsQuery.refetch()} />
-            ) : null}
             {destinationsQuery.hasNextPage ? (
               <DetailAction
                 label={t("visitKnowledge.loadMore")}
@@ -270,7 +266,7 @@ function CityContent({ id }: { id: string }) {
             {destinationsQuery.hasNextPage ? (
               <Text style={s.body}>{t("visitKnowledge.loadedHint")}</Text>
             ) : null}
-            {!shown.length ? (
+            {!shown.length && !destinationsQuery.isPending && !destinationsQuery.isError && destinationsQuery.fetchStatus !== "paused" ? (
               <View style={s.card}>
                 <Text style={s.body}>{t("detailGuide.noResults")}</Text>
                 {places.length > 0 && (

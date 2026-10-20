@@ -1,3 +1,4 @@
+import { LoadingAnnouncement, QueryFeedback, type FeedbackQuery } from "@/components/ui/loading-skeleton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -6,7 +7,6 @@ import { Button } from "heroui-native";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
@@ -205,21 +205,17 @@ export function ProfileScreen() {
             <View style={styles.statDivider} />
             <ProfileStat value="—" label={t("profileLayout.following")} />
           </View>
-          {account.isError ? (
-            <Button variant="ghost" onPress={() => void account.refetch()}>
-              <Button.Label>{t("common.retry")}</Button.Label>
-            </Button>
-          ) : null}
+          <QueryFeedback query={account} hasData={Boolean(user)} layout="card" announce={false} />
         </View>
+        <LoadingAnnouncement loading={[account, tripsQuery, gallery, favoritesQuery].some((query) => query.isPending && query.fetchStatus === "fetching")} />
         <ProfileTabs>
           <View style={styles.panel}>
             <ProfileContentState
-              loading={tripsQuery.isPending}
-              error={tripsQuery.isError}
+              query={tripsQuery}
+              hasData={tripsQuery.data !== undefined}
               empty={!ownedTrips.length}
               icon="compass-outline"
               message={t("profileLayout.emptyTrips")}
-              onRetry={() => void tripsQuery.refetch()}
             />
             <View style={styles.grid}>
               {ownedTrips.map((trip) => (
@@ -259,12 +255,11 @@ export function ProfileScreen() {
           </View>
           <View style={styles.panel}>
             <ProfileContentState
-              loading={gallery.isPending}
-              error={gallery.isError}
+              query={gallery}
+              hasData={gallery.data !== undefined}
               empty={!photos.length}
               icon="images-outline"
               message={t("profileGallery.empty")}
-              onRetry={() => void gallery.refetch()}
             />
             <View style={styles.grid}>
               {photos.map((photo) => (
@@ -324,12 +319,11 @@ export function ProfileScreen() {
           </View>
           <View style={styles.panel}>
             <ProfileContentState
-              loading={favoritesQuery.isPending}
-              error={favoritesQuery.isError}
+              query={favoritesQuery}
+              hasData={favoritesQuery.data !== undefined}
               empty={!saved.length}
               icon="bookmark-outline"
               message={t("profileLayout.emptySaved")}
-              onRetry={() => void favoritesQuery.refetch()}
             />
             <View style={styles.grid}>
               {saved.map((destination) => (
@@ -461,44 +455,20 @@ function ProfileStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function ProfileContentState({
-  loading,
-  error,
-  empty,
-  icon,
-  message,
-  onRetry,
-}: {
-  loading: boolean;
-  error: boolean;
+function ProfileContentState({ query, hasData, empty, icon, message }: {
+  query: FeedbackQuery;
+  hasData: boolean;
   empty: boolean;
   icon: keyof typeof Ionicons.glyphMap;
   message: string;
-  onRetry: () => void;
 }) {
-  const { t } = useTranslation();
-  if (loading)
-    return (
-      <View style={styles.empty}>
-        <ActivityIndicator color={c.foreground} />
-      </View>
-    );
-  if (error)
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>{t("profileLayout.loadError")}</Text>
-        <Button variant="secondary" onPress={onRetry}>
-          <Button.Label>{t("common.retry")}</Button.Label>
-        </Button>
-      </View>
-    );
-  if (!empty) return null;
-  return (
-    <View style={styles.empty}>
+  return <>
+    <QueryFeedback query={query} hasData={hasData} layout="grid" announce={false} />
+    {empty && !query.isPending && !query.isError && query.fetchStatus !== "paused" ? <View style={styles.empty}>
       <Ionicons name={icon} size={32} color={c.muted} />
       <Text style={styles.emptyText}>{message}</Text>
-    </View>
-  );
+    </View> : null}
+  </>;
 }
 
 const styles = StyleSheet.create({

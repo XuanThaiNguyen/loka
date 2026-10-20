@@ -5,8 +5,8 @@ import { theme } from "@/theme/theme";
 
 type HomeSectionHeaderProps = {
   title: string;
-  actionLabel: string;
-  onActionPress: () => void;
+  actionLabel?: string;
+  onActionPress?: () => void;
   showLocationIcon?: boolean;
 };
 
@@ -34,7 +34,7 @@ export function HomeSectionHeader({
         </Text>
       </View>
 
-      <Pressable
+      {actionLabel && onActionPress ? <Pressable
         accessibilityRole="button"
         hitSlop={8}
         onPress={onActionPress}
@@ -46,7 +46,7 @@ export function HomeSectionHeader({
           size={14}
           color={theme.colors.light.muted}
         />
-      </Pressable>
+      </Pressable> : null}
     </View>
   );
 }

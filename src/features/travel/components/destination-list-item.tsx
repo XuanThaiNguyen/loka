@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { Destination } from "@/features/travel/travel.data";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type DestinationListItemProps = {
   destination: Destination;
@@ -26,7 +26,7 @@ export function DestinationListItem({
       />
 
       <View style={styles.content}>
-        <Text numberOfLines={1} style={styles.title}>
+        <Text numberOfLines={2} style={styles.title}>
           {destination.title ?? t(`travel.destinations.${destination.id}.title`)}
         </Text>
         <View style={styles.metadata}>
@@ -52,9 +52,9 @@ export function DestinationListItem({
 
       <View style={styles.arrowButton}>
         <Ionicons
-          name="arrow-forward"
+          name="chevron-forward"
           size={20}
-          color={theme.colors.light.base.white}
+          color={travelSurfaces.featured}
         />
       </View>
     </Pressable>
@@ -62,40 +62,12 @@ export function DestinationListItem({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    minHeight: 126,
-    padding: theme.spacing[3],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.surface,
-  },
-  image: {
-    width: 96,
-    height: 102,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.light.gray[100],
-  },
-  content: {
-    flex: 1,
-    alignSelf: "stretch",
-    justifyContent: "center",
-    gap: theme.spacing[2],
-  },
-  title: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.md,
-    lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "800",
-  },
-  metadata: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[1],
-  },
+
+  card: { minHeight: 126, padding: 12, borderWidth: 1, borderColor: theme.colors.light.separator, borderRadius: 24, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: theme.colors.light.surface },
+  image: { width: 80, height: 104, borderRadius: 16, backgroundColor: theme.colors.light.surfaceSecondary },
+  content: { flex: 1, minWidth: 0, justifyContent: "center", gap: 8 },
+  title: { color: travelSurfaces.foreground, fontSize: 15, lineHeight: 22, fontWeight: "600" },
+  metadata: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
   metadataText: {
     flexShrink: 1,
     color: theme.colors.light.gray[500],
@@ -112,14 +84,7 @@ const styles = StyleSheet.create({
     color: theme.colors.light.gray[900],
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "800",
+    fontWeight: "600",
   },
-  arrowButton: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.accent,
-  },
+  arrowButton: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: travelSurfaces.info },
 });

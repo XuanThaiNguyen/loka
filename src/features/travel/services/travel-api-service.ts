@@ -59,6 +59,8 @@ export type DestinationDTO = {
 };
 
 export type CityDTO = {
+  hasPublishedContent?: boolean;
+  contentUpdatedAt?: string;
   sources?: { label: string; url: string; checkedOn: string }[];
   contentLocale?: "en" | "vi";
   id: string;
@@ -162,31 +164,27 @@ export function useDestinationSuggestions() {
   });
 }
 
+/** Independent queries keep a failed/empty collection from suppressing cities or recommendations. */
 export function useHomeCatalog() {
   const { i18n } = useTranslation();
-  const query = useQuery({
-    queryKey: [...travelQueryKeys.home, i18n.language],
-    queryFn: async ({ signal }) => {
-      const [cityResponse, collectionResponse] = await Promise.all([
-        catalogApi.listCities({ featured: true }, signal),
-        catalogApi.listCollections(signal),
-      ]);
-      const collections = await Promise.all(collectionResponse.data.map((collection) =>
-        catalogApi.getCollectionDestinations(collection.slug, signal).then(mapCollectionPage),
-      ));
-
-      return {
-        cities: cityResponse.data.map(mapCity),
-        collections,
-      };
-    },
+  const locale = i18n.language.startsWith("vi") ? "vi" : "en";
+  const citiesQuery = useQuery({
+    queryKey: [...travelQueryKeys.home, "cities", locale],
+    queryFn: ({ signal }) => catalogApi.listCities({ featured: true }, signal),
+    // Home promotes published editorial guides. Legacy cities remain available in Search/admin.
+    select: (response) => response.data.filter((city) => city.hasPublishedContent === true).map(mapCity),
   });
-
-  return {
-    ...query,
-    cities: query.data?.cities ?? [],
-    collections: query.data?.collections ?? [],
-  };
+  const recommendedQuery = useQuery({
+    queryKey: [...travelQueryKeys.home, "recommended", locale],
+    queryFn: ({ signal }) => catalogApi.listDestinations({ sort: "recommended", limit: 12 }, signal),
+    select: (response) => response.data.map(mapDestination),
+  });
+  const collectionsQuery = useQuery({
+    queryKey: [...travelQueryKeys.home, "collections", locale],
+    queryFn: ({ signal }) => catalogApi.listCollections(signal),
+    select: (response) => response.data,
+  });
+  return { citiesQuery, recommendedQuery, collectionsQuery };
 }
 
 export function useCity(id: string | undefined) {

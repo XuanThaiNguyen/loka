@@ -12,7 +12,7 @@ import {
   ViewStyle,
 } from "react-native";
 
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type TabBarButtonProps = Omit<PressableProps, "children" | "style"> & {
   label: string;
@@ -45,7 +45,7 @@ export function TabBarButton({
 }: TabBarButtonProps) {
   const pathname = usePathname();
   const isSelected = Boolean(accessibilityState?.selected) || pathname === routePath;
-  const color = isSelected ? theme.colors.light.accent : theme.colors.light.gray[500];
+  const color = isSelected ? travelSurfaces.navigationAccent : theme.colors.light.gray[500];
 
   if (prominent) {
     return (
@@ -85,7 +85,7 @@ export function TabBarButton({
             color,
             fontSize: theme.typography.fontSize.xs,
             lineHeight: theme.typography.lineHeight.xs,
-            fontWeight: isSelected ? "700" : "600",
+            fontWeight: isSelected ? "600" : "400",
           }}
         >
           {label}
@@ -122,7 +122,7 @@ const styles = {
     borderColor: theme.colors.light.base.white,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.light.accent,
+    backgroundColor: travelSurfaces.navigationAccent,
     shadowColor: theme.colors.light.base.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
@@ -133,6 +133,6 @@ const styles = {
     marginTop: 1,
     fontSize: 10,
     lineHeight: 12,
-    fontWeight: "700",
+    fontWeight: "500",
   } satisfies TextStyle,
 };

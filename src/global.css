@@ -5,44 +5,45 @@
 @theme {
   --spacing-screen: 1.25rem;
   /* Mobile semantic surfaces; mirror travelSurfaces in theme/theme.ts. */
-  --color-travel-header: #eaf4f7;
-  --color-travel-foreground: #18232d;
-  --color-travel-secondary: #566573;
-  --color-travel-info: #edf2ff;
-  --color-travel-featured: #183d56;
-  --color-travel-featured-inset: #244b65;
-  --color-travel-featured-secondary: #dce8ef;
+  --color-travel-navigation-accent: #3f72df;
+  --color-travel-header: #e8f5f8;
+  --color-travel-foreground: #202a32;
+  --color-travel-secondary: #606d77;
+  --color-travel-info: #eaf5fa;
+  --color-travel-featured: #222e38;
+  --color-travel-featured-inset: #2e3d49;
+  --color-travel-featured-secondary: #dce7ef;
   --color-travel-positive-foreground: #217a42;
   --color-travel-positive-background: #edfcf2;
-  /* Web HeroUI uses a 70/30 mix for secondary button labels. */
+  /* Keep secondary button labels legible on pale surfaces. */
   --color-accent-soft-foreground: color-mix(in oklab, var(--accent) 70%, var(--foreground) 30%);
 }
 
-/* Match pland/ui/src/index.css; sRGB values also live in theme/theme.ts. */
+/* Mobile reference palette; mirror src/theme/theme.ts. */
 @layer theme {
   @variant light {
-    --background: #f8f7f5;
-    --foreground: #161b20;
+    --background: #f5f8fa;
+    --foreground: #202a32;
     --surface: #ffffff;
-    --surface-secondary: #f4f2ef;
-    --surface-tertiary: #eeede9;
+    --surface-secondary: #eef3f5;
+    --surface-tertiary: #e7edf0;
     --overlay: #ffffff;
-    --muted: #636a71;
-    --default: #eeedea;
-    --accent: #2045e8;
+    --muted: #606d77;
+    --default: #eaf0f3;
+    --accent: #222a31;
     --accent-foreground: #fcfcfc;
     --success: #33ac5a;
     --warning: #ed9e2f;
     --danger: #de3b3d;
-    --border: #e1dfdb;
-    --separator: #e8e6e2;
+    --border: #dce5e9;
+    --separator: #e8eef1;
     --segment: #ffffff;
-    --default-foreground: #161b20;
+    --default-foreground: #202a32;
     --success-foreground: #18181b;
     --warning-foreground: #18181b;
     --danger-foreground: #fcfcfc;
-    --focus: #2045e8;
-    --link: #161b20;
+    --focus: #3f72df;
+    --link: #202a32;
     --surface-foreground: var(--foreground);
     --surface-secondary-foreground: var(--foreground);
     --surface-tertiary-foreground: var(--foreground);
@@ -63,8 +64,8 @@
     --overlay: #191c20;
     --muted: #999fa6;
     --default: #24272a;
-    --accent: #4570ff;
-    --accent-foreground: #fcfcfc;
+    --accent: #dce6ed;
+    --accent-foreground: #18232d;
     --success: #33ac5a;
     --warning: #f7b750;
     --danger: #db3b3e;
@@ -75,7 +76,7 @@
     --success-foreground: #18181b;
     --warning-foreground: #18181b;
     --danger-foreground: #fcfcfc;
-    --focus: #4570ff;
+    --focus: #82a8ff;
     --link: #f3f2ef;
     --surface-foreground: var(--foreground);
     --surface-secondary-foreground: var(--foreground);

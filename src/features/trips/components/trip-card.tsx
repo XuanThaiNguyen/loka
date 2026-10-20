@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import type { Destination } from "@/features/travel/travel.data";
 import type { BookingStatus } from "@/features/trips/services/trips-api-service";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type TripCardProps = {
   destination: Destination;
@@ -136,14 +136,8 @@ export function TripCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: theme.spacing[4],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    gap: theme.spacing[4],
-    backgroundColor: theme.colors.light.surface,
-  },
+
+  card: { padding: 18, borderWidth: 1, borderColor: theme.colors.light.separator, borderRadius: 24, gap: 16, backgroundColor: theme.colors.light.surface },
   cardHeader: {
     paddingBottom: theme.spacing[3],
     borderBottomWidth: 1,
@@ -178,32 +172,20 @@ const styles = StyleSheet.create({
   image: {
     width: 88,
     height: 88,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.xl,
     backgroundColor: theme.colors.light.gray[100],
   },
   destinationInfo: {
     flex: 1,
     gap: theme.spacing[1],
   },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: theme.spacing[3],
-    paddingVertical: theme.spacing[1],
-    borderWidth: 1,
-    borderColor: theme.colors.light.primary[500],
-    borderRadius: theme.radius.sm,
-  },
-  statusText: {
-    color: theme.colors.light.primary[600],
-    fontSize: theme.typography.fontSize.xs,
-    lineHeight: theme.typography.lineHeight.xs,
-    fontWeight: "700",
-  },
+  statusBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: travelSurfaces.header },
+  statusText: { color: travelSurfaces.featured, fontSize: 12, lineHeight: 17, fontWeight: "600" },
   title: {
     color: theme.colors.light.gray[900],
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   inlineMetadata: {
     flexDirection: "row",
@@ -216,12 +198,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     lineHeight: theme.typography.lineHeight.xs,
   },
-  schedule: {
-    padding: theme.spacing[3],
-    borderRadius: theme.radius.md,
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.gray[50],
-  },
+  schedule: { padding: 16, borderRadius: 20, gap: 12, backgroundColor: travelSurfaces.info },
   scheduleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -256,22 +233,14 @@ const styles = StyleSheet.create({
     color: theme.colors.light.gray[900],
     fontSize: theme.typography.fontSize.xl,
     lineHeight: theme.typography.lineHeight.xl,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   peopleText: {
     color: theme.colors.light.gray[500],
     fontSize: theme.typography.fontSize.xs,
     fontWeight: "500",
   },
-  detailButton: {
-    minWidth: 112,
-    height: 40,
-    borderWidth: 1,
-    borderColor: theme.colors.light.accent,
-    borderRadius: theme.radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  detailButton: { minWidth: 112, minHeight: 48, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: travelSurfaces.info },
   detailButtonText: {
     color: theme.colors.light.accent,
     fontSize: theme.typography.fontSize.sm,

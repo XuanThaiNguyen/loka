@@ -9,6 +9,8 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { AppProviders } from "@/providers/app-providers";
 import { theme } from "@/theme/theme";
 
+export const unstable_settings = { initialRouteName: "(tabs)" };
+
 function RootNavigator() {
   const { isPending, session } = useAuth();
 
@@ -36,6 +38,12 @@ function RootNavigator() {
           <Stack.Screen name="city/[id]" />
           <Stack.Screen name="collection/[slug]" />
           <Stack.Screen name="destination/[id]" />
+          <Stack.Screen name="explore" />
+          <Stack.Screen name="planner/index" />
+          <Stack.Screen name="planner/[tripId]" />
+          <Stack.Screen name="trip/edit" />
+          <Stack.Screen name="trip/route" />
+          <Stack.Screen name="plan/edit" />
           <Stack.Screen name="trip/new" options={{ animation: "slide_from_right", gestureEnabled: true }} />
           <Stack.Screen name="trip/[id]" />
           <Stack.Screen name="plan/[id]" />

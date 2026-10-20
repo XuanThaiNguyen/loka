@@ -1,9 +1,9 @@
+import { LoadingAnnouncement, QueryFeedback, type FeedbackQuery } from "@/components/ui/loading-skeleton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,8 +13,9 @@ import {
 } from "react-native";
 
 import { RecentTripCard } from "@/features/travel-plan/components/recent-trip-card";
+import { CatalogImage } from "@/features/travel/components/catalog-image";
 import { useSavedTravelPlans } from "@/features/travel-plan/services/travel-plan-api-service";
-import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
+import { JourneyHeader } from "@/components/ui/journey-header";
 import { TripCard } from "@/features/trips/components/trip-card";
 import {
   type IncomingTripInvitationDTO,
@@ -28,7 +29,7 @@ import {
 } from "@/features/trips/services/trips-api-service";
 import { useTabBottomPadding } from "@/hooks/use-tab-bottom-padding";
 import { minorToMajor } from "@/lib/money";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 type WorkspaceTab = "trips" | "booking" | "planning";
 type TripFilter = "all" | TripStatus;
@@ -57,6 +58,7 @@ export function TripsScreen() {
   const trips = useMemo(() => [...(tripsQuery.data ?? [])].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()), [tripsQuery.data]);
   const visibleTrips = tripFilter === "all" ? trips : trips.filter((trip) => trip.status === tripFilter);
   const upcomingCount = trips.filter((trip) => new Date(trip.endDate).getTime() >= now).length;
+  const activeQuery = activeTab === "trips" ? tripsQuery : activeTab === "booking" ? bookingsQuery : plansQuery;
   const refreshing = activeTab === "trips" ? tripsQuery.isRefetching : activeTab === "booking" ? bookingsQuery.isRefetching : plansQuery.isRefetching;
   const refresh = () => {
     if (activeTab === "trips") void Promise.all([tripsQuery.refetch(), invitationsQuery.refetch()]);
@@ -66,8 +68,8 @@ export function TripsScreen() {
 
   return (
     <View style={styles.screen}>
-      <TravelScreenHeader title={t("trips.title")} />
-      <View style={styles.segment}>
+      <JourneyHeader title={t("trips.title")} />
+      <View accessibilityRole="tablist" style={styles.segment}>
         {workspaceTabs.map((tab) => {
           const selected = activeTab === tab;
           return (
@@ -85,6 +87,8 @@ export function TripsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: bottomPadding }]}
       >
+        <LoadingAnnouncement loading={(activeQuery.isPending && activeQuery.fetchStatus === "fetching") || (activeTab === "trips" && invitationsQuery.isPending && invitationsQuery.fetchStatus === "fetching")} />
+        {activeTab !== "trips" ? <QueryFeedback query={activeQuery} hasData={activeQuery.data !== undefined} layout="list" announce={false} /> : null}
         {activeTab === "trips" ? (
           <TripsWorkspace
             trips={visibleTrips}
@@ -93,15 +97,15 @@ export function TripsScreen() {
             now={now}
             filter={tripFilter}
             onFilter={setTripFilter}
-            isPending={tripsQuery.isPending}
-            error={tripsQuery.error}
+            query={tripsQuery}
+            hasData={tripsQuery.data !== undefined}
+            invitationsQuery={invitationsQuery}
             invitations={invitationsQuery.data ?? []}
             invitationPending={respondInvitation.isPending}
             onInvitation={(invitationId, action) => respondInvitation.mutate({ invitationId, action })}
-            onRetry={() => void tripsQuery.refetch()}
           />
         ) : activeTab === "booking" ? (
-          bookingsQuery.isPending ? <LoadingState /> : bookingsQuery.isError ? <ErrorState message={errorMessage(bookingsQuery.error, t("trips.errors.bookings"))} onRetry={() => void bookingsQuery.refetch()} /> : (bookingsQuery.data?.length ?? 0) > 0 ? (
+          (bookingsQuery.data?.length ?? 0) > 0 ? (
             bookingsQuery.data?.map((booking) => (
               <TripCard
                 key={booking.id}
@@ -116,12 +120,12 @@ export function TripsScreen() {
                 onReminderChange={(enabled) => reminderMutation.mutateAsync({ id: booking.id, enabled })}
               />
             ))
-          ) : <EmptyState icon="receipt-outline" title={t("trips.emptyBookingsTitle")} description={t("trips.emptyBookingsDescription")} />
-        ) : plansQuery.isPending ? <LoadingState /> : plansQuery.isError ? <ErrorState message={errorMessage(plansQuery.error, t("trips.errors.plans"))} onRetry={() => void plansQuery.refetch()} /> : (plansQuery.data?.length ?? 0) > 0 ? (
+          ) : !bookingsQuery.isPending && !bookingsQuery.isError && bookingsQuery.fetchStatus !== "paused" ? <EmptyState icon="receipt-outline" title={t("trips.emptyBookingsTitle")} description={t("trips.emptyBookingsDescription")} /> : null
+        ) : (plansQuery.data?.length ?? 0) > 0 ? (
           <View style={styles.list}>
-            {plansQuery.data?.map((plan) => <RecentTripCard key={plan.id} trip={plan} onPress={() => router.push({ pathname: "/plan/[id]", params: { id: plan.id } })} />)}
+            {plansQuery.data?.map((plan) => <RecentTripCard variant="home" key={plan.id} trip={plan} onPress={() => router.push({ pathname: "/plan/[id]", params: { id: plan.id } })} />)}
           </View>
-        ) : <EmptyState icon="sparkles-outline" title={t("trips.planningTitle")} description={t("trips.planningDescription")} action={t("trips.createPlan")} onAction={() => router.push("/explore")} />}
+        ) : !plansQuery.isPending && !plansQuery.isError && plansQuery.fetchStatus !== "paused" ? <EmptyState icon="sparkles-outline" title={t("trips.planningTitle")} description={t("trips.planningDescription")} action={t("trips.createPlan")} onAction={() => router.push("/planner")} /> : null}
       </ScrollView>
     </View>
   );
@@ -134,25 +138,26 @@ type TripsWorkspaceProps = {
   now: number;
   filter: TripFilter;
   onFilter: (filter: TripFilter) => void;
-  isPending: boolean;
-  error: Error | null;
+  query: FeedbackQuery;
+  hasData: boolean;
+  invitationsQuery: FeedbackQuery & { data?: unknown };
   invitations: IncomingTripInvitationDTO[];
   invitationPending: boolean;
   onInvitation: (id: string, action: "accept" | "decline") => void;
-  onRetry: () => void;
 };
 
-function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter, isPending, error, invitations, invitationPending, onInvitation, onRetry }: TripsWorkspaceProps) {
+function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter, query, hasData, invitationsQuery, invitations, invitationPending, onInvitation }: TripsWorkspaceProps) {
   const { t } = useTranslation();
   return (
     <>
+      <View style={styles.overview}>
       <View style={styles.workspaceHeading}>
         <View style={styles.workspaceHeadingText}>
           <Text style={styles.eyebrow}>{t("trips.workspaceEyebrow")}</Text>
           <Text style={styles.workspaceTitle}>{t("trips.workspaceTitle")}</Text>
           <Text style={styles.workspaceDescription}>{t("trips.workspaceDescription")}</Text>
         </View>
-        <Pressable accessibilityLabel={t("trips.createTrip")} onPress={() => router.push("/trip/new")} style={styles.addButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("trips.createTrip")} onPress={() => router.push("/trip/new")} style={styles.addButton}>
           <Ionicons name="add" size={21} color={theme.colors.light.base.white} />
         </Pressable>
       </View>
@@ -162,7 +167,9 @@ function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter,
         <Stat value={upcomingCount} label={t("trips.stats.upcoming")} />
         <Stat value={allTrips.filter((trip) => trip.accessRole !== "owner").length} label={t("trips.stats.shared")} />
       </View>
+      </View>
 
+      <QueryFeedback query={invitationsQuery} hasData={invitationsQuery.data !== undefined} layout="card" announce={false} />
       {invitations.length > 0 ? (
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>{t("trips.invitations.title")}</Text>
@@ -180,12 +187,13 @@ function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter,
       ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-        {tripFilters.map((item) => <Pressable key={item} onPress={() => onFilter(item)} style={[styles.filterChip, filter === item && styles.selectedFilter]}><Text style={[styles.filterLabel, filter === item && styles.selectedFilterLabel]}>{t(`trips.filters.${item}`)}</Text></Pressable>)}
+        {tripFilters.map((item) => <Pressable key={item} accessibilityRole="button" accessibilityState={{ selected: filter === item }} onPress={() => onFilter(item)} style={[styles.filterChip, filter === item && styles.selectedFilter]}><Text style={[styles.filterLabel, filter === item && styles.selectedFilterLabel]}>{t(`trips.filters.${item}`)}</Text></Pressable>)}
       </ScrollView>
 
-      {isPending ? <LoadingState /> : error ? <ErrorState message={errorMessage(error, t("trips.errors.trips"))} onRetry={onRetry} /> : trips.length > 0 ? (
+      <QueryFeedback query={query} hasData={hasData} layout="list" announce={false} />
+      {trips.length > 0 ? (
         <View style={styles.list}>{trips.map((trip) => <TripWorkspaceCard key={trip.id} trip={trip} now={now} />)}</View>
-      ) : <EmptyState icon="map-outline" title={filter === "all" ? t("trips.emptyTripsTitle") : t("trips.emptyFilteredTitle")} description={t("trips.emptyTripsDescription")} action={t("trips.createTrip")} onAction={() => router.push("/trip/new")} />}
+      ) : !query.isPending && !query.isError && query.fetchStatus !== "paused" ? <EmptyState icon="map-outline" title={filter === "all" ? t("trips.emptyTripsTitle") : t("trips.emptyFilteredTitle")} description={t("trips.emptyTripsDescription")} action={t("trips.createTrip")} onAction={() => router.push("/trip/new")} /> : null}
     </>
   );
 }
@@ -194,11 +202,13 @@ function TripWorkspaceCard({ trip, now }: { trip: TripDTO; now: number }) {
   const { t } = useTranslation();
   const phase = getTripPhase(trip, now);
   return (
-    <Pressable onPress={() => router.push({ pathname: "/trip/[id]", params: { id: String(trip.id) } })} style={({ pressed }) => [styles.tripWorkspaceCard, pressed && styles.pressed]}>
-      <View style={styles.tripIcon}><Ionicons name={phase === "past" ? "checkmark" : phase === "ongoing" ? "navigate" : "airplane"} size={21} color={theme.colors.light.accent} /></View>
+    <Pressable accessibilityRole="button" accessibilityLabel={trip.name} onPress={() => router.push({ pathname: "/trip/[id]", params: { id: String(trip.id) } })} style={({ pressed }) => [styles.tripWorkspaceCard, pressed && styles.pressed]}>
+      {trip.city?.coverImageUrl ? <CatalogImage source={{ uri: trip.city.coverImageUrl }} style={styles.tripImage} contentFit="cover" /> : <View style={styles.tripIcon}><Ionicons name={phase === "past" ? "checkmark" : phase === "ongoing" ? "navigate" : "airplane"} size={26} color={travelSurfaces.featured} /></View>}
       <View style={styles.flexText}>
-        <View style={styles.itemTitleRow}><Text selectable numberOfLines={1} style={styles.itemTitle}>{trip.name}</Text><View style={styles.statusPill}><Text style={styles.statusText}>{t(`trips.filters.${trip.status}`)}</Text></View></View>
-        <Text selectable numberOfLines={1} style={styles.itemMeta}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)} · {t(`trips.phases.${phase}`)}</Text>
+        <View style={styles.statusPill}><Text style={styles.statusText}>{t(`trips.filters.${trip.status}`)}</Text></View>
+        <Text numberOfLines={2} style={styles.itemTitle}>{trip.name}</Text>
+        <Text style={styles.itemMeta}>{trip.city ? `${trip.city.name}, ${trip.city.country} · ` : ""}{formatDateRange(trip.startDate, trip.endDate)}</Text>
+        <Text style={styles.itemPhase}>{t(`trips.phases.${phase}`)}</Text>
         {trip.description ? <Text selectable numberOfLines={2} style={styles.itemDescription}>{trip.description}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={19} color={theme.colors.light.gray[400]} />
@@ -208,13 +218,6 @@ function TripWorkspaceCard({ trip, now }: { trip: TripDTO; now: number }) {
 
 function Stat({ value, label }: { value: number; label: string }) {
   return <View style={styles.stat}><Text selectable style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>;
-}
-
-function LoadingState() { return <View style={styles.state}><ActivityIndicator color={theme.colors.light.accent} /></View>; }
-
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  const { t } = useTranslation();
-  return <View style={styles.errorCard}><Ionicons name="alert-circle-outline" size={26} color={theme.colors.light.error[500]} /><Text selectable style={styles.errorText}>{message}</Text><Pressable onPress={onRetry}><Text style={styles.retry}>{t("common.retry")}</Text></Pressable></View>;
 }
 
 function EmptyState({ icon, title, description, action, onAction }: { icon: keyof typeof Ionicons.glyphMap; title: string; description: string; action?: string; onAction?: () => void }) {
@@ -237,57 +240,60 @@ function formatCountdown(startDate: string) {
   return new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(days, "day");
 }
 
-function errorMessage(error: unknown, fallback: string) { return error instanceof Error && error.message ? error.message : fallback; }
+
 
 const styles = StyleSheet.create({
+  overview: { padding: 20, borderRadius: 24, gap: 20, backgroundColor: travelSurfaces.featured },
+  tripImage: { width: 64, height: 96, borderRadius: 16 },
+  itemPhase: { color: travelSurfaces.featured, fontSize: 11, lineHeight: 16, fontWeight: "500" },
+
   screen: { flex: 1, backgroundColor: theme.colors.light.background },
-  segment: { height: 52, marginHorizontal: theme.spacing[5], marginBottom: theme.spacing[4], padding: theme.spacing[1], borderRadius: theme.radius.full, flexDirection: "row", backgroundColor: theme.colors.light.gray[50] },
-  segmentButton: { flex: 1, borderRadius: theme.radius.full, alignItems: "center", justifyContent: "center" },
-  selectedSegment: { backgroundColor: theme.colors.light.accent },
-  segmentLabel: { color: theme.colors.light.gray[500], fontSize: 11, lineHeight: 15, fontWeight: "700" },
-  selectedSegmentLabel: { color: theme.colors.light.accentForeground },
-  content: { paddingHorizontal: theme.spacing[5], gap: theme.spacing[4] },
+  segment: { marginHorizontal: 20, marginBottom: 4, flexDirection: "row", borderBottomWidth: 1, borderBottomColor: theme.colors.light.separator },
+  segmentButton: { flex: 1, minHeight: 52, paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 2, borderBottomColor: "transparent", alignItems: "center", justifyContent: "center" },
+  selectedSegment: { borderBottomColor: travelSurfaces.foreground },
+  segmentLabel: { color: theme.colors.light.muted, fontSize: 14, lineHeight: 20, textAlign: "center" },
+  selectedSegmentLabel: { color: travelSurfaces.foreground, fontWeight: "600" },
+  content: { paddingHorizontal: 20, paddingTop: 20, gap: 20 },
   workspaceHeading: { flexDirection: "row", alignItems: "center", gap: theme.spacing[3] },
-  workspaceHeadingText: { flex: 1, gap: 3 },
-  eyebrow: { color: theme.colors.light.accent, fontSize: 10, lineHeight: 14, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.8 },
-  workspaceTitle: { color: theme.colors.light.gray[900], fontSize: 24, lineHeight: 31, fontWeight: "900" },
-  workspaceDescription: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 18, fontWeight: "600" },
-  addButton: { width: 48, height: 48, borderRadius: theme.radius.full, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
+  workspaceHeadingText: { flex: 1, gap: 8 },
+  eyebrow: { color: travelSurfaces.featuredSecondary, fontSize: 11, lineHeight: 16, fontWeight: "500" },
+  workspaceTitle: { color: theme.colors.light.base.white, fontSize: 23, lineHeight: 30, fontWeight: "600" },
+  workspaceDescription: { color: travelSurfaces.featuredSecondary, fontSize: 13, lineHeight: 20 },
+  addButton: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: travelSurfaces.featuredInset },
   statsRow: { flexDirection: "row", gap: theme.spacing[2] },
-  stat: { flex: 1, minHeight: 74, padding: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, justifyContent: "center", gap: 2, backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
-  statValue: { color: theme.colors.light.gray[900], fontSize: 20, lineHeight: 25, fontWeight: "900", fontVariant: ["tabular-nums"] },
-  statLabel: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 14, fontWeight: "700" },
-  sectionCard: { padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.accentBorder, borderRadius: theme.radius.md, gap: theme.spacing[3], backgroundColor: theme.colors.light.accentSoft, borderCurve: "continuous" },
-  sectionTitle: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "900" },
-  invitationRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
-  flexText: { flex: 1, minWidth: 0, gap: 3 },
+  stat: { flex: 1, minWidth: 0, minHeight: 76, padding: 10, borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 5, backgroundColor: travelSurfaces.featuredInset },
+  statValue: { color: theme.colors.light.base.white, fontSize: 20, lineHeight: 26, fontWeight: "600", fontVariant: ["tabular-nums"] },
+  statLabel: { color: travelSurfaces.featuredSecondary, fontSize: 11, lineHeight: 16, textAlign: "center" },
+  sectionCard: { padding: 18, borderRadius: 24, gap: 16, backgroundColor: travelSurfaces.info },
+  sectionTitle: { color: theme.colors.light.gray[900], fontSize: 15, lineHeight: 20, fontWeight: "600" },
+  invitationRow: { gap: 10, paddingVertical: 8 },
+  flexText: { flex: 1, minWidth: 0, gap: 6 },
   textButton: { paddingHorizontal: theme.spacing[2], paddingVertical: theme.spacing[2] },
-  textButtonLabel: { color: theme.colors.light.gray[600], fontSize: 11, lineHeight: 15, fontWeight: "800" },
+  textButtonLabel: { color: theme.colors.light.gray[600], fontSize: 11, lineHeight: 15, fontWeight: "600" },
   compactButton: { paddingHorizontal: theme.spacing[3], paddingVertical: theme.spacing[2], borderRadius: theme.radius.full, backgroundColor: theme.colors.light.accent },
-  compactButtonLabel: { color: theme.colors.light.base.white, fontSize: 11, lineHeight: 15, fontWeight: "800" },
+  compactButtonLabel: { color: theme.colors.light.base.white, fontSize: 11, lineHeight: 15, fontWeight: "600" },
   filterRow: { gap: theme.spacing[2], paddingRight: theme.spacing[5] },
-  filterChip: { minHeight: 36, paddingHorizontal: theme.spacing[3], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.full, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surface },
-  selectedFilter: { borderColor: theme.colors.light.accent, backgroundColor: theme.colors.light.accentSoft },
-  filterLabel: { color: theme.colors.light.gray[600], fontSize: 11, lineHeight: 15, fontWeight: "800" },
-  selectedFilterLabel: { color: theme.colors.light.accent },
+  filterChip: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surfaceSecondary },
+  selectedFilter: { backgroundColor: travelSurfaces.featured },
+  filterLabel: { color: theme.colors.light.muted, fontSize: 12, lineHeight: 18, fontWeight: "500" },
+  selectedFilterLabel: { color: theme.colors.light.base.white },
   list: { gap: theme.spacing[3] },
-  tripWorkspaceCard: { minHeight: 104, padding: theme.spacing[4], borderWidth: 1, borderColor: theme.colors.light.gray[200], borderRadius: theme.radius.md, flexDirection: "row", alignItems: "center", gap: theme.spacing[3], backgroundColor: theme.colors.light.surface, borderCurve: "continuous" },
-  tripIcon: { width: 44, height: 44, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accentSoft },
-  itemTitleRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing[2] },
-  itemTitle: { flex: 1, color: theme.colors.light.gray[900], fontSize: 14, lineHeight: 19, fontWeight: "900" },
-  itemMeta: { color: theme.colors.light.gray[500], fontSize: 10, lineHeight: 15, fontWeight: "700" },
-  itemDescription: { color: theme.colors.light.gray[600], fontSize: 11, lineHeight: 16, fontWeight: "600" },
-  statusPill: { paddingHorizontal: theme.spacing[2], paddingVertical: 3, borderRadius: theme.radius.full, backgroundColor: theme.colors.light.green[50] },
-  statusText: { color: theme.colors.light.success, fontSize: 9, lineHeight: 12, fontWeight: "900" },
+  tripWorkspaceCard: { padding: 16, borderWidth: 1, borderColor: theme.colors.light.separator, borderRadius: 24, flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: theme.colors.light.surface },
+  tripIcon: { width: 64, height: 96, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: travelSurfaces.header },
+  itemTitle: { color: travelSurfaces.foreground, fontSize: 16, lineHeight: 22, fontWeight: "600" },
+  itemMeta: { color: theme.colors.light.muted, fontSize: 12, lineHeight: 18 },
+  itemDescription: { color: theme.colors.light.muted, fontSize: 12, lineHeight: 18 },
+  statusPill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: travelSurfaces.info },
+  statusText: { color: travelSurfaces.featured, fontSize: 11, lineHeight: 16, fontWeight: "600" },
   state: { minHeight: 180, alignItems: "center", justifyContent: "center" },
-  errorCard: { minHeight: 180, padding: theme.spacing[5], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.error[50] },
+  errorCard: { minHeight: 180, padding: theme.spacing[5], borderRadius: theme.radius.xl, alignItems: "center", justifyContent: "center", gap: theme.spacing[2], backgroundColor: theme.colors.light.error[50] },
   errorText: { color: theme.colors.light.error[700], fontSize: 12, lineHeight: 18, fontWeight: "700", textAlign: "center" },
-  retry: { color: theme.colors.light.accent, fontSize: 13, lineHeight: 18, fontWeight: "900" },
-  empty: { minHeight: 250, padding: theme.spacing[5], alignItems: "center", justifyContent: "center", gap: theme.spacing[2] },
-  emptyIcon: { width: 60, height: 60, borderRadius: theme.radius.full, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accentSoft },
-  emptyTitle: { color: theme.colors.light.gray[900], fontSize: 18, lineHeight: 24, fontWeight: "900", textAlign: "center" },
+  retry: { color: theme.colors.light.accent, fontSize: 13, lineHeight: 18, fontWeight: "600" },
+  empty: { minHeight: 250, padding: 24, borderRadius: 24, backgroundColor: theme.colors.light.surface, alignItems: "center", justifyContent: "center", gap: 12 },
+  emptyIcon: { width: 60, height: 60, borderRadius: theme.radius.full, alignItems: "center", justifyContent: "center", backgroundColor: travelSurfaces.info },
+  emptyTitle: { color: theme.colors.light.gray[900], fontSize: 18, lineHeight: 24, fontWeight: "600", textAlign: "center" },
   emptyDescription: { color: theme.colors.light.gray[500], fontSize: 12, lineHeight: 18, fontWeight: "600", textAlign: "center" },
-  primaryButton: { marginTop: theme.spacing[2], minHeight: 44, paddingHorizontal: theme.spacing[4], borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
-  primaryButtonLabel: { color: theme.colors.light.base.white, fontSize: 13, lineHeight: 18, fontWeight: "900" },
+  primaryButton: { marginTop: 8, minHeight: 48, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
+  primaryButtonLabel: { color: theme.colors.light.base.white, fontSize: 13, lineHeight: 18, fontWeight: "600" },
   pressed: { opacity: 0.75 },
 });

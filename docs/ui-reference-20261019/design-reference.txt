@@ -1,0 +1,58 @@
+LOKA MOBILE VISUAL REFERENCE — 19 OCTOBER 2026
+
+Source of truth
+The nine images in reference/ were supplied by the user. They describe visual
+direction, not new functionality. Keep Loka branding, content and existing flows.
+Use this guide when extending Home, Profile and the personal travel screens.
+
+Palette
+Primary actions: charcoal #222A31 with white text.
+Navigation and central add action: blue #3F72DF. Do not turn every CTA blue.
+Main text: slate #202A32. Supporting text: #606D77.
+Canvas: cool white #F5F8FA. Cards/fields: white #FFFFFF.
+Header: sky #E8F5F8 with a subtle sky/mint/lemon gradient.
+Information panels: #EAF5FA.
+Featured cards: #222E38; inset panel #2E3D49; text #DCE7EF or white.
+Borders: #DCE5E9. Dividers: #E8EEF1. Keep semantic success/error colors.
+These are deliberate approximations of the photographed reference screens,
+not exact sampled brand values. Maintain readable contrast.
+
+Layout and type
+Use 20px page gutters, 16–24px card padding and 16–24px section spacing.
+Main headings: roughly 23–28px, weight 600. Body: 14–16px with generous leading.
+Avoid heavy bold text everywhere. Use gray supporting copy and light separators.
+Cards have 20–28px corners; fields and primary actions have 16px or pill corners.
+Search is a white pill; back/menu buttons are round white touch targets.
+Keep controls at least 44px tall (prefer 48–52px for primary actions).
+Allow Vietnamese labels, dates, values and footer actions to wrap at phone widths.
+
+Screen patterns
+Home: pastel header, rounded search, charcoal trip card, travel imagery/rails.
+Profile: photo cover, overlapping avatar, white body, understated underline tabs.
+My trips: understated tabs, charcoal overview, status pills and white photo cards.
+Trip Planner: pastel intro, white form cards, charcoal selection/continue controls.
+Trip review/details: rounded image hero, charcoal summary, white itinerary cards.
+Favorites: pill search/filter controls and portrait travel imagery.
+Settings: pastel heading, white grouped rows, quiet dividers and wrapping subtitles.
+Bottom navigation: white rounded top corners, blue active icon/label, raised blue
+central plus. Keep the existing tab-bar layout reservation and safe-area handling.
+
+Implementation
+Shared palette lives in src/theme/theme.ts and src/global.css; keep them aligned.
+JourneyHeader supplies the shared personal-screen heading.
+The primary button color and navigation accent are intentionally separate tokens.
+Do not change API contracts, validation, booking availability or data persistence
+as part of visual work. Keep real empty/error/loading/disabled states.
+For web work, use the visuals as reference while preserving WEB behavior.
+Do not import app-only navigation, paused features or mobile budget semantics.
+
+Reference index
+01 Search, destination cards, bottom navigation.
+02 Home, charcoal feature card, pastel content panels.
+03 Assistant visual hierarchy and charcoal action.
+04 Onboarding, Home, planner and trip cards.
+05 Map/search, authentication and Home.
+06 Detail, date selection and primary action patterns.
+07 Planner, travel-style selection, itinerary and loading.
+08 Profile, results, assistant and confirmation patterns.
+09 Trip cards, support/settings rows and confirmation dialog.

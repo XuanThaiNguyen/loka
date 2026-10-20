@@ -1,3 +1,4 @@
+import { LoadingScope } from "@/components/ui/loading-skeleton";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useMemo, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
@@ -63,7 +64,7 @@ export function HomeScreen() {
   }, [headerHeight, heroHeight, insets.top, sceneHeight]);
 
   return (
-    <View
+    <LoadingScope><View
       onLayout={(event) => {
         const nextHeight = event.nativeEvent.layout.height;
         if (nextHeight > 0 && Math.abs(nextHeight - sceneHeight) > 1) {
@@ -92,6 +93,7 @@ export function HomeScreen() {
       <View style={styles.sheetHost} pointerEvents="box-none">
         <BottomSheet
           index={0}
+          accessible={false}
           animatedIndex={animatedIndex}
           snapPoints={snapPoints}
           enableDynamicSizing={false}
@@ -103,7 +105,7 @@ export function HomeScreen() {
           <HomeSheetContent bottomPadding={bottomPadding} />
         </BottomSheet>
       </View>
-    </View>
+    </View></LoadingScope>
   );
 }
 
@@ -119,6 +121,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     backgroundColor: travelSurfaces.header,
+    experimental_backgroundImage: travelSurfaces.headerGradient,
     zIndex: 0,
   },
   sheetHost: {

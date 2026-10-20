@@ -1,3 +1,4 @@
+import { QueryFeedback } from "@/components/ui/loading-skeleton";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -5,12 +6,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
+  KeyboardAvoidingView,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 
 import { useAuth } from "@/features/auth/auth-provider";
@@ -19,12 +22,12 @@ import {
   useCurrentAccount,
   useUpdateCurrentAccount,
 } from "@/features/profile/services/profile-api-service";
-import { TravelScreenHeader } from "@/features/travel/components/travel-screen-header";
+import { JourneyHeader } from "@/components/ui/journey-header";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { i18n, type SupportedLanguage } from "@/i18n";
 import { authClient } from "@/lib/auth/auth-client";
 import { queryClient } from "@/lib/query/query-client";
-import { theme } from "@/theme/theme";
+import { theme, travelSurfaces } from "@/theme/theme";
 
 const languages: SupportedLanguage[] = ["vi", "en"];
 
@@ -48,6 +51,8 @@ const deferredWebItems = [
 
 export function SettingsScreen() {
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const compactIdentity = width < 360;
   const { session } = useAuth();
   const accountQuery = useCurrentAccount();
   const insets = useSafeAreaInsets();
@@ -73,18 +78,20 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <TravelScreenHeader title={t("profileGallery.settings")} showBack />
+    <KeyboardAvoidingView behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined} style={styles.screen}>
+      <JourneyHeader title={t("profileGallery.settings")} showBack />
 
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: bottomPadding },
         ]}
       >
-        <View style={styles.identity}>
-          <View style={styles.avatarContainer}>
+        <QueryFeedback query={accountQuery} hasData={Boolean(user)} layout="card" />
+        <View style={[styles.identity, compactIdentity && styles.compactIdentity]}>
+          <View style={[styles.avatarContainer, compactIdentity && styles.compactAvatar]}>
             {user?.image ? (
               <Image
                 source={{ uri: user.image }}
@@ -98,26 +105,9 @@ export function SettingsScreen() {
                 </Text>
               </View>
             )}
-            <View style={styles.verifiedBadge}>
-              <Ionicons
-                name="checkmark-circle"
-                size={18}
-                color={theme.colors.light.accentForeground}
-              />
-            </View>
           </View>
-          <Text style={styles.name}>{displayName}</Text>
-        </View>
-
-        <View style={styles.contactCard}>
-          <View style={styles.contactIcon}>
-            <Ionicons
-              name="person-outline"
-              size={22}
-              color={theme.colors.light.gray[800]}
-            />
-          </View>
-          <View style={styles.contactDetails}>
+          <View style={styles.identityText}>
+            <Text style={styles.name}>{displayName}</Text>
             <Text style={styles.email}>{user?.email}</Text>
             <Text style={styles.phone}>{t("profile.googleAccount")}</Text>
           </View>
@@ -145,6 +135,8 @@ export function SettingsScreen() {
           />
         ) : null}
 
+        <View style={styles.group}>
+          <Text accessibilityRole="header" style={styles.groupTitle}>{t("settingsSections.preferences")}</Text>
         <View style={styles.menu}>
           <ProfileMenuItem
             icon="receipt-outline"
@@ -161,6 +153,7 @@ export function SettingsScreen() {
             icon="language-outline"
             title={t("profile.items.language.title")}
             subtitle={t(`profile.languages.${i18n.language}`)}
+            isLast={!languageExpanded}
             onPress={() => setLanguageExpanded((current) => !current)}
           />
 
@@ -171,6 +164,8 @@ export function SettingsScreen() {
                 return (
                   <Pressable
                     key={language}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
                     onPress={() => i18n.changeLanguage(language)}
                     style={[
                       styles.languageButton,
@@ -189,7 +184,7 @@ export function SettingsScreen() {
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color={theme.colors.light.accent}
+                        color={theme.colors.light.accentForeground}
                       />
                     ) : null}
                   </Pressable>
@@ -198,6 +193,11 @@ export function SettingsScreen() {
             </View>
           ) : null}
 
+        </View>
+        </View>
+        <View style={styles.group}>
+          <Text accessibilityRole="header" style={styles.groupTitle}>{t("settingsSections.support")}</Text>
+        <View style={styles.menu}>
           {deferredWebItems.map((item) => (
             <ProfileMenuItem
               key={item.key}
@@ -209,9 +209,15 @@ export function SettingsScreen() {
 
           <ProfileMenuItem
             icon="star-outline"
+            isLast
             title={t("profile.items.rateUs.title")}
             subtitle={t("profile.items.rateUs.subtitle")}
           />
+        </View>
+        </View>
+        <View style={styles.group}>
+          <Text accessibilityRole="header" style={styles.groupTitle}>{t("settingsSections.account")}</Text>
+        <View style={styles.menu}>
           <ProfileMenuItem
             icon="trash-outline"
             title={t("profile.items.deleteAccount.title")}
@@ -231,8 +237,9 @@ export function SettingsScreen() {
             isLast
           />
         </View>
+        </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -263,22 +270,19 @@ function ProfileEditForm({ initialName, initialImage, onDone }: { initialName: s
 }
 
 const styles = StyleSheet.create({
+  compactIdentity: { padding: 12, gap: 8 },
+  compactAvatar: { width: 48, height: 48, borderRadius: 24 },
+  identityText: { flex: 1, minWidth: 0, gap: 4 },
+  group: { gap: 12 },
+  groupTitle: { paddingHorizontal: 4, color: travelSurfaces.foreground, fontSize: 19, lineHeight: 26, fontWeight: "600" },
+
   screen: {
     flex: 1,
     backgroundColor: theme.colors.light.background,
   },
-  content: {
-    paddingHorizontal: theme.spacing[5],
-    gap: theme.spacing[5],
-  },
-  identity: {
-    alignItems: "center",
-    gap: theme.spacing[3],
-  },
-  avatarContainer: {
-    width: 104,
-    height: 104,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
+  identity: { padding: 20, borderRadius: 24, flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: travelSurfaces.header },
+  avatarContainer: { width: 64, height: 64, padding: 3, borderRadius: 32, backgroundColor: theme.colors.light.surface },
   avatar: {
     width: "100%",
     height: "100%",
@@ -288,64 +292,28 @@ const styles = StyleSheet.create({
   avatarFallback: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.light.accentSoft,
+    backgroundColor: travelSurfaces.info,
   },
   avatarInitial: {
     color: theme.colors.light.accent,
     fontSize: theme.typography.fontSize["3xl"],
     lineHeight: theme.typography.lineHeight["3xl"],
-    fontWeight: "900",
+    fontWeight: "600",
   },
-  verifiedBadge: {
-    position: "absolute",
-    right: 0,
-    bottom: 2,
-    width: 34,
-    height: 34,
-    borderWidth: 3,
-    borderColor: theme.colors.light.base.white,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.accent,
-  },
-  name: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.xl,
-    lineHeight: theme.typography.lineHeight.xl,
-    fontWeight: "800",
-  },
-  contactCard: {
-    minHeight: 88,
-    padding: theme.spacing[4],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.surface,
-  },
-  editForm: {
-    padding: theme.spacing[4],
-    borderWidth: 1,
-    borderColor: theme.colors.light.accentBorder,
-    borderRadius: theme.radius.md,
-    gap: theme.spacing[3],
-    backgroundColor: theme.colors.light.accentSoft,
-  },
+  name: { color: travelSurfaces.foreground, fontSize: 20, lineHeight: 27, fontWeight: "600" },
+  editForm: { padding: 20, borderRadius: 24, gap: 16, backgroundColor: travelSurfaces.info },
   editFormTitle: {
     color: theme.colors.light.gray[900],
     fontSize: theme.typography.fontSize.md,
     lineHeight: theme.typography.lineHeight.md,
-    fontWeight: "900",
+    fontWeight: "600",
   },
   input: {
     minHeight: 48,
     paddingHorizontal: theme.spacing[3],
     borderWidth: 1,
     borderColor: theme.colors.light.gray[300],
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.xl,
     color: theme.colors.light.gray[900],
     backgroundColor: theme.colors.light.surface,
   },
@@ -353,69 +321,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: theme.spacing[2],
   },
-  secondaryAction: {
-    flex: 1,
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[300],
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.surface,
-  },
+  secondaryAction: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surface },
   secondaryActionText: {
     color: theme.colors.light.gray[700],
-    fontWeight: "800",
-  },
-  primaryAction: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.accent,
-  },
-  primaryActionText: {
-    color: theme.colors.light.base.white,
-    fontWeight: "900",
-  },
-  disabled: { opacity: 0.45 },
-  contactIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: theme.radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.light.gray[50],
-  },
-  contactDetails: {
-    flex: 1,
-    gap: theme.spacing[1],
-  },
-  email: {
-    color: theme.colors.light.gray[900],
-    fontSize: theme.typography.fontSize.md,
-    lineHeight: theme.typography.lineHeight.md,
     fontWeight: "600",
   },
-  phone: {
-    color: theme.colors.light.gray[500],
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: theme.typography.lineHeight.sm,
+  primaryAction: { flex: 1, minHeight: 48, paddingVertical: 12, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.accent },
+  primaryActionText: {
+    color: theme.colors.light.base.white,
+    fontWeight: "600",
   },
-  editButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menu: {
-    paddingHorizontal: theme.spacing[3],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.light.surface,
-  },
+  disabled: { opacity: 0.45 },
+  email: { color: travelSurfaces.secondary, fontSize: 13, lineHeight: 20 },
+  phone: { color: travelSurfaces.secondary, fontSize: 12, lineHeight: 18 },
+  editButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.light.surface },
+  menu: { paddingHorizontal: 16, borderWidth: 1, borderColor: theme.colors.light.separator, borderRadius: 24, backgroundColor: theme.colors.light.surface },
   languageSelector: {
     paddingVertical: theme.spacing[3],
     borderBottomWidth: 1,
@@ -423,22 +343,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: theme.spacing[3],
   },
-  languageButton: {
-    flex: 1,
-    height: 44,
-    paddingHorizontal: theme.spacing[3],
-    borderWidth: 1,
-    borderColor: theme.colors.light.gray[200],
-    borderRadius: theme.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: theme.spacing[2],
-    backgroundColor: theme.colors.light.background,
-  },
+  languageButton: { flex: 1, minHeight: 48, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 24, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: theme.colors.light.surfaceSecondary },
   selectedLanguageButton: {
     borderColor: theme.colors.light.accent,
-    backgroundColor: theme.colors.light.accentSoft,
+    backgroundColor: theme.colors.light.accent,
   },
   languageLabel: {
     color: theme.colors.light.gray[600],
@@ -447,6 +355,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   selectedLanguageLabel: {
-    color: theme.colors.light.accent,
+    color: theme.colors.light.accentForeground,
   },
 });
