@@ -1,0 +1,1 @@
+export { TravelerVisitScreen as default } from "@/features/profile/screens/traveler-detail-screen";

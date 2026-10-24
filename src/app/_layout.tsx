@@ -30,11 +30,15 @@ function RootNavigator() {
           contentStyle: { backgroundColor: theme.colors.light.background },
         }}
       >
+        <Stack.Screen name="invitation/[id]" />
         <Stack.Protected guard={Boolean(session)}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" options={{ animation: "slide_from_right", gestureEnabled: true }} />
           <Stack.Screen name="search" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="notifications" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="traveler/[id]" />
+          <Stack.Screen name="traveler/[id]/visit/[tripId]" />
+          <Stack.Screen name="traveler/[id]/photo/[photoId]" />
           <Stack.Screen name="city/[id]" />
           <Stack.Screen name="collection/[slug]" />
           <Stack.Screen name="destination/[id]" />

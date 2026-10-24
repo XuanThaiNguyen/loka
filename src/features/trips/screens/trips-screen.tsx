@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -49,13 +50,15 @@ export function TripsScreen() {
   const reminderMutation = useBookingReminderMutation();
   const respondInvitation = useRespondToTripInvitation();
   const refetchTrips = tripsQuery.refetch;
+  const refetchInvitations = invitationsQuery.refetch;
   const [now] = useState(() => Date.now());
 
   useFocusEffect(useCallback(() => {
     void refetchTrips();
-  }, [refetchTrips]));
+    void refetchInvitations();
+  }, [refetchTrips, refetchInvitations]));
 
-  const trips = useMemo(() => [...(tripsQuery.data ?? [])].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()), [tripsQuery.data]);
+  const trips = useMemo(() => [...(tripsQuery.isError ? [] : tripsQuery.data ?? [])].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()), [tripsQuery.data, tripsQuery.isError]);
   const visibleTrips = tripFilter === "all" ? trips : trips.filter((trip) => trip.status === tripFilter);
   const upcomingCount = trips.filter((trip) => new Date(trip.endDate).getTime() >= now).length;
   const activeQuery = activeTab === "trips" ? tripsQuery : activeTab === "booking" ? bookingsQuery : plansQuery;
@@ -100,9 +103,9 @@ export function TripsScreen() {
             query={tripsQuery}
             hasData={tripsQuery.data !== undefined}
             invitationsQuery={invitationsQuery}
-            invitations={invitationsQuery.data ?? []}
+            invitations={invitationsQuery.isError ? [] : invitationsQuery.data ?? []}
             invitationPending={respondInvitation.isPending}
-            onInvitation={(invitationId, action) => respondInvitation.mutate({ invitationId, action })}
+            onInvitation={(invitationId, action) => respondInvitation.mutate({ invitationId, action }, { onError: (error) => Alert.alert(t("tripDetail.error"), error.message) })}
           />
         ) : activeTab === "booking" ? (
           (bookingsQuery.data?.length ?? 0) > 0 ? (
@@ -179,8 +182,8 @@ function TripsWorkspace({ trips, allTrips, upcomingCount, now, filter, onFilter,
                 <Text selectable numberOfLines={1} style={styles.itemTitle}>{invitation.trip.name}</Text>
                 <Text selectable style={styles.itemMeta}>{invitation.invitedBy.name} · {formatDateRange(invitation.trip.startDate, invitation.trip.endDate)}</Text>
               </View>
-              <Pressable disabled={invitationPending} onPress={() => onInvitation(invitation.id, "decline")} style={styles.textButton}><Text style={styles.textButtonLabel}>{t("trips.invitations.decline")}</Text></Pressable>
-              <Pressable disabled={invitationPending} onPress={() => onInvitation(invitation.id, "accept")} style={styles.compactButton}><Text style={styles.compactButtonLabel}>{t("trips.invitations.accept")}</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={invitationPending} onPress={() => onInvitation(invitation.id, "decline")} style={styles.textButton}><Text style={styles.textButtonLabel}>{t("trips.invitations.decline")}</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={invitationPending} onPress={() => onInvitation(invitation.id, "accept")} style={styles.compactButton}><Text style={styles.compactButtonLabel}>{t("trips.invitations.accept")}</Text></Pressable>
             </View>
           ))}
         </View>

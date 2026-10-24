@@ -21,7 +21,7 @@ export function HomeSectionState({ queries, hasData, empty, emptyLabel, layout =
     refetch: () => Promise.all(queries.map((item) => item.refetch())),
   };
   return <>
-    <QueryFeedback query={query} hasData={hasData} layout={layout} announce={false} />
+    <QueryFeedback query={query} hasData={hasData} layout={layout} announce={false} compact />
     {empty && !pending && !failed ? <View style={styles.empty}>
       <Text style={styles.text}>{emptyLabel ?? t("catalogContent.empty")}</Text>
     </View> : null}

@@ -20,6 +20,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useSocialCounts } from "@/features/discovery/services/discovery-api-service";
+import { ProfileTripsPanel } from "@/features/profile/components/profile-trips-panel";
 import { ProfileTabs } from "@/features/profile/components/profile-tabs";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useCurrentAccount } from "@/features/profile/services/profile-api-service";
@@ -40,9 +42,11 @@ export function ProfileScreen() {
   const { t } = useTranslation();
   const { session } = useAuth();
   const account = useCurrentAccount();
+  const social = useSocialCounts();
+  const socialCounts = social.isError ? null : social.data?.data;
   const user = account.data ?? session?.user;
   const tripsQuery = useTrips();
-  const trips = tripsQuery.data ?? [];
+  const trips = tripsQuery.isError ? [] : tripsQuery.data ?? [];
   const ownedTrips = trips.filter((trip) => trip.accessRole === "owner");
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [asset, setAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -126,8 +130,8 @@ export function ProfileScreen() {
     void favoritesQuery.refetch();
     void tripsQuery.refetch();
     void account.refetch();
+    void social.refetch();
   };
-  // The account API currently exposes name/avatar only. Keep missing social data explicit.
   const cover = getDestination("swissAlps")?.image;
   const saved = favoritesQuery.data ?? [];
 
@@ -201,58 +205,16 @@ export function ProfileScreen() {
               label={t("profileLayout.trips")}
             />
             <View style={styles.statDivider} />
-            <ProfileStat value="—" label={t("profileLayout.followers")} />
+            <ProfileStat value={socialCounts?.followers.toLocaleString() ?? "—"} label={t("profileLayout.followers")} />
             <View style={styles.statDivider} />
-            <ProfileStat value="—" label={t("profileLayout.following")} />
+            <ProfileStat value={socialCounts?.following.toLocaleString() ?? "—"} label={t("profileLayout.following")} />
           </View>
+          <QueryFeedback query={social} hasData={Boolean(social.data)} announce={false} />
           <QueryFeedback query={account} hasData={Boolean(user)} layout="card" announce={false} />
         </View>
         <LoadingAnnouncement loading={[account, tripsQuery, gallery, favoritesQuery].some((query) => query.isPending && query.fetchStatus === "fetching")} />
         <ProfileTabs>
-          <View style={styles.panel}>
-            <ProfileContentState
-              query={tripsQuery}
-              hasData={tripsQuery.data !== undefined}
-              empty={!ownedTrips.length}
-              icon="compass-outline"
-              message={t("profileLayout.emptyTrips")}
-            />
-            <View style={styles.grid}>
-              {ownedTrips.map((trip) => (
-                <Pressable
-                  key={trip.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={trip.name}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/trip/[id]",
-                      params: { id: trip.id },
-                    })
-                  }
-                  style={styles.gridItem}
-                >
-                  <View style={styles.tile}>
-                    {trip.city?.coverImageUrl ? (
-                      <Image
-                        source={{ uri: trip.city.coverImageUrl }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                      />
-                    ) : (
-                      <Ionicons
-                        name="compass-outline"
-                        size={32}
-                        color={c.muted}
-                      />
-                    )}
-                  </View>
-                  <Text numberOfLines={2} style={styles.tileLabel}>
-                    {trip.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
+          <ProfileTripsPanel query={tripsQuery} />
           <View style={styles.panel}>
             <ProfileContentState
               query={gallery}

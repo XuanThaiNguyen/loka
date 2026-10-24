@@ -62,17 +62,22 @@ export function LoadingSkeleton({ layout = "list", announce = true }: { layout?:
 }
 
 export type FeedbackQuery = { isPending?: boolean; isFetching?: boolean; isError?: boolean; fetchStatus?: string; error?: unknown; refetch: () => unknown };
-export function QueryFeedback({ query, hasData = false, layout = "list", announce = true }: { query: FeedbackQuery; hasData?: boolean; layout?: SkeletonLayout; announce?: boolean }) {
+export function QueryFeedback({ query, hasData = false, layout = "list", announce = true, compact = false }: { query: FeedbackQuery; hasData?: boolean; layout?: SkeletonLayout; announce?: boolean; compact?: boolean }) {
   const { t } = useTranslation();
   const errorCode = (query.error as { code?: string } | null)?.code;
   const offline = query.fetchStatus === "paused" || errorCode === "NETWORK_ERROR";
   const inactive = query.isPending && query.fetchStatus === "idle";
+  // Home keeps failures actionable without placing diagnostic banners among cards.
+  if (compact && (offline || query.isError || inactive)) return <Pressable
+    accessibilityRole="button" accessibilityLabel={t("common.retry")}
+    disabled={query.isFetching} onPress={() => void query.refetch()} style={s.retry}
+  ><Text style={s.retryText}>{t("common.retry")}</Text></Pressable>;
   if (offline || query.isError || inactive) return <View style={s.feedback}>
     <Text accessibilityRole="alert" style={s.caption}>{t(offline ? "loadingUi.offline" : errorCode === "REQUEST_TIMEOUT" ? "loadingUi.timeout" : "detailGuide.loadError")}</Text>
     <Pressable accessibilityRole="button" onPress={() => void query.refetch()} style={s.retry}><Text style={s.retryText}>{t("common.retry")}</Text></Pressable>
   </View>;
   if (!hasData && (query.isPending || query.isFetching)) return <LoadingSkeleton layout={layout} announce={announce} />;
-  if (hasData && query.isFetching) return <Text style={s.caption}>{t("loadingUi.refreshing")}</Text>;
+  if (!compact && hasData && query.isFetching) return <Text style={s.caption}>{t("loadingUi.refreshing")}</Text>;
   return null;
 }
 const s = StyleSheet.create({

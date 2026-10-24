@@ -1,3 +1,5 @@
+import { useAuth } from "@/features/auth/auth-provider";
+import { useIsFocused } from "expo-router";
 import {
   apiPath,
   apiRequest,
@@ -81,28 +83,37 @@ export const plannerQueryKeys = {
 };
 
 export function usePlannerSession(id: string | null) {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const focused = useIsFocused();
   return useQuery({
-    queryKey: plannerQueryKeys.session(id ?? ""),
-    enabled: Boolean(id),
+    queryKey: [...plannerQueryKeys.session(id ?? ""), viewerId],
+    enabled: Boolean(id && viewerId) && focused,
+    staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always",
     queryFn: ({ signal }) => plannerApi.getSession(id as string, signal),
     select: (response) => response.data,
   });
 }
 
 export function usePlannerSessions() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
   return useQuery({
-    queryKey: plannerQueryKeys.sessions,
+    queryKey: [...plannerQueryKeys.sessions, "list", viewerId],
+    enabled: Boolean(viewerId),
     queryFn: ({ signal }) => plannerApi.listSessions(undefined, signal),
     select: (response) => response.data,
   });
 }
 
 export function useCreatePlannerSession() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: plannerApi.createSession,
     onSuccess: (response) => {
-      queryClient.setQueryData(plannerQueryKeys.session(response.data.id), response);
+      queryClient.setQueryData([...plannerQueryKeys.session(response.data.id), viewerId], response);
       void queryClient.invalidateQueries({ queryKey: plannerQueryKeys.sessions });
       void queryClient.invalidateQueries({ queryKey: ["trips"] });
     },
@@ -110,11 +121,13 @@ export function useCreatePlannerSession() {
 }
 
 export function useUpdatePlannerSession() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<Omit<PlannerSessionInput, "tripId">> }) => plannerApi.updateSession(id, input),
     onSuccess: (response) => {
-      queryClient.setQueryData(plannerQueryKeys.session(response.data.id), response);
+      queryClient.setQueryData([...plannerQueryKeys.session(response.data.id), viewerId], response);
       void queryClient.invalidateQueries({ queryKey: plannerQueryKeys.sessions });
       void queryClient.invalidateQueries({ queryKey: ["trips"] });
     },

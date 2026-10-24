@@ -4,16 +4,19 @@ import { router } from "expo-router";
 import type { ReactNode } from "react";
 
 import { WhosAround } from "@/features/home/components/whos-around";
+import { TravelerVisitScreen, TravelerPhotoScreen } from "@/features/profile/screens/traveler-detail-screen";
 import { TravelerProfileScreen } from "@/features/profile/screens/traveler-profile-screen";
 import { discoveryApi, eligibleTravelers, type RecentTravelersResponse, type TravelerProfileResponse } from "@/features/discovery/services/discovery-api-service";
 import { ApiError, apiRequest } from "@/lib/api/client";
 
 let mockViewerId = "viewer";
 let mockAccountId = "real/account";
+let mockTripId = "42";
+let mockPhotoId = "100";
 jest.mock("@/features/auth/auth-provider", () => ({ useAuth: () => ({ session: { user: { id: mockViewerId } } }) }));
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true },
-  useLocalSearchParams: () => ({ id: mockAccountId }),
+  useLocalSearchParams: () => ({ id: mockAccountId, tripId: mockTripId, photoId: mockPhotoId }),
   useIsFocused: () => true,
 }));
 jest.mock("react-i18next", () => ({
@@ -54,6 +57,7 @@ const profile = (hasMore = false): TravelerProfileResponse => ({
   data: {
     traveler: response().data[0].traveler,
     recentTrips: [response().data[0].recentTrip],
+    socialCounts: { followers: 12, following: 7 }, publicTripCount: 1,
     photos: [{ id: "100", image: { kind: "public-photo", photoId: "100", url: "https://example.test/public.jpg", urlExpiresAt: "2099-01-01T00:00:00Z" } }],
   },
   meta: { hasMore, nextCursor: hasMore ? "100" : null },
@@ -120,7 +124,7 @@ test("recommendations expire using server time, exclude the viewer, and deduplic
   expect(eligibleTravelers(data, 1000, 1000 + 9 * 86400000, "viewer")).toEqual([]);
 });
 
-test("a wall loads only public API data, paginates with the cursor and closes its photo preview", async () => {
+test("a wall loads only public API data, paginates with the cursor and opens public image detail", async () => {
   const next = profile();
   next.data.photos = [{ id: "99", image: { kind: "placeholder" } }];
   const load = jest.spyOn(discoveryApi, "profile").mockResolvedValueOnce(profile(true)).mockResolvedValue(next);
@@ -131,9 +135,7 @@ test("a wall loads only public API data, paginates with the cursor and closes it
   await waitFor(() => expect(load).toHaveBeenLastCalledWith("real/account", "100", expect.anything()));
   await waitFor(() => expect(screen.getAllByRole("button", { name: "View photo" })).toHaveLength(2));
   await userEvent.setup().press(screen.getAllByRole("button", { name: "View photo" })[0]);
-  expect(screen.getByRole("button", { name: "Close" })).toBeOnTheScreen();
-  await userEvent.setup().press(screen.getByRole("button", { name: "Close" }));
-  expect(screen.queryByRole("button", { name: "Close" })).not.toBeOnTheScreen();
+  expect(router.push).toHaveBeenCalledWith({ pathname: "/traveler/[id]/photo/[photoId]", params: { id: "real/account", photoId: "100" } });
 });
 
 test("an opted-out wall hides cached public content and offers safe back navigation", async () => {
@@ -168,4 +170,43 @@ test("switching viewers does not display cached recommendations from the previou
   await screen.rerender(<QueryClientProvider client={client}><WhosAround /></QueryClientProvider>);
   expect(screen.queryByText("Public traveler")).not.toBeOnTheScreen();
   expect(screen.getByRole("progressbar")).toBeOnTheScreen();
+});
+
+
+test("visitor wall shows server counts and opens eligible visit detail", async () => {
+  jest.spyOn(discoveryApi, "profile").mockResolvedValue(profile());
+  await mount(<TravelerProfileScreen />);
+  expect(await screen.findByText("12")).toBeOnTheScreen();
+  expect(screen.getByText("7")).toBeOnTheScreen();
+  await userEvent.setup().press(screen.getByRole("button", { name: "discovery.viewVisit" }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: "/traveler/[id]/visit/[tripId]", params: { id: "real/account", tripId: "42" } });
+});
+
+test("public visit loads, retries, links its photo and hides content when sharing is revoked", async () => {
+  const data = { data: { traveler: profile().data.traveler, visit: profile().data.recentTrips[0], photos: [{ id: "100", image: profile().data.photos[0].image, caption: "Public caption", createdAt: "2026-10-20T00:00:00Z" }] }, meta: { hasMore: false, nextCursor: null } };
+  let reject!: (error: Error) => void;
+  const load = jest.spyOn(discoveryApi, "visit").mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; })).mockResolvedValue(data);
+  const client = await mount(<TravelerVisitScreen />);
+  expect(screen.getByRole("progressbar")).toBeOnTheScreen();
+  await act(() => reject(new ApiError("Offline", 0, "NETWORK_ERROR")));
+  await userEvent.setup().press(await screen.findByRole("button", { name: "Retry" }));
+  expect(await screen.findByText("Public traveler")).toBeOnTheScreen();
+  await userEvent.setup().press(screen.getByRole("button", { name: "View photo" }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: "/traveler/[id]/photo/[photoId]", params: { id: "real/account", photoId: "100" } });
+  load.mockRejectedValue(new ApiError("Private", 404));
+  await act(() => client.invalidateQueries({ queryKey: ["discovery"] }));
+  expect(await screen.findByText("discovery.detailUnavailable")).toBeOnTheScreen();
+  expect(screen.queryByText("Public traveler")).not.toBeOnTheScreen();
+  await userEvent.setup().press(screen.getByRole("button", { name: "Back" }));
+  expect(router.back).toHaveBeenCalled();
+});
+
+test("direct public photo detail shows caption then removes it after privacy changes", async () => {
+  const load = jest.spyOn(discoveryApi, "photo").mockResolvedValue({ data: { traveler: profile().data.traveler, photo: { id: "100", image: profile().data.photos[0].image, caption: "Public caption", createdAt: "2026-10-20T00:00:00Z" } } });
+  const client = await mount(<TravelerPhotoScreen />);
+  expect(await screen.findByText("Public caption")).toBeOnTheScreen();
+  load.mockRejectedValue(new ApiError("Private", 404));
+  await act(() => client.invalidateQueries({ queryKey: ["discovery"] }));
+  expect(await screen.findByText("discovery.detailUnavailable")).toBeOnTheScreen();
+  expect(screen.queryByText("Public caption")).not.toBeOnTheScreen();
 });

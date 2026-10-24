@@ -9,7 +9,8 @@ Palette
 Primary actions: charcoal #222A31 with white text.
 Navigation and central add action: blue #3F72DF. Do not turn every CTA blue.
 Main text: slate #202A32. Supporting text: #606D77.
-Canvas: cool white #F5F8FA. Cards/fields: white #FFFFFF.
+Canvas: pure white #FFFFFF (updated at the user's request on October 22).
+Cards/fields: white #FFFFFF.
 Header: sky #E8F5F8 with a subtle sky/mint/lemon gradient.
 Information panels: #EAF5FA.
 Featured cards: #222E38; inset panel #2E3D49; text #DCE7EF or white.

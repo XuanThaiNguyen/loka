@@ -1,3 +1,5 @@
+import { useAuth } from "@/features/auth/auth-provider";
+import { useIsFocused } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -116,7 +118,10 @@ export type TripWrite = {
   invitationEmails?: string[];
 };
 
+export type InvitationReviewDTO = Omit<IncomingTripInvitationDTO, "status"> & { status: IncomingTripInvitationDTO["status"] | "expired"; expiresAt: string };
+
 export const tripsApi = {
+  getInvitation: (id: string, signal?: AbortSignal) => apiRequest<DataEnvelope<InvitationReviewDTO>>(`/api/trips/invitations/${id}`, { signal }),
   list: (status?: TripStatus, signal?: AbortSignal) =>
     apiRequest<DataEnvelope<TripDTO[]>>(apiPath("/api/trips", { status }), { signal }),
   get: (id: number, signal?: AbortSignal) =>
@@ -190,17 +195,26 @@ export const tripQueryKeys = {
 };
 
 export function useTrips() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const focused = useIsFocused();
   return useQuery({
-    queryKey: tripQueryKeys.trips,
+    enabled: Boolean(viewerId) && focused,
+    staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always",
+    queryKey: [...tripQueryKeys.trips, "list", viewerId],
     queryFn: ({ signal }) => tripsApi.list(undefined, signal),
     select: (response) => response.data,
   });
 }
 
 export function useTrip(id: number | null) {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const focused = useIsFocused();
   return useQuery({
-    queryKey: tripQueryKeys.trip(id ?? 0),
-    enabled: id !== null && id > 0,
+    staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always",
+    queryKey: [...tripQueryKeys.trip(id ?? 0), viewerId],
+    enabled: Boolean(viewerId) && focused && id !== null && id > 0,
     queryFn: ({ signal }) => tripsApi.get(id as number, signal),
     select: (response) => response.data,
   });
@@ -210,16 +224,20 @@ export function useCreateTrip() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: tripsApi.create,
-    onSuccess: (response) => {
-      queryClient.setQueryData(tripQueryKeys.trip(response.data.id), response);
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: tripQueryKeys.trips });
     },
   });
 }
 
 export function useTripInvitations() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const focused = useIsFocused();
   return useQuery({
-    queryKey: tripQueryKeys.invitations,
+    enabled: Boolean(viewerId) && focused,
+    staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always",
+    queryKey: [...tripQueryKeys.invitations, viewerId],
     queryFn: ({ signal }) => tripsApi.listInvitations("pending", signal),
     select: (response) => response.data,
   });
@@ -229,8 +247,7 @@ export function useUpdateTrip() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, input }: { id: number; input: Partial<Omit<TripWrite, "stops" | "invitationEmails">> }) => tripsApi.update(id, input),
-    onSuccess: (response) => {
-      queryClient.setQueryData(tripQueryKeys.trip(response.data.id), response);
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: tripQueryKeys.trips });
     },
   });
@@ -240,8 +257,7 @@ export function useReplaceTripStops() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, stops }: { id: number; stops: NonNullable<TripWrite["stops"]> }) => tripsApi.replaceStops(id, stops),
-    onSuccess: (response) => {
-      queryClient.setQueryData(tripQueryKeys.trip(response.data.id), response);
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: tripQueryKeys.trips });
     },
   });

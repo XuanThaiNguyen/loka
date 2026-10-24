@@ -1,5 +1,24 @@
 const en = {
-  discovery: {"description": "Travelers who shared a trip completed in the last 10 days.", "empty": "No recently shared trips yet.", "recentTrip": "Recently completed trip", "peopleHint": "Search within up to six recent travelers, not all accounts.", "publicMoments": "Public travel moments", "noTrips": "No recently shared trips.", "noPhotos": "No public photos yet.", "completed": "Completed {{date}}", "unavailable": "This profile is no longer discoverable."},
+  notifications: {
+    "title": "Notifications",
+    "subtitle": "Your trip invitations, all in one place.",
+    "bellPending": "Notifications, {{count}} pending invitations",
+    "loading": "Loading notifications",
+    "saving": "Saving response",
+    "loadError": "Could not load your notifications. Please try again.",
+    "emptyTitle": "You’re all caught up",
+    "emptyDescription": "New trip invitations will appear here. Pull down to refresh.",
+    "invitation": "TRIP INVITATION",
+    "from": "{{name}} invited you to join",
+    "access": "Join as a viewer. The trip creator keeps planning and editing access.",
+    "accept": "Accept",
+    "reject": "Reject",
+    "accepted": "Invitation accepted. You can now find this trip in Shared.",
+    "rejected": "Invitation rejected. No shared access was granted.",
+    "responseError": "Could not save your response. The invitation may have changed. Refresh and try again."
+},
+  invitationReview: {"title": "Trip invitation", "back": "Back", "loading": "Loading invitation", "unavailable": "This invitation is unavailable. Sign in with the invited account, or try again.", "retry": "Retry", "pending": "Awaiting your response.", "accepted": "Invitation accepted.", "declined": "Invitation declined.", "revoked": "The owner cancelled this invitation.", "expired": "This invitation expired. Ask the owner for a new invitation.", "expires": "Expires {{date}}", "access": "The creator remains the owner and planner. Accepting grants shared viewing access.", "accept": "Accept", "decline": "Decline", "openTrip": "Open trip", "responseError": "Could not save your response. Check the current status and try again.", "from": "Invited by {{name}}"},
+  discovery: {"countsUnavailable": "Follower counts are unavailable.", "viewVisit": "View completed visit in {{city}}", "loadMoreVisits": "Load more visits", "visitDetails": "Completed visit", "visitPrivacy": "Only shared visit details and public photos are shown.", "detailUnavailable": "This shared content is no longer available.", "photoDetails": "Public photo", "photoUnavailable": "This photo cannot be loaded right now.", "description": "Travelers who shared a trip completed in the last 10 days.", "empty": "No recently shared trips yet.", "recentTrip": "Recently completed trip", "peopleHint": "Search within up to six recent travelers, not all accounts.", "publicMoments": "Public travel moments", "noTrips": "No recently shared trips.", "noPhotos": "No public photos yet.", "completed": "Completed {{date}}", "unavailable": "This profile is no longer discoverable."},
   loadingUi: { content: "Loading content", refreshing: "Refreshing…", offline: "Unable to connect. Check your connection and try again.", timeout: "This is taking too long. Please try again." },
   homeSections: { trips: "Your trips", collections: "Collections", noTrips: "Your trips will appear here when you create one.", noWorkspaces: "No saved planning workspaces yet.", noCollections: "No featured collections are available yet.", loadError: "Could not refresh {{title}}. Please try again.", retry: "Retry {{title}}", loading: "Loading {{title}}…" },
   taskFlow: { fewerPeople: "Fewer travellers", morePeople: "More travellers", ownerOnly: "Only the trip owner can edit this trip.", invalidTrip: "Check the name, dates and group size (1–50).", close: "Close", discardTitle: "Discard changes?", discardDescription: "Your unsaved changes will be lost. Stay here to keep editing.", keepEditing: "Keep editing", discard: "Discard", saving: "Saving…" },
@@ -19,6 +38,10 @@ const en = {
     savedPrivate: "Saved places are private to this traveler.",
   },
   profileLayout: {
+    ownedTrips: "Owned",
+    sharedTrips: "Shared",
+    emptySharedTrips: "Trips you accept invitations to will appear here.",
+
     trips: "Trips", photos: "Photos", saved: "Saved", followers: "Followers", following: "Following",
     noBio: "No bio yet.", emptyTrips: "Your journeys will appear here once you create a trip.",
     emptySaved: "Save a place you love to find it here.", loadError: "Could not load this content.",
@@ -372,6 +395,7 @@ const en = {
     },
   },
   tripDetail: {
+    error: "Could not update invitation",
     header: "Trip details",
     days: "{{count}} days",
     noDescription: "This Trip does not have a description yet.",
@@ -596,7 +620,7 @@ const en = {
           daNang: "Da Nang, Vietnam",
         },
         destinations: {
-          daNang: "Da Nang, Vietnam",
+          daNang: "Da Nang and Hoian",
           tokyo: "Tokyo, Japan",
           bali: "Bali, Indonesia",
         },

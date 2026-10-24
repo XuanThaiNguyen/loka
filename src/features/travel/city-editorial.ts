@@ -74,6 +74,6 @@ const en: CityEditorial = {
 
 export function getCityEditorialPreview(id: string, name: string, language: string): CityEditorial | undefined {
   const normalized = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z]/g, "");
-  if (id !== "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f" && !["danang", "danangcity"].includes(normalized)) return undefined;
+  if (id !== "3f5d650f-ad92-4b78-8d11-ad7e8fcf7c1f" && !["danang", "danangcity", "danangandhoian"].includes(normalized)) return undefined;
   return language.startsWith("vi") ? vi : en;
 }

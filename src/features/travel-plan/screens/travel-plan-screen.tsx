@@ -133,7 +133,7 @@ export function PlannerTaskScreen() {
   const validId = Number.isInteger(id) && id > 0;
   const trip = useTrip(validId ? id : null);
   if (!validId) return <ErrorScreen message={t("travelPlan.workspace.tripLoadError")} onBack={closeTask} />;
-  if (!trip.data) return <LoadingScreen query={trip} label={t("travelPlan.workspace.loadingTrip")} />;
+  if (!trip.data || trip.isError) return <LoadingScreen query={trip} label={t("travelPlan.workspace.loadingTrip")} />;
   return <PlannerTaskContent key={id} trip={trip.data} tripQuery={trip} mode={mode} />;
 }
 
@@ -145,7 +145,7 @@ function PlannerTaskContent({ trip, tripQuery, mode }: { trip: TripDetailDTO; tr
   const sessionId = entryTrip.plannerSessionId;
   const session = usePlannerSession(sessionId);
   const saved = () => router.dismissTo({ pathname: "/trip/[id]", params: { id: String(trip.id) } });
-  if (sessionId && !session.data) return <LoadingScreen query={session} label={t("travelPlan.workspace.loadingTrip")} />;
+  if (sessionId && (!session.data || session.isError)) return <LoadingScreen query={session} label={t("travelPlan.workspace.loadingTrip")} />;
   const feedback = <><QueryFeedback query={tripQuery} hasData />{sessionId ? <QueryFeedback query={session} hasData /> : null}</>;
   if (session.data) {
     if (mode === "edit" && session.data.accessRole !== "viewer") return <PlannerSessionEditor feedback={feedback} key={session.data.id} session={session.data} onCancel={closeTask} onSaved={saved} />;

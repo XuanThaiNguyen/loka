@@ -16,7 +16,8 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { authClient } from "@/lib/auth/auth-client";
 import { theme } from "@/theme/theme";
 
-export function SignInScreen() {
+export function SignInScreen({ returnTo = "/" }: { returnTo?: string } = {}) {
+ const callbackPath = /^\/invitation\/[0-9a-f-]{36}$/i.test(returnTo) ? returnTo : "/";
   const { t } = useTranslation();
   const { refreshSession } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -29,7 +30,7 @@ export function SignInScreen() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: callbackPath,
       });
 
       if (result.error) {
@@ -38,7 +39,7 @@ export function SignInScreen() {
       }
 
       await refreshSession();
-      router.replace("/");
+      router.replace(callbackPath as "/");
     } catch {
       setError(t("auth.errors.network"));
     } finally {

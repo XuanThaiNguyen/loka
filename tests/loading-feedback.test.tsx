@@ -9,17 +9,17 @@ beforeEach(() => refetch.mockClear());
 
 test('paused Home request offers retry instead of an indefinite skeleton or empty state', async () => {
   await render(<HomeSectionState queries={[{ isPending: true, fetchStatus: 'paused', refetch }]} hasData={false} empty emptyLabel="No trips" />);
-  expect(screen.getByRole('alert')).toHaveTextContent('loadingUi.offline');
+  expect(screen.queryByRole('alert')).not.toBeOnTheScreen();
   expect(screen.queryByRole('progressbar')).not.toBeOnTheScreen();
   expect(screen.queryByText('No trips')).not.toBeOnTheScreen();
   await userEvent.setup().press(screen.getByRole('button', { name: 'common.retry' }));
   expect(refetch).toHaveBeenCalledTimes(1);
 });
 
-test('cached Home content remains visible with subtle refresh feedback', async () => {
+test('cached Home content remains visible without refresh status messages', async () => {
   await render(<><HomeSectionState queries={[{ isFetching: true, fetchStatus: 'fetching', refetch }]} hasData /><Text>Da Nang</Text></>);
   expect(screen.getByText('Da Nang')).toBeOnTheScreen();
-  expect(screen.getByText('loadingUi.refreshing')).toBeOnTheScreen();
+  expect(screen.queryByText('loadingUi.refreshing')).not.toBeOnTheScreen();
   expect(screen.queryByRole('progressbar')).not.toBeOnTheScreen();
 });
 
@@ -32,12 +32,13 @@ test('multiple Home skeletons have one screen-level loading announcement', async
 test('failed collection request does not replace a loaded sibling section', async () => {
   await render(<><HomeSectionState queries={[{ refetch }]} hasData /><Text>Recommended place</Text><HomeSectionState queries={[{ isError: true, error: { code: 'REQUEST_TIMEOUT' }, refetch }]} hasData={false} empty /></>);
   expect(screen.getByText('Recommended place')).toBeOnTheScreen();
-  expect(screen.getByRole('alert')).toHaveTextContent('loadingUi.timeout');
+  expect(screen.queryByText('loadingUi.timeout')).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'common.retry' })).toBeOnTheScreen();
 });
 
-test('a successful empty collection shows its true empty state', async () => {
-  await render(<HomeSectionState queries={[{ refetch }]} hasData empty emptyLabel="No collections" />);
-  expect(screen.getByText('No collections')).toBeOnTheScreen();
+test('personal sections can still offer a useful empty state', async () => {
+  await render(<HomeSectionState queries={[{ refetch }]} hasData empty emptyLabel="No trips" />);
+  expect(screen.getByText('No trips')).toBeOnTheScreen();
   expect(screen.queryByRole('progressbar')).not.toBeOnTheScreen();
 });
 

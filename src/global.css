@@ -22,7 +22,7 @@
 /* Mobile reference palette; mirror src/theme/theme.ts. */
 @layer theme {
   @variant light {
-    --background: #f5f8fa;
+    --background: #ffffff;
     --foreground: #202a32;
     --surface: #ffffff;
     --surface-secondary: #eef3f5;

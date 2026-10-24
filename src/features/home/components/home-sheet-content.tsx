@@ -1,9 +1,9 @@
-import { LoadingAnnouncement } from "@/components/ui/loading-skeleton";
+import { LoadingAnnouncement, type FeedbackQuery } from "@/components/ui/loading-skeleton";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CatalogImage as Image } from "@/features/travel/components/catalog-image";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Pressable,
@@ -135,7 +135,7 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
         </Pressable>
       ) : null}
 
-      <View style={styles.section}>
+      <HomeCatalogSection query={citiesQuery} hasItems={cities.length > 0}>
         <HomeSectionHeader
           title={t("home.exploreCity")}
           actionLabel={t("common.viewAll")}
@@ -171,17 +171,18 @@ export function HomeSheetContent({ bottomPadding }: HomeSheetContentProps) {
             </Pressable>
           ))}
         </ScrollView>
-      </View>
+      </HomeCatalogSection>
 
-      <View style={styles.section}>
+      <HomeCatalogSection query={recommendedQuery} hasItems={!!recommendedQuery.data?.length}>
         <HomeSectionHeader title={t("travel.collections.recommended")} actionLabel={t("common.viewAll")} onActionPress={() => router.push({ pathname: "/search", params: { scope: "places" } })} />
         <HomeSectionState queries={[recommendedQuery]} hasData={recommendedQuery.data !== undefined} layout="destinations" empty={!recommendedQuery.data?.length} />
         <DestinationRail items={recommendedQuery.data ?? []} />
-      </View>
-      <View style={styles.section}>
+      </HomeCatalogSection>
+      {/* Populated collections have their own titles; the index needs only loading/retry UI. */}
+      <HomeCatalogSection query={collectionsQuery} hasItems={false}>
         <HomeSectionHeader title={t("homeSections.collections")} />
-        <HomeSectionState queries={[collectionsQuery]} hasData={collectionsQuery.data !== undefined} empty={!collectionsQuery.data?.length} emptyLabel={t("homeSections.noCollections")} />
-      </View>
+        <HomeSectionState queries={[collectionsQuery]} hasData={collectionsQuery.data !== undefined} />
+      </HomeCatalogSection>
       {(collectionsQuery.data ?? []).map((collection) => <CollectionSection key={collection.id} collection={collection} />)}
       <WhosAround />
     </BottomSheetScrollView>
@@ -274,12 +275,22 @@ function formatDateRange(startDate: string, endDate: string) {
 function CollectionSection({ collection }: { collection: CollectionDTO }) {
   const { t } = useTranslation();
   const query = useCollection(collection.slug);
-  return <View style={styles.section}>
+  return <HomeCatalogSection query={query} hasItems={query.items.length > 0}>
     <LoadingAnnouncement loading={query.isPending && query.fetchStatus === "fetching"} />
     <HomeSectionHeader title={collection.title} actionLabel={t("common.viewAll")} onActionPress={() => router.push({ pathname: "/collection/[slug]", params: { slug: collection.slug } })} />
     <HomeSectionState queries={[query]} hasData={query.data !== undefined} layout="destinations" empty={!query.items.length} />
     <DestinationRail items={query.items} compact={collection.type === "trending"} />
-  </View>;
+  </HomeCatalogSection>;
+}
+
+/** Only a successful empty result hides an admin-managed Home section. */
+function HomeCatalogSection({ query, hasItems, children }: {
+  query: FeedbackQuery;
+  hasItems: boolean;
+  children: ReactNode;
+}) {
+  if (!hasItems && !query.isPending && !query.isError && query.fetchStatus !== "paused") return null;
+  return <View style={styles.section}>{children}</View>;
 }
 
 function DestinationRail({ items, compact = false }: { items: readonly Destination[]; compact?: boolean }) {

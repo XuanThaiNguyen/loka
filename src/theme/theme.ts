@@ -414,7 +414,7 @@ export const foundationColors = {
 // Mobile reference palette; keep src/global.css in sync (web theme is independent).
 const lightColors = {
   ...foundationColors,
-  background: "#f5f8fa",
+  background: "#ffffff",
   foreground: "#202a32",
   surface: "#ffffff",
   surfaceSecondary: "#eef3f5",

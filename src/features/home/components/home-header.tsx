@@ -9,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { useAuth } from "@/features/auth/auth-provider";
+import { useNotifications } from "@/features/notifications/services/notifications-api-service";
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_TOP_HEIGHT,
@@ -27,6 +28,8 @@ type HomeHeaderProps = {
 export function HomeHeader({ tintProgress, topInset, onHeightChange }: HomeHeaderProps) {
   const { t } = useTranslation();
   const { session } = useAuth();
+  const notifications = useNotifications();
+  const pendingCount = !notifications.isError ? notifications.data?.length ?? 0 : 0;
   const userName =
     session?.user.name?.trim() ||
     session?.user.email.split("@")[0] ||
@@ -92,9 +95,10 @@ export function HomeHeader({ tintProgress, topInset, onHeightChange }: HomeHeade
           />
           <HeaderIcon
             name="notifications-outline"
-            accessibilityLabel={t("home.notifications")}
+            onPress={() => router.push("/notifications")}
+            accessibilityLabel={pendingCount > 0 ? t("notifications.bellPending", { count: pendingCount }) : t("home.notifications")}
             tintProgress={tintProgress}
-            hasBadge
+            hasBadge={pendingCount > 0}
           />
         </View>
       </View>

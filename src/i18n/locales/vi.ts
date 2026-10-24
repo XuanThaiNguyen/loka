@@ -1,5 +1,24 @@
 const vi = {
-  discovery: {"description": "Những người đã chia sẻ chuyến đi hoàn thành trong 10 ngày qua.", "empty": "Chưa có chuyến đi được chia sẻ gần đây.", "recentTrip": "Chuyến đi vừa hoàn thành", "peopleHint": "Tìm trong tối đa sáu người đi du lịch gần đây, không phải tất cả tài khoản.", "publicMoments": "Khoảnh khắc du lịch công khai", "noTrips": "Chưa có chuyến đi được chia sẻ gần đây.", "noPhotos": "Chưa có ảnh công khai.", "completed": "Hoàn thành {{date}}", "unavailable": "Hồ sơ này hiện không được chia sẻ công khai."},
+  notifications: {
+    "title": "Thông báo",
+    "subtitle": "Các lời mời chuyến đi của bạn ở cùng một nơi.",
+    "bellPending": "Thông báo, {{count}} lời mời đang chờ",
+    "loading": "Đang tải thông báo",
+    "saving": "Đang lưu phản hồi",
+    "loadError": "Không thể tải thông báo. Vui lòng thử lại.",
+    "emptyTitle": "Bạn đã xem hết thông báo",
+    "emptyDescription": "Lời mời chuyến đi mới sẽ xuất hiện tại đây. Kéo xuống để làm mới.",
+    "invitation": "LỜI MỜI CHUYẾN ĐI",
+    "from": "{{name}} mời bạn tham gia",
+    "access": "Tham gia với quyền xem. Người tạo chuyến đi vẫn giữ quyền lập kế hoạch và chỉnh sửa.",
+    "accept": "Chấp nhận",
+    "reject": "Từ chối",
+    "accepted": "Đã chấp nhận lời mời. Bạn có thể tìm chuyến đi trong mục Được chia sẻ.",
+    "rejected": "Đã từ chối lời mời. Bạn không được cấp quyền truy cập chuyến đi.",
+    "responseError": "Không thể lưu phản hồi. Lời mời có thể đã thay đổi. Hãy làm mới và thử lại."
+},
+  invitationReview: {"title": "Lời mời chuyến đi", "back": "Quay lại", "loading": "Đang tải lời mời", "unavailable": "Không thể xem lời mời. Hãy đăng nhập bằng tài khoản được mời hoặc thử lại.", "retry": "Thử lại", "pending": "Đang chờ phản hồi của bạn.", "accepted": "Đã chấp nhận lời mời.", "declined": "Đã từ chối lời mời.", "revoked": "Chủ chuyến đi đã hủy lời mời.", "expired": "Lời mời đã hết hạn. Hãy yêu cầu chủ chuyến đi gửi lời mời mới.", "expires": "Hết hạn {{date}}", "access": "Người tạo vẫn là chủ chuyến đi và người lập kế hoạch. Chấp nhận để xem chuyến đi được chia sẻ.", "accept": "Chấp nhận", "decline": "Từ chối", "openTrip": "Mở chuyến đi", "responseError": "Không thể lưu phản hồi. Kiểm tra trạng thái hiện tại và thử lại.", "from": "Được mời bởi {{name}}"},
+  discovery: {"countsUnavailable": "Chưa có dữ liệu người theo dõi.", "viewVisit": "Xem chuyến đi đã hoàn thành tại {{city}}", "loadMoreVisits": "Xem thêm chuyến đi", "visitDetails": "Chuyến đi đã hoàn thành", "visitPrivacy": "Chỉ hiển thị thông tin chuyến đi được chia sẻ và ảnh công khai.", "detailUnavailable": "Nội dung được chia sẻ này hiện không còn khả dụng.", "photoDetails": "Ảnh công khai", "photoUnavailable": "Hiện không thể tải ảnh này.", "description": "Những người đã chia sẻ chuyến đi hoàn thành trong 10 ngày qua.", "empty": "Chưa có chuyến đi được chia sẻ gần đây.", "recentTrip": "Chuyến đi vừa hoàn thành", "peopleHint": "Tìm trong tối đa sáu người đi du lịch gần đây, không phải tất cả tài khoản.", "publicMoments": "Khoảnh khắc du lịch công khai", "noTrips": "Chưa có chuyến đi được chia sẻ gần đây.", "noPhotos": "Chưa có ảnh công khai.", "completed": "Hoàn thành {{date}}", "unavailable": "Hồ sơ này hiện không được chia sẻ công khai."},
   loadingUi: { content: "Đang tải nội dung", refreshing: "Đang cập nhật…", offline: "Không thể kết nối. Hãy kiểm tra mạng và thử lại.", timeout: "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại." },
   homeSections: { trips: "Chuyến đi của bạn", collections: "Bộ sưu tập", noTrips: "Chuyến đi sẽ xuất hiện tại đây sau khi bạn tạo.", noWorkspaces: "Bạn chưa có không gian lập kế hoạch đã lưu.", noCollections: "Chưa có bộ sưu tập nổi bật nào.", loadError: "Không thể tải lại {{title}}. Vui lòng thử lại.", retry: "Thử tải lại {{title}}", loading: "Đang tải {{title}}…" },
   taskFlow: { fewerPeople: "Giảm số người", morePeople: "Tăng số người", ownerOnly: "Chỉ chủ chuyến đi mới có thể chỉnh sửa.", invalidTrip: "Kiểm tra tên, ngày đi và số người (1–50).", close: "Đóng", discardTitle: "Bỏ thay đổi?", discardDescription: "Các thay đổi chưa lưu sẽ bị mất. Ở lại để tiếp tục chỉnh sửa.", keepEditing: "Tiếp tục chỉnh sửa", discard: "Bỏ thay đổi", saving: "Đang lưu…" },
@@ -19,6 +38,10 @@ const vi = {
     savedPrivate: "Địa điểm đã lưu chỉ dành riêng cho người dùng này.",
   },
   profileLayout: {
+    ownedTrips: "Của tôi",
+    sharedTrips: "Được chia sẻ",
+    emptySharedTrips: "Chuyến đi bạn chấp nhận lời mời sẽ xuất hiện ở đây.",
+
     trips: "Chuyến đi", photos: "Ảnh", saved: "Đã lưu", followers: "Người theo dõi", following: "Đang theo dõi",
     noBio: "Chưa có giới thiệu cá nhân.", emptyTrips: "Những hành trình sẽ xuất hiện ở đây khi bạn tạo chuyến đi.",
     emptySaved: "Lưu địa điểm bạn yêu thích để tìm lại ở đây.", loadError: "Không thể tải nội dung.",
@@ -181,7 +204,7 @@ const vi = {
     profile: "Hồ sơ",
   },
   home: {
-    whosAround: "Who’s around", demo: "Demo", viewProfile: "Xem hồ sơ", viewTraveler: "Xem hồ sơ của {{name}}",
+    whosAround: "Ai vừa khám phá?", demo: "Demo", viewProfile: "Xem hồ sơ", viewTraveler: "Xem hồ sơ của {{name}}",
     yourItinerary: "Sẵn sàng cho hành trình mới",
     browseItinerary: "Xem lịch trình",
     userEyebrow: "Chào mừng trở lại",
@@ -373,6 +396,7 @@ const vi = {
     },
   },
   tripDetail: {
+    error: "Không thể cập nhật lời mời",
     header: "Chi tiết Trip",
     days: "{{count}} ngày",
     noDescription: "Chưa có mô tả cho chuyến đi này.",
@@ -597,7 +621,7 @@ const vi = {
           daNang: "Đà Nẵng, Việt Nam",
         },
         destinations: {
-          daNang: "Đà Nẵng, Việt Nam",
+          daNang: "Da Nang and Hoian",
           tokyo: "Tokyo, Nhật Bản",
           bali: "Bali, Indonesia",
         },

@@ -73,7 +73,7 @@ export function TripDetailScreen() {
   }, [tripId, refetchTrip]));
 
   if (!Number.isInteger(tripId) || tripId <= 0) return <ScreenState message={t("travelPlan.workspace.tripLoadError")} />;
-  if (!tripQuery.data) return <ScreenState query={tripQuery} />;
+  if (!tripQuery.data || tripQuery.isError) return <ScreenState query={tripQuery} />;
   return <TripDetailContent trip={tripQuery.data} query={tripQuery} refreshing={tripQuery.isRefetching} onRefresh={() => void tripQuery.refetch()} />;
 }
 
@@ -178,7 +178,7 @@ function TripEditorRoute({ routeOnly = false }: { routeOnly?: boolean }) {
   const validId = Number.isInteger(tripId) && tripId > 0;
   const query = useTrip(validId ? tripId : null);
   if (!validId) return <ScreenState message={t("travelPlan.workspace.tripLoadError")} />;
-  if (!query.data) return <ScreenState query={query} />;
+  if (!query.data || query.isError) return <ScreenState query={query} />;
   if (query.data.accessRole !== "owner") return <ScreenState message={t("taskFlow.ownerOnly")} />;
   const done = () => router.dismissTo({ pathname: "/trip/[id]", params: { id: String(tripId) } });
   return routeOnly ? <RouteEditor query={query} key={tripId} trip={query.data} onDone={done} /> : <EditTripForm query={query} key={tripId} trip={query.data} onDone={done} />;

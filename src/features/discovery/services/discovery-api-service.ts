@@ -23,23 +23,32 @@ export type RecentTraveler = {
   target: { kind: "traveler-profile"; accountId: string };
 };
 export type RecentTravelersResponse = { data: RecentTraveler[]; meta: { evaluatedAt: string } };
+export type SocialCounts = { followers: number; following: number } | null;
+export type PublicPhoto = { id: string; image: DiscoveryImage; caption: string; createdAt: string };
+export type TravelerVisitResponse = { data: { traveler: PublicTraveler; visit: RecentTrip; photos: PublicPhoto[] }; meta: { hasMore: boolean; nextCursor: string | null } };
+export type TravelerPhotoResponse = { data: { traveler: PublicTraveler; photo: PublicPhoto } };
 export type TravelerProfileResponse = {
   data: {
     traveler: PublicTraveler;
+    socialCounts?: SocialCounts;
+    publicTripCount?: number;
     photos: { id: string; image: DiscoveryImage }[];
     recentTrips: RecentTrip[];
   };
-  meta: { hasMore: boolean; nextCursor: string | null };
+  meta: { hasMore: boolean; nextCursor: string | null; tripsHasMore?: boolean; nextTripCursor?: number | null };
 };
 
 export const discoveryApi = {
   recent: (signal?: AbortSignal) =>
     apiRequest<RecentTravelersResponse>("/api/around-me/recent-travelers", { signal }),
-  profile: (accountId: string, beforeId?: string, signal?: AbortSignal) =>
+  profile: (accountId: string, beforeId?: string, signal?: AbortSignal, beforeTripId?: number) =>
     apiRequest<TravelerProfileResponse>(
-      apiPath(`/api/travelers/${encodeURIComponent(accountId)}`, { beforeId }),
+      apiPath(`/api/travelers/${encodeURIComponent(accountId)}`, { beforeId, beforeTripId }),
       { signal },
     ),
+  socialCounts: (signal?: AbortSignal) => apiRequest<{ data: SocialCounts }>("/api/me/social-counts", { signal }),
+  visit: (accountId: string, tripId: string, beforeId?: string, signal?: AbortSignal) => apiRequest<TravelerVisitResponse>(apiPath(`/api/travelers/${encodeURIComponent(accountId)}/visits/${encodeURIComponent(tripId)}`, { beforeId }), { signal }),
+  photo: (accountId: string, photoId: string, signal?: AbortSignal) => apiRequest<TravelerPhotoResponse>(`/api/travelers/${encodeURIComponent(accountId)}/photos/${encodeURIComponent(photoId)}`, { signal }),
 };
 
 /** Poll only the visible screen while the app is active. Re-entry revalidates privacy. */
@@ -94,13 +103,38 @@ export function useTravelerProfile(accountId: string) {
   const active = useDiscoveryEnabled(Boolean(viewerId && accountId));
   return useInfiniteQuery({
     queryKey: ["discovery", "profile", viewerId, accountId],
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam, signal }) => discoveryApi.profile(accountId, pageParam, signal),
-    getNextPageParam: (last) => last.meta.hasMore ? last.meta.nextCursor ?? undefined : undefined,
+    initialPageParam: undefined as { photo?: string; trip?: number } | undefined,
+    queryFn: ({ pageParam, signal }) => pageParam?.trip === undefined ? discoveryApi.profile(accountId, pageParam?.photo, signal) : discoveryApi.profile(accountId, pageParam.photo, signal, pageParam.trip),
+    getNextPageParam: (last) => last.meta.hasMore || last.meta.tripsHasMore ? { photo: last.meta.nextCursor ?? undefined, trip: last.meta.nextTripCursor ?? undefined } : undefined,
     enabled: active,
     staleTime: 0,
     gcTime: 0,
     refetchInterval: 30_000,
     refetchOnWindowFocus: "always",
   });
+}
+
+export function useSocialCounts() {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const enabled = useDiscoveryEnabled(Boolean(viewerId));
+  return useQuery({ queryKey: ["discovery", "social-counts", viewerId], queryFn: ({ signal }) => discoveryApi.socialCounts(signal), enabled, staleTime: 0, gcTime: 0, refetchInterval: 30_000 });
+}
+
+export function useTravelerVisit(accountId: string, tripId: string) {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const enabled = useDiscoveryEnabled(Boolean(viewerId && accountId && tripId));
+  return useInfiniteQuery({ queryKey: ["discovery", "visit", viewerId, accountId, tripId], initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam, signal }) => discoveryApi.visit(accountId, tripId, pageParam, signal),
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.nextCursor ?? undefined : undefined,
+    enabled, staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always" });
+}
+
+export function useTravelerPhoto(accountId: string, photoId: string) {
+  const { session } = useAuth();
+  const viewerId = session?.user.id ?? "";
+  const enabled = useDiscoveryEnabled(Boolean(viewerId && accountId && photoId));
+  return useQuery({ queryKey: ["discovery", "photo", viewerId, accountId, photoId], queryFn: ({ signal }) => discoveryApi.photo(accountId, photoId, signal),
+    enabled, staleTime: 0, gcTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: "always" });
 }
